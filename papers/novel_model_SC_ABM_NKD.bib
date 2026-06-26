@@ -1,0 +1,448 @@
+% ============================================================
+%  novel_model_SC_ABM_NKD.bib
+%  Complete bibliography for SC-ABM-NKD preprint
+%
+%  Section 1 – Foundational references (cited in the model)
+%  Section 2 – New supporting references (5-8 latest papers,
+%               validating the five novelty claims)
+% ============================================================
+
+% ── Section 1: Foundational references ──────────────────────
+
+@article{blei2017,
+  author  = {Blei, David M. and Kucukelbir, Alp and McAuliffe, Jon D.},
+  title   = {Variational inference: a review for statisticians},
+  journal = {Journal of the American Statistical Association},
+  year    = {2017},
+  volume  = {112},
+  number  = {518},
+  pages   = {859--877},
+  doi     = {10.1080/01621459.2017.1285773}
+}
+
+@article{lecam1960,
+  author  = {{Le Cam}, Lucien},
+  title   = {An approximation theorem for the {Poisson} binomial distribution},
+  journal = {Pacific Journal of Mathematics},
+  year    = {1960},
+  volume  = {10},
+  number  = {4},
+  pages   = {1181--1197},
+  doi     = {10.2140/pjm.1960.10.1181}
+}
+
+@book{grunwald2004,
+  author    = {Gr\"{u}nwald, Peter D.},
+  title     = {The Minimum Description Length Principle},
+  publisher = {MIT Press},
+  address   = {Cambridge, MA},
+  year      = {2007}
+}
+
+@article{dail2011,
+  author  = {Dail, David and Madsen, Leonard},
+  title   = {Models for estimating abundance from repeated counts of an
+             open metapopulation},
+  journal = {Biometrics},
+  year    = {2011},
+  volume  = {67},
+  number  = {2},
+  pages   = {577--587},
+  doi     = {10.1111/j.1541-0420.2010.01465.x}
+}
+
+@article{datta2016,
+  author  = {Datta, Abhirup and Banerjee, Sudipto and Finley, Andrew O. and
+             Gelfand, Alan E.},
+  title   = {Hierarchical nearest-neighbor {Gaussian} process models for large
+             geostatistical datasets},
+  journal = {Journal of the American Statistical Association},
+  year    = {2016},
+  volume  = {111},
+  number  = {514},
+  pages   = {800--812},
+  doi     = {10.1080/01621459.2015.1044091}
+}
+
+@book{meyntweedie1993,
+  author    = {Meyn, Sean P. and Tweedie, Richard L.},
+  title     = {Markov Chains and Stochastic Stability},
+  publisher = {Springer-Verlag},
+  address   = {London},
+  year      = {1993},
+  doi       = {10.1007/978-1-4471-3267-7}
+}
+
+@article{hooten2010,
+  author    = {Hooten, Mevin B. and Wikle, Christopher K.},
+  title     = {Statistical Agent-Based Models for Discrete
+               Spatio-Temporal Systems},
+  journal   = {Journal of the American Statistical Association},
+  year      = {2010},
+  volume    = {105},
+  number    = {489},
+  pages     = {236--248},
+  doi       = {10.1198/jasa.2009.tm09036}
+}
+
+@phdthesis{heard2014,
+  author  = {Heard, Daniel},
+  title   = {Statistical Inference Utilizing Agent Based Models},
+  school  = {Department of Statistical Science, Duke University},
+  year    = {2014},
+  address = {Durham, NC},
+  type    = {{PhD} Dissertation}
+}
+
+@article{garnelo2018,
+  author        = {Garnelo, Marta and Schwarz, Jonathan and
+                   Rosenbaum, Dan and Viola, Fabio and
+                   Rezende, Danilo J. and Eslami, S. M. Ali and
+                   Teh, Yee Whye},
+  title         = {Neural Processes},
+  journal       = {arXiv preprint},
+  year          = {2018},
+  eprint        = {1807.01622},
+  archivePrefix = {arXiv},
+  primaryClass  = {cs.LG},
+  doi           = {10.48550/arXiv.1807.01622}
+}
+
+@article{beaumont2009,
+  author  = {Beaumont, Mark A. and Cornuet, Jean-Marie and
+             Marin, Jean-Michel and Robert, Christian P.},
+  title   = {Adaptive Approximate {Bayesian} Computation},
+  journal = {Biometrika},
+  year    = {2009},
+  volume  = {96},
+  number  = {4},
+  pages   = {983--990},
+  doi     = {10.1093/biomet/asp052}
+}
+
+@book{turchin1998,
+  author    = {Turchin, Peter},
+  title     = {Quantitative Analysis of Movement: Measuring and
+               Modelling Population Redistribution in Animals
+               and Plants},
+  publisher = {Sinauer Associates},
+  address   = {Sunderland, MA},
+  year      = {1998}
+}
+
+
+% ── Section 2: New supporting references ────────────────────
+%
+%  Novelty 1 – Neural dispersal kernel / Neural CA
+%    → richardson2024, mao2026
+%
+%  Novelty 2 – Density-regulated survival and dispersal
+%    → pletcher2025
+%
+%  Novelty 3 – Multi-source joint observation model
+%    → verhoef2025, adjei2024
+%
+%  Novelty 4 – Nonlinear ADR PDE limit (CA→PDE)
+%    → richardson2024 (NCA learns PDE trajectories)
+%
+%  Novelty 5 – Neural Process emulated ABC-SMC
+%    → scheurer2025, hikida2025, dinh2025
+
+
+% ── Novelty 1 & 4: Neural Cellular Automata for spatio-temporal ecology ──
+
+@article{richardson2024,
+  author    = {Richardson, Alex D. and Antal, Tibor and
+               Blythe, Richard A. and Schumacher, Linus J.},
+  title     = {Learning Spatio-Temporal Patterns with
+               Neural Cellular Automata},
+  journal   = {{PLOS} Computational Biology},
+  year      = {2024},
+  volume    = {20},
+  number    = {4},
+  pages     = {e1011589},
+  doi       = {10.1371/journal.pcbi.1011589},
+  note      = {Demonstrates that neural cellular automata can learn
+               local dispersal rules from spatio-temporal image
+               sequences and recover PDE dynamics; directly motivates
+               the neural dispersal kernel of SC-ABM-NKD.}
+}
+
+% ── Novelty 1: Neural posterior estimation for spatial individual-level models ──
+
+@article{mao2026,
+  author        = {Mao, Yicheng and Deardon, Rob},
+  title         = {Neural Posterior Estimation for Spatial
+                   Individual-Level Epidemic Models},
+  journal       = {arXiv preprint},
+  year          = {2026},
+  eprint        = {2605.29180},
+  archivePrefix = {arXiv},
+  primaryClass  = {stat.CO},
+  doi           = {10.48550/arXiv.2605.29180},
+  note          = {Closest published analogue to SC-ABM-NKD inference:
+                   neural posterior estimation (NPE) for spatial
+                   individual-level ABMs with incomplete observation,
+                   demonstrating feasibility for the spatial emulated
+                   inference paradigm.}
+}
+
+% ── Novelty 2: Density-dependent dispersal for range shifts ──
+
+@article{pletcher2025,
+  author    = {Pletcher, E. and Shriver, Robert K.},
+  title     = {Density-Dependent Growth and Dispersal Can Accurately
+               Forecast Near-Term Range Shifts in a Dominant
+               Dryland Tree Species},
+  journal   = {Journal of Ecology},
+  year      = {2025},
+  volume    = {113},
+  number    = {11},
+  pages     = {3252--3264},
+  doi       = {10.1111/1365-2745.70157},
+  note      = {Empirical validation that density-dependent dispersal
+               models outperform climate-only models for forecasting
+               ecological range shifts; directly motivates the
+               logistic survival term and saturating dispersal
+               function in SC-ABM-NKD.}
+}
+
+% ── Novelty 3: Multi-source abundance estimation with imperfect detection ──
+
+@article{verhoef2025,
+  author    = {{Ver Hoef}, Jay M. and McClintock, Brett T. and
+               Boveng, Peter L. and London, Josh M. and
+               Jansen, John K.},
+  title     = {An Integrated Data Model to Estimate Abundance
+               from Counts with Temporal Dependence and
+               Imperfect Detection},
+  journal   = {Ecology},
+  year      = {2025},
+  volume    = {106},
+  number    = {5},
+  pages     = {e70073},
+  doi       = {10.1002/ecy.70073},
+  note      = {Develops a hierarchical model combining survey-count
+               data with temporal autocorrelation and imperfect
+               detection; the closest methodological precedent for
+               the SC-ABM-NKD joint NegBin + Bernoulli observation
+               layer sharing a single latent abundance field.}
+}
+
+% ── Novelty 3: Sequential MC for ecological data assimilation ──
+
+@article{adjei2024,
+  author        = {Adjei, Kwaku Peprah and Cooke, Rob and
+                   Isaac, Nick and {O'Hara}, Robert B.},
+  title         = {A Sequential {Monte Carlo} Algorithm for
+                   Data Assimilation Problems in Ecology},
+  journal       = {arXiv preprint},
+  year          = {2024},
+  eprint        = {2401.06515},
+  archivePrefix = {arXiv},
+  primaryClass  = {stat.AP},
+  doi           = {10.48550/arXiv.2401.06515},
+  note          = {SMC for ecological state-space models validated
+                   on Swiss Breeding Bird Survey data; directly
+                   relevant to fusing eBird count data with the
+                   latent-count SMC component of SC-ABM-NKD.}
+}
+
+% ── Novelty 5: Uncertainty-aware surrogate emulators for ABC ──
+
+@article{scheurer2025,
+  author        = {Scheurer, Stefania and Reiser, Philipp and
+                   Br{\"{u}}nnette, Tim and Nowak, Wolfgang and
+                   Guthke, Anneli and B{\"{u}}rkner, Paul-Christian},
+  title         = {Uncertainty-Aware Surrogate-Based Amortized
+                   {Bayesian} Inference for Computationally
+                   Expensive Models},
+  journal       = {Transactions on Machine Learning Research},
+  year          = {2026},
+  eprint        = {2505.08683},
+  archivePrefix = {arXiv},
+  primaryClass  = {stat.ML},
+  doi           = {10.48550/arXiv.2505.08683},
+  note          = {Introduces uncertainty-aware surrogate emulators
+                   for amortised Bayesian inference, propagating
+                   emulator uncertainty through a latent variable —
+                   the same mechanism used by the Neural Process
+                   emulator in SC-ABM-NKD's ABC-SMC phase.}
+}
+
+% ── Novelty 5: Multilevel neural simulation-based inference ──
+
+@article{hikida2025,
+  author        = {Hikida, Yuga and Bharti, Ayush and
+                   Jeffrey, Niall and Briol, Fran\c{c}ois-Xavier},
+  title         = {Multilevel Neural Simulation-Based Inference},
+  journal       = {arXiv preprint},
+  year          = {2025},
+  eprint        = {2506.06087},
+  archivePrefix = {arXiv},
+  primaryClass  = {stat.ML},
+  doi           = {10.48550/arXiv.2506.06087},
+  note          = {Combines multilevel Monte Carlo with neural SBI to
+                   reduce simulator cost; the multi-fidelity principle
+                   parallels SC-ABM-NKD's use of a Neural Process
+                   surrogate in place of the full ABM simulator inside
+                   the SMC acceptance loop.}
+}
+
+% ── Section 3: Latest peer-reviewed supporting references (JASA / AoS / Biometrika / JRSS-B) ──
+
+% JRSS-B: Poisson approximate likelihoods for stochastic compartmental models
+@article{whitehouse2023,
+  author  = {Whitehouse, Michael and Whiteley, Nick and Rimella, Lorenzo},
+  title   = {Consistent and fast inference in compartmental models of epidemics
+             using {Poisson} Approximate Likelihoods},
+  journal = {Journal of the Royal Statistical Society Series B: Statistical Methodology},
+  year    = {2023},
+  volume  = {85},
+  number  = {4},
+  pages   = {1173--1203},
+  doi     = {10.1093/jrsssb/qkad065}
+}
+
+% JASA: Neural networks embedded in GP geostatistical models (NN-GLS)
+@article{zhan2025,
+  author  = {Zhan, Wentao and Datta, Abhirup},
+  title   = {Neural networks for geospatial data},
+  journal = {Journal of the American Statistical Association},
+  year    = {2025},
+  volume  = {120},
+  number  = {549},
+  pages   = {535--547},
+  doi     = {10.1080/01621459.2024.2356293}
+}
+
+% JASA: Robust Bayesian NegBin under zero-inflation and outliers
+@article{hamura2025,
+  author  = {Hamura, Yasuyuki and Irie, Kaoru and Sugasawa, Shonosuke},
+  title   = {Robust {Bayesian} modeling of counts with zero inflation and outliers:
+             theoretical robustness and efficient computation},
+  journal = {Journal of the American Statistical Association},
+  year    = {2025},
+  volume  = {120},
+  number  = {551},
+  pages   = {1545--1557},
+  doi     = {10.1080/01621459.2024.2447111}
+}
+
+% Annals of Statistics: Non-asymptotic concentration bounds for discrepancy-based ABC
+@article{legramanti2025,
+  author  = {Legramanti, Sirio and Durante, Daniele and Alquier, Pierre},
+  title   = {Concentration of discrepancy-based approximate {Bayesian} computation
+             via {Rademacher} complexity},
+  journal = {Annals of Statistics},
+  year    = {2025},
+  volume  = {53},
+  number  = {1},
+  pages   = {37--60},
+  doi     = {10.1214/24-AOS2453}
+}
+
+% Biometrika: Spectral adjustment for GP/covariate spatial confounding
+@article{guan2023,
+  author  = {Guan, Yawen and Page, Garritt L. and Reich, Brian J. and
+             Ventrucci, Massimo and Yang, Shu},
+  title   = {Spectral adjustment for spatial confounding},
+  journal = {Biometrika},
+  year    = {2023},
+  volume  = {110},
+  number  = {3},
+  pages   = {699--719},
+  doi     = {10.1093/biomet/asac069}
+}
+
+% ── Section 4: Verified CSDA papers (for SC-ABM CSDA submission) ─────────────
+
+% CSDA: ABC for stochastic SDE models (FitzHugh-Nagumo → parallels ABC-SMC for SC-ABM)
+@article{samson2025,
+  author  = {Samson, Adeline and Tamborrino, Massimiliano and Tubikanec, Irene},
+  title   = {Inference for the stochastic {FitzHugh--Nagumo} model from real action
+             potential data via approximate {Bayesian} computation},
+  journal = {Computational Statistics \& Data Analysis},
+  year    = {2025},
+  volume  = {204},
+  pages   = {108095},
+  doi     = {10.1016/j.csda.2024.108095}
+}
+
+% CSDA: Fast approximate posterior for disease dynamics via state-space models
+@article{tang2026,
+  author  = {Tang, Meini and Prado, Raquel},
+  title   = {Fast approximate posterior inference for modeling disease dynamics
+             via state-space models},
+  journal = {Computational Statistics \& Data Analysis},
+  year    = {2026},
+  volume  = {221},
+  pages   = {108368},
+  doi     = {10.1016/j.csda.2026.108368}
+}
+
+% CSDA: Sequential hierarchical Bayes + particle filter + RJMCMC resampling
+@article{huan2026,
+  author  = {Huan, Yue and Wang, Guoqiang and Lin, Hai Xiang},
+  title   = {Sequential hierarchical {Bayesian} model and particle filter estimation
+             with two-step {RJMCMC} resampling},
+  journal = {Computational Statistics \& Data Analysis},
+  year    = {2026},
+  volume  = {216},
+  pages   = {108304},
+  doi     = {10.1016/j.csda.2025.108304}
+}
+
+% CSDA: Spatiotemporal change detection with doubly-penalized Poisson regression
+@article{zhang2025csda,
+  author  = {Zhang, Zerui and Wang, Xin and Zhang, Xin and Zhang, Jing},
+  title   = {Simultaneously detecting spatiotemporal changes with penalized
+             {Poisson} regression models},
+  journal = {Computational Statistics \& Data Analysis},
+  year    = {2025},
+  volume  = {212},
+  pages   = {108240},
+  doi     = {10.1016/j.csda.2025.108240}
+}
+
+% ── Data application: NEON mosquito surveillance ────────────────────────────
+
+@misc{neon2024mosquito,
+  author       = {{National Ecological Observatory Network (NEON)}},
+  title        = {Mosquito expert taxonomist identification
+                  ({DP1.10043.001}), {RELEASE-2024}},
+  year         = {2024},
+  howpublished = {\url{https://data.neonscience.org}},
+  note         = {Accessed June 2025}
+}
+
+% ── Novelty 5: ABC-SMC with random forests (non-parametric summary selection) ──
+
+@incollection{newey1994,
+  author    = {Newey, Whitney K. and McFadden, Daniel},
+  title     = {Large sample estimation and hypothesis testing},
+  booktitle = {Handbook of Econometrics},
+  editor    = {Engle, Robert F. and McFadden, Daniel},
+  volume    = {4},
+  chapter   = {36},
+  pages     = {2111--2245},
+  publisher = {Elsevier},
+  year      = {1994},
+  doi       = {10.1016/S1573-4412(05)80005-4}
+}
+
+@article{dinh2025,
+  author    = {Dinh, Khanh N. and Liu, C{\'e}cile and
+               Xiang, Zijin and Liu, Zhihan and
+               Tavar{\'e}, Simon},
+  title     = {Approximate {Bayesian} Computation Sequential
+               {Monte Carlo} via Random Forests},
+  journal   = {Statistics and Computing},
+  year      = {2025},
+  doi       = {10.1007/s11222-025-10748-x},
+  note      = {arXiv:2406.15865. Introduces random-forest-based
+               ABC-SMC that adaptively selects informative summary
+               statistics; complements SC-ABM-NKD's five hand-crafted
+               summaries (Equations 34--38) and provides a path to
+               automatic summary selection.}
+}

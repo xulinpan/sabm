@@ -1,0 +1,24 @@
+Package: scabmnkd
+Type: Package
+Title: SC-ABM-NKD: Hierarchical Count-Based Spatio-Temporal ABM with Neural Dispersal Kernel
+Version: 0.1.0
+Authors@R: person("Author", "Name", email = "author@example.com", role = c("aut", "cre"))
+Description: Implements the SC-ABM-NKD model for spatio-temporal population
+    dynamics. Combines a count-based agent-based model (latent NegBin state) with
+    a neural dispersal kernel (3-layer ReLU MLP), density-regulated survival,
+    Poisson-superposition immigration, long-distance dispersal, and a doubly-
+    stochastic observation model (NegBin counts + Bernoulli remote sensing).
+    Inference is performed via ABC-SMC with adaptive tolerance. Synthesises
+    Hooten & Wikle (2010, JASA), Heard (2014, Duke PhD), and extensions.
+License: MIT + file LICENSE
+Encoding: UTF-8
+RoxygenNote: 7.3.2
+Depends:
+    R (>= 4.1.0)
+Imports:
+    R6,
+    stats
+Suggests:
+    ggplot2,
+    testthat (>= 3.0.0)
+Config/testthat/edition: 3

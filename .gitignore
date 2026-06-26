@@ -1,0 +1,66 @@
+# Python virtual environment and caches
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# R session artifacts
+.Rhistory
+.RData
+.Rapp.history
+*.Rout
+
+# ----- Large data files (not tracked in git) -----
+# Raw source downloads — too large for GitHub
+data/raw/
+
+# Fire / VIIRS GIS files (>5 GB combined)
+data/processed/*.dbf
+data/processed/*.shp
+data/processed/*.shx
+data/processed/*.prj
+data/processed/*.cpg
+data/processed/*.parquet
+
+# eBird parquet extracts
+data/processed/ebd_observations.parquet
+data/processed/ebd_sampling.parquet
+
+# ----- Generated binary outputs (reproduced by running scripts) -----
+inference/*.rds
+
+# ----- Generated PDFs (reproduced from LaTeX / R source) -----
+figures/*.pdf
+papers/*.pdf
+gap_analysis/*.pdf
+gap_analysis/build/
+
+# IDE / tool settings (machine-local)
+.claude/
+
+# Generated EDA output (plots and summaries)
+eda_output/
+
+# LaTeX build artifacts
+papers/*.aux
+papers/*.log
+papers/*.out
+papers/*.toc
+papers/*.blg
+papers/*.bbl
+papers/*.synctex.gz
+gap_analysis/*.aux
+gap_analysis/*.log
+gap_analysis/*.out
+gap_analysis/*.toc
+
+# Latexmk / editor build files (project-wide)
+*.fdb_latexmk
+*.fls
+*.spl
+
+# Downloaded archives and generated reports
+papers/drive-download*.zip
+scabmnkd/*.pdf

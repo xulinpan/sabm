@@ -1,0 +1,120 @@
+scientific_name,common_name,taxonomic_order,n_checklists,total_count,max_count,has_breeding_code,has_media,n_localities,frequency
+Cardinalis cardinalis,Northern Cardinal,34224,170,902.0,30.0,True,0,58,0.7054
+Thryothorus ludovicianus,Carolina Wren,27107,118,279.0,9.0,True,0,41,0.4896
+Baeolophus bicolor,Tufted Titmouse,21936,113,359.0,15.0,True,0,42,0.4689
+Mimus polyglottos,Northern Mockingbird,27870,108,304.0,16.0,True,1,43,0.4481
+Zenaida macroura,Mourning Dove,2373,105,379.0,35.0,True,0,43,0.4357
+Zonotrichia albicollis,White-throated Sparrow,32919,104,373.0,18.0,False,1,35,0.4315
+Cyanocitta cristata,Blue Jay,21066,98,287.0,8.0,True,0,36,0.4066
+Melanerpes carolinus,Red-bellied Woodpecker,11088,96,155.0,7.0,True,0,38,0.3983
+Corvus brachyrhynchos,American Crow,21333,93,312.0,50.0,True,0,36,0.3859
+Pipilo erythrophthalmus,Eastern Towhee,33136,85,197.0,11.0,True,0,34,0.3527
+Sialia sialis,Eastern Bluebird,27881,84,187.0,10.0,True,1,35,0.3485
+Haemorhous mexicanus,House Finch,32034,84,232.0,12.0,True,0,31,0.3485
+Poecile carolinensis,Carolina Chickadee,21836,83,188.0,16.0,True,0,32,0.3444
+Sayornis phoebe,Eastern Phoebe,16840,81,128.0,6.0,True,1,30,0.3361
+Turdus migratorius,American Robin,28313,78,887.0,100.0,True,0,34,0.3237
+Dryobates pubescens,Downy Woodpecker,11287,74,111.0,6.0,True,0,30,0.3071
+Bombycilla cedrorum,Cedar Waxwing,29618,74,1800.0,300.0,False,1,26,0.3071
+Setophaga coronata,Yellow-rumped Warbler,33874,73,330.0,20.0,False,0,35,0.3029
+Molothrus ater,Brown-headed Cowbird,33556,69,638.0,120.0,True,0,28,0.2863
+Setophaga pinus,Pine Warbler,33868,66,128.0,15.0,True,0,33,0.2739
+Spizella passerina,Chipping Sparrow,32708,65,393.0,50.0,True,0,29,0.2697
+Corthylio calendula,Ruby-crowned Kinglet,26595,54,85.0,6.0,False,1,27,0.2241
+Toxostoma rufum,Brown Thrasher,27795,50,80.0,4.0,True,0,24,0.2075
+Spinus tristis,American Goldfinch,32338,49,378.0,120.0,True,0,29,0.2033
+Cathartes aura,Turkey Vulture,7720,49,189.0,30.0,True,0,23,0.2033
+Agelaius phoeniceus,Red-winged Blackbird,33500,49,809.0,200.0,True,0,21,0.2033
+Corvus ossifragus,Fish Crow,21346,44,137.0,20.0,True,0,24,0.1826
+Polioptila caerulea,Blue-gray Gnatcatcher,26874,43,136.0,12.0,True,1,23,0.1784
+Buteo lineatus,Red-shouldered Hawk,8391,39,50.0,3.0,True,0,21,0.1618
+Melospiza melodia,Song Sparrow,32995,38,112.0,15.0,False,1,21,0.1577
+Ardea alba,Great Egret,7635,38,104.0,15.0,True,1,18,0.1577
+Branta canadensis,Canada Goose,330,37,302.0,50.0,False,1,14,0.1535
+Junco hyemalis,Dark-eyed Junco,32842,35,137.0,10.0,False,0,12,0.1452
+Colaptes auratus,Northern Flicker,11785,30,49.0,7.0,False,0,20,0.1245
+Charadrius vociferus,Killdeer,5770,27,199.0,75.0,False,1,9,0.112
+Sitta pusilla,Brown-headed Nuthatch,26683,27,40.0,5.0,True,0,15,0.112
+Ardea herodias,Great Blue Heron,7658,25,31.0,4.0,True,0,13,0.1037
+Sturnella magna,Eastern Meadowlark,33290,23,397.0,75.0,False,0,7,0.0954
+Passer domesticus,House Sparrow,31261,22,50.0,10.0,True,0,8,0.0913
+Vireo griseus,White-eyed Vireo,18966,21,48.0,8.0,True,0,15,0.0871
+Regulus satrapa,Golden-crowned Kinglet,26599,20,26.0,3.0,False,0,15,0.083
+Sturnus vulgaris,European Starling,27571,20,275.0,120.0,False,0,12,0.083
+Quiscalus quiscula,Common Grackle,33576,20,309.0,150.0,False,0,8,0.083
+Dryocopus pileatus,Pileated Woodpecker,11647,19,29.0,4.0,True,1,16,0.0788
+Megaceryle alcyon,Belted Kingfisher,10202,18,20.0,2.0,True,1,9,0.0747
+Passerculus sandwichensis,Savannah Sparrow,32962,17,306.0,75.0,False,1,5,0.0705
+Stelgidopteryx serripennis,Northern Rough-winged Swallow,23876,17,58.0,10.0,False,0,9,0.0705
+Catharus guttatus,Hermit Thrush,28081,17,23.0,3.0,False,1,14,0.0705
+Melospiza georgiana,Swamp Sparrow,33033,17,46.0,8.0,False,0,8,0.0705
+Sphyrapicus varius,Yellow-bellied Sapsucker,11016,16,21.0,3.0,False,0,11,0.0664
+Geothlypis trichas,Common Yellowthroat,33749,16,24.0,3.0,False,0,12,0.0664
+Buteo jamaicensis,Red-tailed Hawk,8410,15,23.0,4.0,True,0,8,0.0622
+Sitta carolinensis,White-breasted Nuthatch,26640,14,16.0,2.0,True,0,10,0.0581
+Hirundo rustica,Barn Swallow,23957,14,38.0,10.0,True,0,8,0.0581
+Aix sponsa,Wood Duck,441,13,32.0,4.0,False,1,7,0.0539
+Anas platyrhynchos,Mallard,525,12,25.0,4.0,True,0,5,0.0498
+Setophaga americana,Northern Parula,33784,12,24.0,4.0,True,0,10,0.0498
+Vireo flavifrons,Yellow-throated Vireo,19021,11,13.0,2.0,False,0,8,0.0456
+Melanerpes erythrocephalus,Red-headed Woodpecker,11035,11,15.0,3.0,False,1,7,0.0456
+Coragyps atratus,Black Vulture,7716,11,32.0,6.0,False,1,7,0.0456
+Lanius ludovicianus,Loggerhead Shrike,20860,11,27.0,4.0,False,1,2,0.0456
+Spizella pusilla,Field Sparrow,32720,10,30.0,6.0,False,0,6,0.0415
+Astur cooperii,Cooper's Hawk,8183,10,11.0,2.0,True,0,8,0.0415
+Falco sparverius,American Kestrel,11913,10,14.0,3.0,False,0,5,0.0415
+Setophaga dominica,Yellow-throated Warbler,33883,9,40.0,25.0,False,0,9,0.0373
+Progne subis,Purple Martin,23851,9,32.0,8.0,True,0,7,0.0373
+Streptopelia decaocto,Eurasian Collared-Dove,1994,9,33.0,8.0,False,1,4,0.0373
+Nannopterum auritum,Double-crested Cormorant,7342,8,31.0,9.0,True,0,8,0.0332
+Gallinago delicata,Wilson's Snipe,6042,8,113.0,35.0,False,0,2,0.0332
+Pooecetes gramineus,Vesper Sparrow,32935,8,21.0,5.0,False,1,4,0.0332
+Vireo solitarius,Blue-headed Vireo,19027,8,9.0,2.0,False,0,8,0.0332
+Euphagus cyanocephalus,Brewer's Blackbird,33574,8,164.0,100.0,False,0,1,0.0332
+Setophaga palmarum,Palm Warbler,33863,7,12.0,4.0,False,0,3,0.029
+Calidris melanotos,Pectoral Sandpiper,6163,7,248.0,100.0,False,1,4,0.029
+Mniotilta varia,Black-and-white Warbler,33685,6,11.0,3.0,False,0,4,0.0249
+Leiothlypis celata,Orange-crowned Warbler,33696,6,8.0,2.0,False,0,4,0.0249
+Podilymbus podiceps,Pied-billed Grebe,6776,6,8.0,2.0,False,0,4,0.0249
+Haliaeetus leucocephalus,Bald Eagle,8271,5,5.0,1.0,True,0,5,0.0207
+Archilochus colubris,Ruby-throated Hummingbird,4747,5,5.0,1.0,False,0,4,0.0207
+Strix varia,Barred Owl,9117,5,7.0,2.0,True,0,5,0.0207
+Haemorhous purpureus,Purple Finch,32048,5,20.0,11.0,False,0,3,0.0207
+Circus hudsonius,Northern Harrier,8228,5,5.0,1.0,False,0,2,0.0207
+Branta hutchinsii,Cackling Goose,319,4,16.0,4.0,False,1,1,0.0166
+Setophaga discolor,Prairie Warbler,33896,4,4.0,1.0,False,0,4,0.0166
+Zonotrichia leucophrys,White-crowned Sparrow,32905,4,11.0,4.0,False,0,1,0.0166
+Parkesia motacilla,Louisiana Waterthrush,33675,4,5.0,2.0,False,0,3,0.0166
+Chaetura pelagica,Chimney Swift,3842,3,5.0,3.0,True,0,3,0.0124
+Troglodytes hiemalis,Winter Wren,27054,3,3.0,1.0,False,0,3,0.0124
+Pluvialis dominica,American Golden-Plover,5758,3,385.0,300.0,False,1,3,0.0124
+Setophaga virens,Black-throated Green Warbler,33928,3,3.0,1.0,False,0,2,0.0124
+Spatula discors,Blue-winged Teal,468,3,8.0,4.0,False,0,2,0.0124
+Lophodytes cucullatus,Hooded Merganser,729,3,44.0,40.0,False,0,3,0.0124
+Euphagus carolinus,Rusty Blackbird,33571,3,24.0,15.0,False,0,2,0.0124
+Petrochelidon pyrrhonota,Cliff Swallow,24051,2,79.0,75.0,False,0,2,0.0083
+Tachycineta bicolor,Tree Swallow,23834,2,9.0,7.0,False,0,2,0.0083
+Vireo olivaceus,Red-eyed Vireo,19067,2,2.0,1.0,False,0,2,0.0083
+Ardea ibis,Western Cattle-Egret,7631,2,5.0,4.0,False,0,1,0.0083
+Anthus rubescens,American Pipit,31605,2,4.0,3.0,False,0,2,0.0083
+Buteo platypterus,Broad-winged Hawk,8383,2,4.0,3.0,False,0,2,0.0083
+Certhia americana,Brown Creeper,26777,2,2.0,1.0,False,0,2,0.0083
+Dryobates villosus,Hairy Woodpecker,11314,2,2.0,1.0,False,0,2,0.0083
+Falco peregrinus,Peregrine Falcon,11997,2,2.0,1.0,False,1,1,0.0083
+Pandion haliaetus,Osprey,7737,2,2.0,1.0,True,0,2,0.0083
+Fulica americana,American Coot,5443,1,1.0,1.0,False,0,1,0.0041
+Falco columbarius,Merlin,11947,1,1.0,1.0,False,0,1,0.0041
+Gavia immer,Common Loon,6854,1,2.0,2.0,False,1,1,0.0041
+Dumetella carolinensis,Gray Catbird,27758,1,2.0,2.0,True,0,1,0.0041
+Dryobates borealis,Red-cockaded Woodpecker,11313,1,6.0,6.0,False,0,1,0.0041
+Anser caerulescens,Snow Goose,257,1,1.0,1.0,False,0,1,0.0041
+Bubo virginianus,Great Horned Owl,8811,1,1.0,1.0,False,0,1,0.0041
+Bucephala albeola,Bufflehead,717,1,1.0,1.0,False,0,1,0.0041
+Anhinga anhinga,Anhinga,7283,1,2.0,2.0,False,0,1,0.0041
+Limnothlypis swainsonii,Swainson's Warbler,33687,1,1.0,1.0,False,0,1,0.0041
+Meleagris gallopavo,Wild Turkey,1242,1,3.0,3.0,False,0,1,0.0041
+Sitta canadensis,Red-breasted Nuthatch,26688,1,1.0,1.0,False,0,1,0.0041
+Troglodytes aedon,Northern House Wren,26942,1,1.0,1.0,False,0,1,0.0041
+Tringa solitaria,Solitary Sandpiper,6067,1,1.0,1.0,False,0,1,0.0041
+Tringa melanoleuca,Greater Yellowlegs,6092,1,1.0,1.0,False,0,1,0.0041
+Tringa flavipes,Lesser Yellowlegs,6083,1,2.0,2.0,False,0,1,0.0041

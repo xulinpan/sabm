@@ -1,0 +1,86 @@
+{
+  "site": "UNDE",
+  "focal_species": "Coquillettidia perturbans",
+  "season": "2024-04-01 to 2024-10-31",
+  "m": 10,
+  "T": 16,
+  "plots": [
+    "UNDE_066",
+    "UNDE_067",
+    "UNDE_068",
+    "UNDE_070",
+    "UNDE_071",
+    "UNDE_072",
+    "UNDE_073",
+    "UNDE_074",
+    "UNDE_075",
+    "UNDE_076"
+  ],
+  "step_dates": [
+    "2024-04-11",
+    "2024-04-18",
+    "2024-05-02",
+    "2024-05-15",
+    "2024-05-30",
+    "2024-06-13",
+    "2024-06-27",
+    "2024-07-11",
+    "2024-07-26",
+    "2024-08-08",
+    "2024-08-21",
+    "2024-09-05",
+    "2024-09-19",
+    "2024-10-03",
+    "2024-10-17",
+    "2024-10-30"
+  ],
+  "channel_design": {
+    "Y_C": "overnight trap (set ~7pm CDT, collected ~7am CDT): NegBin count",
+    "Y_P": "daytime trap  (set ~7am CDT, collected ~7pm CDT): Bernoulli binary",
+    "independence": "different trap cycles, conditionally independent given N"
+  },
+  "neigh_threshold_km": 2.5,
+  "observation": {
+    "n_OC": 134,
+    "n_OC_pos": 73,
+    "n_OC_zero": 61,
+    "n_OP": 144,
+    "n_OP_pos": 111,
+    "n_OP_abs": 33,
+    "coverage_C_pct": 83.8,
+    "coverage_P_pct": 90.0
+  },
+  "counts": {
+    "total_scaled": 55547,
+    "min": 1,
+    "max": 4800,
+    "mean": 760.9,
+    "median": 202
+  },
+  "covariates": {
+    "X_cols": [
+      "intercept",
+      "elevation_z",
+      "is_wetland",
+      "is_forest"
+    ],
+    "W_cols": [
+      "intercept",
+      "elevation_z"
+    ],
+    "elevation_mu_m": 513.8,
+    "elevation_sd_m": 4.8,
+    "nlcd_classes": [
+      "mixedForest",
+      "woodyWetlands",
+      "woodyWetlands",
+      "woodyWetlands",
+      "woodyWetlands",
+      "woodyWetlands",
+      "deciduousForest",
+      "deciduousForest",
+      "woodyWetlands",
+      "deciduousForest"
+    ]
+  }
+}

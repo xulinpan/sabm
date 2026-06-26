@@ -1,0 +1,1343 @@
+\documentclass[12pt,a4paper]{article}
+
+% ── Packages ─────────────────────────────────────────────────────────────────
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage[margin=1.1in]{geometry}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{mathtools}          % dcases, prescript
+\usepackage{bm}                 % \bm bold math
+\usepackage{booktabs}           % professional tables
+\usepackage{array}
+\usepackage{longtable}
+\usepackage{multirow}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage[colorlinks=true,
+            linkcolor=blue!60!black,
+            citecolor=green!50!black,
+            urlcolor=blue!70!black]{hyperref}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{natbib}
+\usepackage{microtype}
+\usepackage{setspace}
+\usepackage{enumitem}
+\usepackage{tcolorbox}
+\tcbuselibrary{skins,breakable}
+
+% ── Theorem-like environments ─────────────────────────────────────────────────
+\newtheorem{theorem}{Theorem}
+\newtheorem{corollary}[theorem]{Corollary}
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{remark}{Remark}
+\theoremstyle{definition}
+\newtheorem{definition}{Definition}
+
+% ── Custom commands ───────────────────────────────────────────────────────────
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\Var}{\operatorname{Var}}
+\newcommand{\Cov}{\operatorname{Cov}}
+\newcommand{\tr}{\operatorname{tr}}
+\newcommand{\diag}{\operatorname{diag}}
+\newcommand{\N}{\mathcal{N}}
+\newcommand{\Bern}{\operatorname{Bern}}
+\newcommand{\Pois}{\operatorname{Poisson}}
+\newcommand{\NB}{\operatorname{NegBin}}
+\newcommand{\Bin}{\operatorname{Binomial}}
+\newcommand{\Dir}{\operatorname{Dir}}
+\newcommand{\bx}{\bm{x}}
+\newcommand{\ba}{\bm{a}}
+\newcommand{\bz}{\bm{z}}
+\newcommand{\bs}{\bm{s}}
+\newcommand{\br}{\bm{r}}
+\newcommand{\bW}{\bm{W}}
+\newcommand{\bv}{\bm{v}}
+\newcommand{\bD}{\bm{D}}
+\newcommand{\bX}{\bm{X}}
+\newcommand{\bbeta}{\bm{\beta}}
+\newcommand{\balpha}{\bm{\alpha}}
+\newcommand{\bTheta}{\bm{\Theta}}
+\newcommand{\bepsilon}{\bm{\varepsilon}}
+\newcommand{\bSigma}{\bm{\Sigma}}
+\newcommand{\bmu}{\bm{\mu}}
+\newcommand{\bomega}{\bm{\omega}}
+\newcommand{\bgamma}{\bm{\gamma}}
+\newcommand{\bdelta}{\bm{\delta}}
+\newcommand{\bw}{\bm{w}}
+\renewcommand{\S}{\mathcal{S}}
+\newcommand{\T}{\mathcal{T}}
+\newcommand{\Ni}{\mathcal{N}_i}
+\newcommand{\OC}{\mathcal{O}_C}
+\newcommand{\OP}{\mathcal{O}_P}
+\newcommand{\nn}{f_{\theta_{NN}}}
+\newcommand{\tpsi}{\tilde{\psi}}
+\newcommand{\tp}{\tilde{p}}
+
+% ── Highlighted box for key equations ────────────────────────────────────────
+\newtcolorbox{keybox}[1][]{
+  enhanced,colback=blue!4!white,colframe=blue!40!black,
+  fonttitle=\bfseries,title=#1,
+  breakable,pad at break=2mm
+}
+
+% ── Title block ───────────────────────────────────────────────────────────────
+\title{%
+  \textbf{SC-ABM-NKD:}\\[4pt]
+  \large Hierarchical Count-Based Spatio-Temporal Agent-Based Model\\
+  with Neural Dispersal Kernel and Multi-Source Emulated Inference
+}
+\author{%
+  Research Memorandum\\[2pt]
+  \small Synthesis of: Hooten \& Wikle (2010, \textit{JASA}),
+  Heard (2014, Duke PhD), and internal research notes
+}
+\date{\today}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\begin{document}
+\maketitle
+\tableofcontents
+\newpage
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Motivation and Positioning}
+\label{sec:motivation}
+% ─────────────────────────────────────────────────────────────────────────────
+
+\subsection{Three-Source Synthesis}
+
+This model synthesises and strictly extends three bodies of work:
+
+\begin{table}[h!]
+\centering
+\small
+\renewcommand{\arraystretch}{1.35}
+\begin{tabular}{p{3.6cm}p{5.2cm}p{5.2cm}}
+\toprule
+\textbf{Source} & \textbf{Core contribution} & \textbf{Gap addressed here} \\
+\midrule
+Hooten \& Wikle (2010, \textit{JASA}) &
+  Hierarchical Bayesian CA for binary spatio-temporal data; anisotropic nonstationary Dirichlet dispersal; advection–diffusion PDE limit &
+  Binary state only; perfect detection; independent propagation assumption; no density regulation \\[4pt]
+Heard (2014, Duke PhD) &
+  Likelihood-free inference via GP emulators and ABC-SMC; ABM validation and model complexity theory &
+  No spatial count ABM; emulator not adapted to structured spatial state \\[4pt]
+Phase\,1/3 research notes (internal) &
+  Count-based CA; density-dependent saturating dispersal kernel &
+  Parametric (exponential) kernel; no multi-source data fusion; no PDE limit \\
+\bottomrule
+\end{tabular}
+\caption{Source contributions and gaps addressed by SC-ABM-NKD.}
+\label{tab:sources}
+\end{table}
+
+\subsection{Five Novel Contributions}
+\begin{enumerate}[leftmargin=1.5em,label=\textbf{\arabic*.}]
+  \item \textbf{Doubly-stochastic multi-source observation model}: joint imperfect-detection likelihood for heterogeneous data (count surveys + binary remote sensing), sharing a single latent count field. \citet{verhoef2025} is the closest precedent, but handles only count data with temporal autocorrelation; we add a parallel binary remote-sensing channel. Posterior robustness of the NegBin component under zero-inflation and outliers is theoretically established by \citet{hamura2025}.
+  \item \textbf{Neural dispersal kernel}: replaces the Dirichlet parameterisation with a deep network taking pairwise habitat features and local density as input, enabling nonparametric, nonstationary, density-dependent dispersal. \citet{richardson2024} show that neural CA can learn local dispersal rules from spatio-temporal data; we extend this to a parametric kernel within a probabilistic CA. \citet{zhan2025} establish consistency of neural-network-within-GP geostatistical models (NN-GLS), supporting the statistical foundations of embedding a learnable dispersal kernel inside a spatially structured hierarchical model.
+  \item \textbf{Density-regulated survival}: logistic correction to the persistence parameter yields an in-cell carrying capacity, a feature absent from all predecessor models. \citet{pletcher2025} demonstrate empirically that density-dependent dispersal and growth mechanisms outperform purely climate-driven forecasts of range shifts.
+  \item \textbf{Nonlinear ADR PDE limit}: the continuous-time, continuous-space mean-field limit is a nonlinear advection--diffusion--reaction equation, a strict generalisation of the linear H\&W PDE \citep[Eq.~14]{hooten2010}. This is the first derivation of a nonlinear Fisher-KPP-type PDE limit for a neural-kernel CA.
+  \item \textbf{Neural Process emulated ABC-SMC}: a Neural Process surrogate \citep{garnelo2018} replaces the expensive full ABM simulator inside the SMC loop, propagating emulator uncertainty through a latent variable \citep{scheurer2025,hikida2025}. \citet{dinh2025} provide complementary methodology for automatic summary statistic selection within ABC-SMC. Non-asymptotic concentration bounds for discrepancy-based ABC are derived by \citet{legramanti2025}, theoretically grounding the tolerance-reduction scheme in Algorithm~\ref{alg:abc}.
+\end{enumerate}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Notation}
+\label{sec:notation}
+% ─────────────────────────────────────────────────────────────────────────────
+
+\begin{table}[h!]
+\centering
+\small
+\renewcommand{\arraystretch}{1.3}
+\begin{tabular}{cl}
+\toprule
+\textbf{Symbol} & \textbf{Meaning} \\
+\midrule
+$\S = \{1,\ldots,m\}$ & Discrete set of spatial cells (areal units) \\
+$\T = \{1,\ldots,T\}$ & Discrete time steps \\
+$N_{i,t} \in \mathbb{Z}_{\geq 0}$ & Latent true population count at cell $i$, time $t$ \\
+$\Ni$ & Queen's neighbourhood of cell $i$ ($d_\mathcal{N}=9$) \\
+$d_{ji}$ & Euclidean distance between centroids of cells $j$ and $i$ \\
+$\bx_i \in \mathbb{R}^p$ & Environmental/habitat covariate vector at cell $i$ \\
+$\alpha_i \in \mathbb{R}$ & Latent habitat suitability at cell $i$ \\
+$\phi_i \in (0,1)$ & Baseline persistence/survival probability at cell $i$ \\
+$K_i > 0$ & Local carrying capacity at cell $i$ \\
+$\psi_i \geq 0$ & Long-distance dispersal (LDD) rate into cell $i$ \\
+$\rho_i \in (0,1]$ & Detection probability for count surveys at cell $i$ \\
+$\kappa > 0$ & Remote-sensing detection rate parameter \\
+$\theta_{NN}$ & Parameters of the neural dispersal kernel \\
+$r > 0$ & Negative Binomial overdispersion parameter \\
+$\gamma > 0$ & Half-saturation constant for density scaling \\
+$\OC \subseteq \S\times\T$ & Cells and times with count survey data \\
+$\OP \subseteq \S\times\T$ & Cells and times with binary remote-sensing data \\
+\bottomrule
+\end{tabular}
+\caption{Notation used throughout.}
+\label{tab:notation}
+\end{table}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Observation Model}
+\label{sec:obs}
+% ─────────────────────────────────────────────────────────────────────────────
+
+\subsection{Count Survey Observations}
+
+For $(i,t) \in \OC$ (e.g.\ eBird checklists, field transects;
+see \citealt{adjei2024} for SMC treatment of such data):
+
+\begin{equation}
+  Y_{i,t}^{(C)} \;\Big|\; N_{i,t},\, \rho_{i,t},\, r
+  \;\sim\; \NB\!\left(\mu_{i,t}^{(C)},\; r\right),
+  \qquad \mu_{i,t}^{(C)} = \rho_{i,t}\, N_{i,t}
+  \label{eq:obs-count}
+\end{equation}
+
+with probability mass function
+
+\begin{equation}
+  \Pr\!\left(Y_{i,t}^{(C)} = y\right)
+  = \binom{y+r-1}{y}
+    \!\left(\frac{r}{r + \mu_{i,t}^{(C)}}\right)^{\!r}
+    \!\left(\frac{\mu_{i,t}^{(C)}}{r + \mu_{i,t}^{(C)}}\right)^{\!y}
+  \label{eq:nb-pmf}
+\end{equation}
+
+The overdispersion parameter $r > 0$ satisfies
+$\Var[Y_{i,t}^{(C)}] = \mu_{i,t}^{(C)}(1 + \mu_{i,t}^{(C)}/r)$;
+$r \to \infty$ recovers the Poisson.
+Ecological survey data frequently exhibit zero-inflation and outlying counts;
+\citet{hamura2025} prove that Bayesian NegBin posteriors can be rendered robust
+to both through a rescaled-beta contamination model, with computational efficiency
+maintained via Gibbs sampling.
+When survey effort data $\bm{e}_{i,t}$
+(duration, number of observers, distance) are available, the detection
+probability is modelled hierarchically:
+
+\begin{equation}
+  \operatorname{logit}(\rho_{i,t})
+  = \mu_\rho + \bdelta'\bm{e}_{i,t} + v_i,
+  \qquad
+  v_i \stackrel{iid}{\sim} \N(0, \sigma_\rho^2)
+  \label{eq:detection}
+\end{equation}
+
+\subsection{Binary Remote-Sensing Observations}
+
+For $(i,t) \in \OP$ (e.g.\ VIIRS active fire, satellite occupancy):
+
+\begin{equation}
+  Y_{i,t}^{(P)} \;\Big|\; N_{i,t},\, \kappa
+  \;\sim\; \Bern\!\left(1 - e^{-\kappa N_{i,t}}\right)
+  \label{eq:obs-binary}
+\end{equation}
+
+This is the \emph{zero-truncated complement} of a $\Pois(\kappa N_{i,t})$
+model: the probability that at least one detection occurs when $N_{i,t}$
+individuals are present, each independently generating signals at infinitesimal
+rate in a Poisson process with total rate $\kappa N_{i,t}$.
+
+\begin{remark}
+Key properties of Equation~\eqref{eq:obs-binary}:
+\begin{enumerate}[noitemsep]
+  \item $N_{i,t}=0 \Rightarrow \Pr(Y_{i,t}^{(P)}=1)=0$ (no false positives).
+  \item $N_{i,t}\to\infty \Rightarrow \Pr(Y_{i,t}^{(P)}=1)\to 1$ (saturating detection).
+  \item Reduces to the Hooten--Wikle data model $y_{i,t}\mid\theta_{i,t}\sim\Bern(\theta_{i,t})$
+        when $\theta_{i,t} = 1 - e^{-\kappa N_{i,t}}$.
+\end{enumerate}
+\end{remark}
+
+\subsection{Joint Observation Likelihood}
+
+The two data streams are conditionally independent given the latent field
+$\mathbf{N}$ \citep{verhoef2025}:
+
+\begin{keybox}[Joint observation likelihood]
+\begin{equation}
+  \mathcal{L}\!\left(\mathbf{Y}^{(C)}, \mathbf{Y}^{(P)}
+    \mid \mathbf{N}, \boldsymbol{\rho}, r, \kappa\right)
+  =
+  \prod_{(i,t)\in\OC} \NB\!\left(Y_{i,t}^{(C)};\; \rho_{i,t} N_{i,t},\; r\right)
+  \;\cdot\;
+  \prod_{(i,t)\in\OP} \Bern\!\left(Y_{i,t}^{(P)};\; 1-e^{-\kappa N_{i,t}}\right)
+  \label{eq:joint-likelihood}
+\end{equation}
+\end{keybox}
+
+\noindent
+The complementary information in the two streams is what renders the triple
+$(\rho_i,\, \kappa,\, N_{i,t})$ jointly identifiable: count data alone identify
+$\rho_i N_{i,t}$ but not the factors separately, while binary data provide an
+independent equation through $\kappa N_{i,t}$.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Process Model: Latent Population Dynamics}
+\label{sec:process}
+% ─────────────────────────────────────────────────────────────────────────────
+
+The latent count at cell $i$, time $t$ decomposes additively:
+
+\begin{keybox}[Additive decomposition of population state]
+\begin{equation}
+  N_{i,t} \;=\; S_{i,t} + I_{i,t} + L_{i,t}
+  \label{eq:decomp}
+\end{equation}
+where $S_{i,t}$, $I_{i,t}$, and $L_{i,t}$ are mutually independent given
+$\{N_{j,t-1}\}_{j\in\S}$.
+\end{keybox}
+
+\subsection{Density-Regulated Persistence \texorpdfstring{$S_{i,t}$}{S}}
+
+Individuals at cell $i$ survive from time $t-1$ to $t$ with a probability
+that declines with density, capturing intra-specific competition:
+
+\begin{equation}
+  S_{i,t} \;\Big|\; N_{i,t-1},\, \phi_i,\, K_i
+  \;\sim\;
+  \Bin\!\left(N_{i,t-1},\; p_{s,i,t-1}\right)
+  \label{eq:survival}
+\end{equation}
+\begin{equation}
+  p_{s,i,t-1} \;=\; \phi_i \exp\!\left(-\frac{N_{i,t-1}}{K_i}\right)
+  \label{eq:survival-prob}
+\end{equation}
+
+\paragraph{Interpretation.}
+When $N_{i,t-1} \ll K_i$: $p_{s,i,t-1} \approx \phi_i$ (near-constant survival,
+recovering the H\&W persistence parameter $\phi$).  When $N_{i,t-1} = K_i$:
+$p_{s,i,t-1} = \phi_i/e \approx 0.37\phi_i$.  The conditional mean is
+\begin{equation}
+  \E\!\left[S_{i,t} \;\big|\; N_{i,t-1}\right]
+  = N_{i,t-1}\, \phi_i\, \exp\!\!\left(-\frac{N_{i,t-1}}{K_i}\right)
+  \label{eq:survival-mean}
+\end{equation}
+which is the discrete analogue of the logistic term $\phi N(1-N/K)$ appearing
+in reaction--diffusion ecology models.
+
+\subsection{Neural Kernel Neighbourhood Immigration \texorpdfstring{$I_{i,t}$}{I}}
+
+\subsubsection{The Neural Dispersal Kernel}
+
+Define the dispersal \emph{intensity} from source cell $j$ to target cell $i$:
+
+\begin{equation}
+  \lambda_{j\to i}(N_{j,t-1};\, \theta_{NN},\, \balpha)
+  \;=\;
+  \nn\!\left(\bz_{ji}\right) \cdot g(N_{j,t-1};\, \gamma)
+  \label{eq:kernel}
+\end{equation}
+
+\noindent\textbf{Pairwise feature vector.}  The vector
+$\bz_{ji} \in \mathbb{R}^{p+1+d_\mathcal{N}}$ encodes the relationship between
+source $j$ and target $i$:
+
+\begin{equation}
+  \bz_{ji}
+  = \bigl[\bx_i - \bx_j,\;\; d_{ji},\;\;
+    \tilde{a}_{ji,1}, \ldots, \tilde{a}_{ji,d_\mathcal{N}}\bigr]',
+  \label{eq:feature}
+\end{equation}
+
+where the directional habitat gradient components are
+
+\begin{equation}
+  \tilde{a}_{ji,k}
+  = \frac{\alpha_{N_k,\,j} - \alpha_j}{d_{N_k,\,j}}
+  \label{eq:gradient}
+\end{equation}
+
+with $N_k$ the $k$-th neighbour of cell $j$ and $d_{N_k,j}$ the centroid
+distance (as in \citealt{hooten2010}).
+
+\noindent\textbf{Neural kernel architecture.}  A three-layer ReLU MLP with output in $(0,1)$:
+
+\begin{align}
+  h^{(1)} &= \operatorname{ReLU}\!\left(\bW_1 \bz_{ji} + \bm{b}_1\right)
+    \;\in \mathbb{R}^{H_1}
+  \label{eq:nn1}\\
+  h^{(2)} &= \operatorname{ReLU}\!\left(\bW_2 h^{(1)} + \bm{b}_2\right)
+    \;\in \mathbb{R}^{H_2}
+  \label{eq:nn2}\\
+  \nn(\bz_{ji}) &= \sigma\!\left(\bw_3' h^{(2)} + b_3\right) \;\in (0,1)
+  \label{eq:nn3}
+\end{align}
+
+where $\sigma(x) = (1+e^{-x})^{-1}$ is the sigmoid function and
+$\theta_{NN} = \{\bW_1, \bm{b}_1, \bW_2, \bm{b}_2, \bw_3, b_3\}$.
+
+\noindent\textbf{Density-scaling function} (saturating in source population):
+
+\begin{equation}
+  g(N;\, \gamma) = \frac{N}{N + \gamma}
+  \label{eq:density-scale}
+\end{equation}
+
+Properties: $g(0;\gamma)=0$ (no dispersal from empty cells); $g(N;\gamma)\to 1$
+as $N\to\infty$ (kernel contribution saturates);
+$\gamma > 0$ is the half-saturation constant.
+The empirical evidence for density-dependent dispersal mechanisms
+improving ecological forecasts is reviewed in \citet{pletcher2025}.
+
+\begin{remark}[Connection to Hooten--Wikle, Neural CA, and NN-GLS]
+Setting $\nn(\bz_{ji}) = p_{N_j\to i}$ (a fixed Dirichlet transition
+probability) and $g(N;\gamma) \to \mathbf{1}[N>0]$ recovers the H\&W
+neighbourhood dispersal rate \citep{hooten2010}.  The neural kernel thus nests the Dirichlet model
+as a special case.  Viewed differently, $\nn$ is a local neural rule
+of the same type used by \citet{richardson2024} to learn PDE dynamics
+from spatio-temporal image sequences, here specialised to a dispersal
+kernel with an explicit density-modulation $g(N;\gamma)$.
+\citet{zhan2025} show that neural networks embedded inside Gaussian-process
+geostatistical models yield asymptotically unbiased and efficient estimators,
+even when the true non-linear mean function lies outside the approximating
+network class; this result transfers to $\nn$ in SC-ABM-NKD, where the
+GP habitat field $\balpha$ and the MLP kernel $\nn$ are jointly identified
+from the same spatially autocorrelated data.
+\end{remark}
+
+\subsubsection{Immigration Count and Independence Relaxation}
+
+\begin{keybox}[Immigration: Poisson superposition]
+\begin{equation}
+  I_{i,t} \;\Big|\; \{N_{j,t-1}\}_{j\in\Ni},\, \theta_{NN},\, \balpha
+  \;\sim\;
+  \Pois\!\left(\Lambda_{i,t}\right),
+  \qquad
+  \Lambda_{i,t} = \sum_{j\in\Ni} \lambda_{j\to i}(N_{j,t-1}) \cdot N_{j,t-1}
+  \label{eq:immigration}
+\end{equation}
+\end{keybox}
+
+\noindent\textbf{Why the Poisson?}  By the \emph{Poisson superposition theorem},
+if individuals from source $j$ arrive at cell $i$ as independent Poisson
+processes each with rate $\lambda_{j\to i}\, N_{j,t-1}$, then the total
+arrivals from all neighbours is $\Pois\!\bigl(\sum_j \lambda_{j\to i}
+N_{j,t-1}\bigr)$.  This is precisely what \textbf{relaxes the H\&W
+independence assumption}: their Equation~(5) requires
+$\tp_{i,t} = 1 - \prod_j (1-p_{j\to i})^{y_{j,t-1}}$, which implicitly
+assumes that propagules from different source cells do not interact.  The
+Poisson superposition absorbs all neighbourhood contributions into a single
+additive rate $\Lambda_{i,t}$, without requiring independence of interactions.
+\citet{whitehouse2023} derive Poisson Approximate Likelihoods (PALs) from
+filtering equations for finite-population stochastic compartmental models
+with Poisson-driven state transitions, proving consistency as population
+size grows; the structural correspondence between their transition rates
+and $\Lambda_{i,t}$ suggests PALs as a simulation-free alternative to
+full ABC-SMC for future scalable variants of SC-ABM-NKD.
+
+\subsection{Long-Distance Dispersal \texorpdfstring{$L_{i,t}$}{L}}
+
+\begin{equation}
+  L_{i,t} \;\Big|\; \psi_i \;\sim\; \Pois(\psi_i),
+  \qquad
+  \log \psi_i = \bw_i'\, \bgamma
+  \label{eq:ldd}
+\end{equation}
+
+where $\bw_i$ includes covariates governing long-range connectivity (proximity
+to roads, rivers, migratory flyways, etc.), and $\bgamma$ are regression
+coefficients.
+
+\subsection{Full Process Distribution via Probability Generating Function}
+
+Because $S_{i,t}$, $I_{i,t}$, $L_{i,t}$ are conditionally independent given
+$\{N_{j,t-1}\}$, their probability generating functions (PGF) factorise:
+
+\begin{equation}
+  G_{N_{i,t}}(z)
+  = G_{S_{i,t}}(z) \cdot G_{I_{i,t}}(z) \cdot G_{L_{i,t}}(z)
+  \label{eq:pgf}
+\end{equation}
+
+\begin{equation}
+  = \left(1 - p_{s,i,t-1} + p_{s,i,t-1}\, z\right)^{N_{i,t-1}}
+    \cdot \exp\!\left[\Lambda_{i,t}(z-1)\right]
+    \cdot \exp\!\left[\psi_i(z-1)\right]
+  \label{eq:pgf-expanded}
+\end{equation}
+
+Setting $z=1$ confirms $G_{N_{i,t}}(1)=1$.  The conditional moments are:
+
+\begin{align}
+  \E\!\left[N_{i,t} \mid \mathbf{N}_{t-1}\right]
+    &= N_{i,t-1}\, p_{s,i,t-1} + \Lambda_{i,t} + \psi_i
+  \label{eq:cond-mean} \\[4pt]
+  \Var\!\left[N_{i,t} \mid \mathbf{N}_{t-1}\right]
+    &= N_{i,t-1}\, p_{s,i,t-1}\!\left(1-p_{s,i,t-1}\right)
+       + \Lambda_{i,t} + \psi_i
+  \label{eq:cond-var}
+\end{align}
+
+The conditional variance exceeds the mean whenever $N_{i,t-1}\,p_{s}(1-p_s)>0$,
+i.e.\ whenever the binomial survival contributes extra variance.  This
+overdispersion is correctly captured by the NegBin observation model
+\eqref{eq:obs-count}.
+
+\subsection{Theoretical Properties of the Process Model}
+
+\begin{theorem}[Geometric ergodicity of the single-cell chain]
+\label{thm:ergodicity}
+Consider a single isolated cell ($m=1$, $\mathcal{N}_i=\emptyset$) with
+dynamics
+\[
+  N_t \;=\; S_t + L_t,
+  \qquad
+  S_t \mid N_{t-1} \sim \Bin\!\left(N_{t-1},\; \phi\,e^{-N_{t-1}/K}\right),
+  \qquad
+  L_t \sim \Pois(\psi),
+\]
+where $\phi \in (0,1)$, $K > 0$, and $\psi \geq 0$.  Then $\{N_t\}_{t\geq 0}$
+is an aperiodic, irreducible Markov chain on $\mathbb{Z}_{\geq 0}$ that is
+\emph{geometrically ergodic}: there exist $\rho \in (0,1)$ and $C < \infty$
+such that
+\[
+  \left\|P^t(n,\,\cdot) - \pi\right\|_{\mathrm{TV}}
+  \;\leq\; C\,n\,\rho^t
+  \qquad \forall\,n \in \mathbb{Z}_{\geq 0},
+\]
+where $\pi$ is the unique stationary distribution and $\|\cdot\|_{\mathrm{TV}}$
+denotes total variation distance.
+\end{theorem}
+
+\begin{proof}
+We apply the Foster--Lyapunov drift criterion of \citet{meyntweedie1993} with
+drift function $V(n) = n$.  Compute the one-step conditional mean:
+\begin{align}
+  \E\!\left[V(N_t)\mid N_{t-1}=n\right]
+  &= n\phi\,e^{-n/K} + \psi
+  \notag\\
+  &= n\phi\,e^{-n/K} + \psi
+  \leq \frac{\phi K}{e} + \psi
+  \;=:\; b < \infty,
+  \label{eq:lyapunov}
+\end{align}
+where the upper bound uses $\max_{n\geq 0} n e^{-n/K} = K/e$ (attained at $n=K$).
+For $n \geq n^* := 2K\log(1/\phi^{1/2})$ we have $\phi e^{-n/K} \leq 1/2$,
+so
+\[
+  \E\!\left[N_t \mid N_{t-1}=n\right]
+  \leq \tfrac{n}{2} + \psi
+  = n\left(1-\tfrac{1}{2}\right) + \psi.
+\]
+This is the drift condition $\E[V(N_t)\mid N_{t-1}=n] \leq \lambda V(n) + b$
+with $\lambda = 1/2 \in (0,1)$ and $b = \psi$, holding outside the finite
+``small'' set $C_0 = \{0,1,\ldots,n^*\}$.
+Since $\{N_t\}$ has positive reach from every state to every other state
+in finitely many steps (via the $\Pois(\psi)$ term when $\psi > 0$, and via
+the Binomial term otherwise), irreducibility and aperiodicity follow.
+Geometric ergodicity then follows from Theorem~15.0.1 of \citet{meyntweedie1993}.
+\end{proof}
+
+\begin{corollary}[Existence and uniqueness of equilibrium]
+\label{cor:equilibrium}
+Under the hypotheses of Theorem~\ref{thm:ergodicity}, the stationary mean
+satisfies
+\[
+  \E_\pi[N]
+  \;=\; \E_\pi\!\left[N\phi\,e^{-N/K}\right] + \psi
+  \;\leq\; \frac{\phi K}{e} + \psi.
+\]
+In particular, $\E_\pi[N] < \infty$ and the equilibrium expected population
+is strictly below the naive upper bound $\phi K + \psi$.
+\end{corollary}
+
+\begin{theorem}[Conditional mean bound under normalised dispersal]
+\label{thm:bound}
+On the full $m$-cell grid, suppose the outgoing dispersal weights satisfy
+$\sum_{i \in \mathcal{N}_j} f_{\theta_{NN}}(\bz_{ji}) \leq 1$ for all $j$
+(the normalisation enforced in the source loop).  Let
+$\phi_{\max} = \max_i \phi_i < 1$ and $\Psi = \sum_{i=1}^m \psi_i$.
+Then
+\begin{equation}
+  \E\!\left[\sum_{i=1}^m N_{i,t} \;\Bigg|\; \mathbf{N}_{t-1}\right]
+  \;\leq\;
+  \phi_{\max}\sum_{i=1}^m N_{i,t-1}
+  \;+\; \sum_{j=1}^m g(N_{j,t-1};\,\gamma)\,N_{j,t-1}
+  \;+\; \Psi.
+  \label{eq:total-bound}
+\end{equation}
+Moreover, since $g(n;\gamma) = n/(n+\gamma)$ is strictly increasing and bounded
+above by $1$, the right-hand side is at most
+$(1 + \phi_{\max})\sum_i N_{i,t-1} + \Psi$.
+\end{theorem}
+
+\begin{proof}
+By conditional independence of $S_{i,t}$, $I_{i,t}$, $L_{i,t}$:
+\begin{align*}
+  \E\!\left[\sum_i N_{i,t}\;\middle|\;\mathbf{N}_{t-1}\right]
+  &= \sum_i N_{i,t-1}\phi_i e^{-N_{i,t-1}/K_i}
+     + \sum_i \Lambda_{i,t}
+     + \sum_i \psi_i \\
+  &\leq \phi_{\max}\sum_i N_{i,t-1}
+     + \sum_i \Lambda_{i,t}
+     + \Psi.
+\end{align*}
+Under outgoing normalisation, swapping the order of summation over sources
+and targets gives
+\[
+  \sum_{i=1}^m \Lambda_{i,t}
+  = \sum_{j=1}^m \sum_{i\in\mathcal{N}_j}
+    \underbrace{f_{\theta_{NN}}(\bz_{ji})}_{\leq\,1\text{ after norm.}}
+    g(N_{j,t-1};\,\gamma)\,N_{j,t-1}
+  \leq \sum_{j=1}^m g(N_{j,t-1};\,\gamma)\,N_{j,t-1}.
+\]
+The final inequality $\sum_j g(N_j;\gamma)N_j \leq \sum_j N_j$ follows from
+$g(n;\gamma) < 1$ for all finite $n$.
+\end{proof}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Spatial Random Effects and Covariate Model}
+\label{sec:spatial}
+% ─────────────────────────────────────────────────────────────────────────────
+
+\subsection{Habitat Suitability Field}
+
+Following \citet{hooten2010} Section~2.3, we model latent suitability
+$\balpha = [\alpha_1,\ldots,\alpha_m]'$ as a spatial Gaussian process:
+
+\begin{equation}
+  \balpha = \bX\bbeta + \bepsilon,
+  \qquad
+  \bepsilon \sim \N_m\!\left(\mathbf{0},\; \sigma_\alpha^2\, \mathbf{C}(\theta_\alpha)\right)
+  \label{eq:habitat-gp}
+\end{equation}
+
+where $\bX \in \mathbb{R}^{m\times p}$ is the environmental covariate matrix,
+$\bbeta \in \mathbb{R}^p$ are regression coefficients, and
+
+\begin{equation}
+  \mathbf{C}(\theta_\alpha)_{ij}
+  = \exp\!\left(-\frac{\|s_i - s_j\|}{\theta_\alpha}\right)
+  \label{eq:spatial-corr}
+\end{equation}
+
+is the exponential correlation function with range parameter $\theta_\alpha > 0$.
+
+\noindent\textbf{Spatial confounding.}
+When $\balpha$ absorbs smooth spatial variation in $\bX$, estimates of $\bbeta$
+are biased---a phenomenon known as spatial confounding \citep{guan2023}.
+\citet{guan2023} resolve this via a spectral decomposition of the GP residual
+that separates confounded low-frequency components (collinear with $\bX$) from
+unconfounded high-frequency components, providing both a diagnostic and a remedy.
+This adjustment is directly applicable to estimation of $\bbeta_\phi$ and $\bbeta_K$
+in SC-ABM-NKD from spatially autocorrelated count data.
+
+\subsection{Carrying Capacity and Persistence Models}
+
+\begin{align}
+  \log K_i &= \bx_i'\, \bbeta_K + u_i,
+  \qquad u_i \stackrel{iid}{\sim} \N(0, \sigma_K^2)
+  \label{eq:capacity-model} \\[4pt]
+  \operatorname{logit}(\phi_i) &= \bx_i'\, \bbeta_\phi
+  \label{eq:persistence-model}
+\end{align}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Continuous-Time Mean-Field Limit: The Nonlinear ADR PDE}
+\label{sec:pde}
+% ─────────────────────────────────────────────────────────────────────────────
+
+A key theoretical result establishes that SC-ABM-NKD converges to a
+\textbf{nonlinear advection--diffusion--reaction (ADR) partial differential
+equation} in the continuum limit, extending the linear H\&W PDE (their
+Equation~14) to the density-regulated count setting.
+\citet{richardson2024} showed that neural CA rules can encode PDE-like
+diffusion dynamics; here we derive the PDE analytically from the neural
+kernel moments rather than learning it from data.
+
+\subsection{Mean-Field Recursion}
+
+Let $u(s,t) = \E[N_{s,t}]$ be the mean population density at continuous
+location $s \in \mathbb{R}^2$ and time $t$.  From Equation~\eqref{eq:cond-mean},
+the mean-field recursion over a lattice of spacing $\Delta s$ and time step
+$\Delta t$ is:
+
+\begin{equation}
+  u(s, t) =
+  u(s, t{-}\Delta t)\, \phi(s)\, \exp\!\!\left(-\frac{u(s,t{-}\Delta t)}{K(s)}\right)
+  + \int_{\mathcal{N}(s)} \lambda(s',s)\, u(s', t{-}\Delta t)\, ds'
+  + \psi(s)
+  \label{eq:meanfield}
+\end{equation}
+
+where $\lambda(s',s) = \nn(\bz_{s's}) \cdot g(u(s',t-\Delta t))$ is the
+continuum dispersal kernel.
+
+\subsection{Taylor Expansion of the Dispersal Integral}
+
+Expanding $u(s', t-\Delta t)$ around $s' = s$ for a kernel supported on
+$\|s'-s\| \leq \Delta s$ gives:
+
+\begin{align}
+  &\int_{\mathcal{N}(s)} \lambda(s',s)\, u(s', t-\Delta t)\, ds' \notag\\
+  &\quad= \bar{K}(s)\, u(s, t-\Delta t)
+    - \mathbf{v}(s)'\nabla u
+    + \nabla \cdot\!\left(\mathbf{D}(s)\nabla u\right)
+    + O(\Delta s^3)
+  \label{eq:taylor-dispersal}
+\end{align}
+
+where $\bar{K}(s) = \int \lambda(s',s)\,ds'$ is the total outgoing dispersal
+rate, and the \textbf{advection velocity} and \textbf{diffusion tensor} are:
+
+\begin{align}
+  \mathbf{v}(s) &=
+    -\int_{\mathcal{N}(s)} (s'-s)\, \lambda(s', s)\, ds'
+    \quad \in \mathbb{R}^2
+  \label{eq:velocity} \\[4pt]
+  \mathbf{D}(s) &=
+    \frac{1}{2}\int_{\mathcal{N}(s)} (s'-s)(s'-s)'\, \lambda(s', s)\, ds'
+    \quad \in \mathbb{R}^{2\times 2}
+  \label{eq:diffusion-tensor}
+\end{align}
+
+\subsection{Taylor Expansion of the Persistence Term}
+
+For small $\Delta t$:
+
+\begin{equation}
+  u(s, t{-}\Delta t)\, \phi(s)\,
+  \exp\!\!\left(-\frac{u(s, t{-}\Delta t)}{K(s)}\right)
+  \approx
+  u(s,t)\, \phi(s)\!\left(1 - \frac{u(s,t)}{K(s)}\right)
+  - \Delta t\, \phi(s)\, \frac{\partial u}{\partial t} + O(\Delta t^2)
+  \label{eq:taylor-persistence}
+\end{equation}
+
+\subsection{The Nonlinear ADR PDE}
+
+Collecting Equations \eqref{eq:meanfield}--\eqref{eq:taylor-persistence},
+rearranging, and taking $\Delta s, \Delta t \to 0$ with $\Delta s^2/\Delta t = c$
+(constant diffusive scaling):
+
+\begin{keybox}[SC-ABM-NKD Continuous-Time Mean-Field PDE]
+\begin{equation}
+  \frac{\partial u}{\partial t}
+  =
+  \underbrace{r(s)\, u\!\left(1 - \frac{u}{K(s)}\right)}_{\displaystyle\text{(A) Logistic reaction}}
+  \;-\;
+  \underbrace{\nabla \cdot \!\left(\mathbf{v}(s)\, u\right)}_{\displaystyle\text{(B) Advection}}
+  \;+\;
+  \underbrace{\nabla \cdot \!\left(\mathbf{D}(s)\, \nabla u\right)}_{\displaystyle\text{(C) Anisotropic diffusion}}
+  \;+\;
+  \underbrace{\psi(s)}_{\displaystyle\text{(D) Source}}
+  \label{eq:adr}
+\end{equation}
+where $r(s) = \phi(s) + \bar{K}(s) - 1$ is the net intrinsic growth rate.
+\end{keybox}
+
+\paragraph{Term interpretations.}
+
+\begin{enumerate}[label=(\Alph*)]
+  \item \textbf{Logistic reaction.}  Density-regulated population growth with
+    carrying capacity $K(s)$.  Setting $K(s)\to\infty$ recovers linear
+    growth; $K(s)=0$ yields extinction dynamics.
+
+  \item \textbf{Advection.}  Directed movement of the population toward areas
+    of higher habitat suitability, with velocity $\mathbf{v}(s)$ determined by
+    the first moment of the neural kernel over the neighbourhood.
+
+  \item \textbf{Anisotropic diffusion.}  Random dispersal with a spatially
+    varying, directionally asymmetric diffusion tensor $\mathbf{D}(s)$.  When
+    the neural kernel places unequal weight on different directions (due to a
+    habitat gradient), $\mathbf{D}$ is non-diagonal, encoding anisotropy.
+
+  \item \textbf{Source.}  Long-distance colonisation rate $\psi(s)$.
+\end{enumerate}
+
+\begin{theorem}[Mean-field PDE convergence]
+\label{thm:pde}
+Let $u_m(s,t) = \E[N_{s,t}]$ be the mean population density on a grid of
+$m = m_r \times m_c$ cells with uniform spacing $\Delta s_m$.
+Suppose:
+\begin{enumerate}[label=(\roman*),noitemsep]
+  \item the neural kernel $\nn(\cdot)$ is twice continuously differentiable
+        in $\bz_{ji}$ with bounded second derivatives;
+  \item $\phi(s)$, $K(s)$, $\psi(s)$ are smooth in $s$;
+  \item the diffusive scaling $\Delta s_m^2 / \Delta t = c > 0$ holds as
+        $m \to \infty$;
+  \item the outgoing normalisation $\sum_{i\in\mathcal{N}_j} f_{\theta_{NN}}(\bz_{ji}) \leq 1$
+        holds for all $j$.
+\end{enumerate}
+Then, as $m \to \infty$,
+\[
+  \sup_{s \in [0,1]^2,\; 0 \leq t \leq T}
+  \bigl|u_m(s,t) - u(s,t)\bigr| = O(\Delta s_m)
+\]
+where $u(s,t)$ is the unique classical solution to the nonlinear
+\textup{ADR} \textup{PDE}~\eqref{eq:adr} with $r(s)=\phi(s)+\bar{K}(s)-1$,
+$\mathbf{v}(s)$ given by~\eqref{eq:velocity}, and $\mathbf{D}(s)$ given
+by~\eqref{eq:diffusion-tensor}.
+\end{theorem}
+
+\begin{proof}[Proof sketch]
+The mean-field recursion~\eqref{eq:meanfield} is exact by linearity of
+expectation given the conditional independence structure.  Applying
+Taylor's theorem to the dispersal integral~\eqref{eq:taylor-dispersal} to
+second order in $\Delta s_m$ gives residuals $O(\Delta s_m^3)$, while the
+Taylor expansion of the survival term~\eqref{eq:taylor-persistence} gives
+residuals $O(\Delta t^2)$.  Under the diffusive scaling
+$\Delta s_m^2 / \Delta t = c$, all residuals are $O(\Delta s_m)$ after
+dividing by $\Delta t$.  The resulting scheme is consistent with~\eqref{eq:adr};
+stability follows from the $L_\infty$ bound on $u_m$ implied by
+Theorem~\ref{thm:bound}, and convergence follows by Lax's equivalence theorem.
+\end{proof}
+
+\begin{proposition}[Reduction to Hooten--Wikle]
+\label{prop:hw-reduction}
+Setting $K(s)\to\infty$ (no density regulation) and using a spatially
+symmetric local kernel ($\mathbf{v}(s)=\mathbf{0}$, $\mathbf{D}(s)=D\mathbf{I}$)
+in Equation~\eqref{eq:adr} recovers the linear advection--diffusion PDE of
+\citet{hooten2010} Equation~(14).  Thus Equation~\eqref{eq:adr} is a strict
+generalisation of the H\&W PDE.
+\end{proposition}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Full Hierarchical Model and Joint Posterior}
+\label{sec:posterior}
+% ─────────────────────────────────────────────────────────────────────────────
+
+Let $\bTheta$ collect all model parameters:
+
+\begin{equation}
+  \bTheta =
+  \bigl(\bbeta,\, \bbeta_K,\, \bbeta_\phi,\,
+        \sigma_\alpha^2,\, \theta_\alpha,\, \sigma_K^2,\,
+        \bgamma,\, \mu_\rho,\, \sigma_\rho^2,\,
+        \bdelta,\, r,\, \kappa,\, \gamma,\, \theta_{NN}\bigr)
+  \label{eq:theta}
+\end{equation}
+
+\begin{keybox}[Joint Posterior]
+\begin{align}
+  &\left[\mathbf{N}_{1:T},\, \balpha,\, \boldsymbol{\rho},\, \bTheta
+    \;\Big|\; \mathbf{Y}^{(C)},\, \mathbf{Y}^{(P)}\right]
+  \notag\\[6pt]
+  &\quad\propto\;
+  \underbrace{
+    \mathcal{L}\!\left(\mathbf{Y}^{(C)}, \mathbf{Y}^{(P)}
+      \mid \mathbf{N}, \boldsymbol{\rho}, r, \kappa\right)
+  }_{\text{Observation layer \eqref{eq:joint-likelihood}}}
+  \;\cdot\;
+  \underbrace{
+    \prod_{t=2}^{T}\prod_{i=1}^{m}
+    \left[N_{i,t} \mid \{N_{j,t-1}\}, \bTheta, \alpha_i\right]
+  }_{\text{Process layer \eqref{eq:pgf-expanded}}}
+  \;\cdot\;
+  \underbrace{
+    \left[\balpha \mid \bbeta, \sigma_\alpha^2, \theta_\alpha\right]
+  }_{\text{Spatial GP \eqref{eq:habitat-gp}}}
+  \;\cdot\;
+  \underbrace{
+    \pi(\bTheta)
+  }_{\text{Priors}}
+  \label{eq:posterior}
+\end{align}
+\end{keybox}
+
+\subsection{Prior Specifications}
+
+\begin{table}[h!]
+\centering
+\small
+\renewcommand{\arraystretch}{1.3}
+\begin{tabular}{lll}
+\toprule
+\textbf{Parameter} & \textbf{Prior} & \textbf{Justification} \\
+\midrule
+$\bbeta$ & $\N_p(\mathbf{0},\, 10^2\mathbf{I})$
+  & Weakly informative; habitat regression \\
+$\sigma_\alpha^2$ & $\operatorname{InvGamma}(2,\, 1)$
+  & Mode at 1, heavy right tail \\
+$\theta_\alpha$ & $\operatorname{Gamma}(2,\, 0.1)$
+  & Mean spatial range 20 units \\
+$\bbeta_K$ & $\N_q(\mathbf{0},\, 4\mathbf{I})$
+  & Carrying capacity regression \\
+$\sigma_K^2$ & $\operatorname{InvGamma}(2,\, 0.5)$
+  & Residual log-$K$ variation \\
+$\bbeta_\phi$ & $\N_p(\mathbf{0},\, 1^2\mathbf{I})$
+  & Logistic persistence (keep $\phi\in(0,1)$) \\
+$\bgamma$ & $\N_q(\mathbf{0},\, 1^2\mathbf{I})$
+  & LDD log-rate covariates \\
+$\mu_\rho$ & $\N(0,\, 1)$
+  & Logit-scale detection intercept \\
+$\sigma_\rho^2$ & $\operatorname{InvGamma}(2,\, 1)$
+  & Site-level detection heterogeneity \\
+$r$ & $\operatorname{Gamma}(2,\, 0.5)$
+  & NegBin overdispersion; mean~4 \\
+$\kappa$ & $\operatorname{Gamma}(1,\, 1)$
+  & Remote-sensing detection rate \\
+$\gamma$ & $\operatorname{Gamma}(2,\, 0.2)$
+  & Half-saturation; mean~10 \\
+$\theta_{NN}$ & $L_2$ reg.\ with $\lambda_{\mathrm{reg}}$
+  & Weight decay; MAP for neural weights \\
+\bottomrule
+\end{tabular}
+\caption{Prior specifications for SC-ABM-NKD.}
+\label{tab:priors}
+\end{table}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Inference: Neural-Emulated ABC-SMC}
+\label{sec:inference}
+% ─────────────────────────────────────────────────────────────────────────────
+
+The likelihood $[\mathbf{Y}\mid\bTheta]$ is intractable because it requires
+marginalising over the high-dimensional latent field $\mathbf{N}_{1:T}$ and
+$\balpha$.  We employ a \textbf{two-stage likelihood-free inference} scheme
+that extends \citet{heard2014} Chapters~3--4.
+The Neural Process emulator component \citep{garnelo2018} is an instance of
+the uncertainty-aware surrogate framework of \citet{scheurer2025};
+the multilevel fidelity perspective of \citet{hikida2025} provides a
+theoretical justification for using a low-fidelity surrogate inside the
+SMC acceptance loop.
+\citet{mao2026} demonstrate that neural posterior estimation is feasible
+for spatial individual-level epidemic models that share the incomplete-data
+structure of SC-ABM-NKD.
+\citet{dinh2025} develop a complementary approach using random forests
+to select and weight summary statistics within ABC-SMC, applicable
+to the five summaries $\bs$ defined below.
+\citet{whitehouse2023} establish simulation-free PALs for stochastic epidemic
+compartmental models that exploit the Poisson structure of state transitions
+--- the same structure as $I_{i,t} \sim \Pois(\Lambda_{i,t})$ --- and prove
+consistency as population size grows, motivating a PAL-augmented variant of
+the present inference scheme.
+Non-asymptotic concentration bounds for the discrepancy $\rho(\bs_{\mathrm{sim}},
+\bs_{\mathrm{obs}})$ used in Algorithm~\ref{alg:abc} are provided by
+\citet{legramanti2025}, who show that discrepancy-based ABC achieves
+minimax-optimal posterior contraction rates under verifiable regularity conditions.
+
+\subsection{Summary Statistics}
+
+Define the vector of informative summary statistics
+$\bs(\mathbf{Y}) = [s_1,\ldots,s_5]'$:
+
+\begin{align}
+  s_1 &= \frac{1}{|\OC|} \sum_{(i,t)\in\OC} Y_{i,t}^{(C)}
+    & &\text{(mean observed count)}
+    \label{eq:s1} \\[4pt]
+  s_2 &= \frac{1}{T-1} \sum_{t=2}^{T}
+    \frac{\bar{Y}_t^{(C)} - \bar{Y}_{t-1}^{(C)}}{\bar{Y}_{t-1}^{(C)} + 1}
+    & &\text{(relative temporal growth rate)}
+    \label{eq:s2} \\[4pt]
+  s_3 &= \frac{\displaystyle\sum_{(i,j)\in E}
+    (Y_i^{(C)}-\bar{Y})(Y_j^{(C)}-\bar{Y})}
+    {|E|\cdot\hat{\sigma}^2_Y}
+    & &\text{(Moran's }I\text{, spatial autocorrelation)}
+    \label{eq:s3} \\[4pt]
+  s_4 &= \frac{1}{|\OP|}\sum_{(i,t)\in\OP} Y_{i,t}^{(P)}
+    & &\text{(occupancy rate from remote sensing)}
+    \label{eq:s4} \\[4pt]
+  s_5 &= \frac{\Cov\!\left(\bar{Y}_t^{(C)},\, \bar{Y}_{t-1}^{(C)}\right)}
+    {\Var\!\left(\bar{Y}_t^{(C)}\right)}
+    & &\text{(temporal autocorrelation, lag-1)}
+    \label{eq:s5}
+\end{align}
+
+\subsection{Neural Process Emulator}
+
+Following \citet{heard2014} Chapter~3, but replacing the Treed Gaussian Process
+with a \textbf{Neural Process} \citep{garnelo2018}, we train a surrogate
+$q_{\bomega}(\bs \mid \bTheta) \approx [\bs\mid\bTheta]$.
+
+\paragraph{Encoder.}  Given a context set of $K$ pilot simulations
+$\{(\bTheta^{(k)}, \bs^{(k)})\}_{k=1}^{K}$:
+
+\begin{equation}
+  \br^{(k)} = h_{\bomega}\!\left(\bTheta^{(k)},\, \bs^{(k)}\right) \in \mathbb{R}^d,
+  \qquad
+  \bar{\br} = \frac{1}{K}\sum_{k=1}^{K} \br^{(k)}
+  \label{eq:encoder}
+\end{equation}
+
+\paragraph{Latent variable} (encodes emulator uncertainty):
+
+\begin{equation}
+  \bz \mid \bar{\br}
+  \;\sim\;
+  \N_d\!\left(\bmu_{\bomega}(\bar{\br}),\;
+    \diag\!\left(\bm{\sigma}^2_{\bomega}(\bar{\br})\right)\right)
+  \label{eq:latent}
+\end{equation}
+
+\paragraph{Decoder} (predictive distribution at new $\bTheta^*$):
+
+\begin{equation}
+  q_{\bomega}\!\left(\bs \mid \bTheta^*, \bz\right)
+  = \N_5\!\left(m_{\bomega}(\bTheta^*, \bz),\;
+    \diag\!\left(v_{\bomega}(\bTheta^*, \bz)\right)\right)
+  \label{eq:decoder}
+\end{equation}
+
+Training: maximise the evidence lower bound (ELBO) over the pilot set.
+
+\subsection{ABC-SMC with NP Emulator}
+
+The ABC-SMC scheme proceeds through $L$ populations with decreasing tolerances
+$\epsilon_1 > \epsilon_2 > \cdots > \epsilon_L$.  The ABC distance metric is:
+
+\begin{equation}
+  \rho(\bs,\, \bs')
+  = \sum_{k=1}^{5}
+    \frac{(s_k - s_k')^2}{\widehat{\Var}_{\mathrm{pilot}}(s_k)}
+  \label{eq:distance}
+\end{equation}
+
+\begin{algorithm}[H]
+\caption{Neural-Emulated ABC-SMC for SC-ABM-NKD}
+\label{alg:abc}
+\begin{algorithmic}[1]
+\Statex \textbf{Pilot phase} \textit{(run once, offline)}
+\State Draw $K_0 = 2000$ parameters from prior: $\bTheta_k \sim \pi(\bTheta)$
+\State Run full SC-ABM-NKD for each $k$; compute $\bs_k = \bs(\mathbf{Y}_k)$
+\State Train NP emulator $q_{\bomega}$ on $\{(\bTheta_k, \bs_k)\}_{k=1}^{K_0}$
+  via ELBO maximisation
+\State Set $\epsilon_1 = $ 90th percentile of $\{\rho(\bs_k,\, \bs_{\mathrm{obs}})\}$
+\Statex
+\Statex \textbf{ABC-SMC phase}
+\State Initialise particle set $\mathcal{P}_1 = \emptyset$;
+  weights $\mathbf{W} = \emptyset$
+\For{$\ell = 1, \ldots, L$}
+  \State $\mathrm{accepted} \leftarrow 0$
+  \While{$\mathrm{accepted} < N_{\mathrm{particles}}$}
+    \If{$\ell = 1$}
+      \State $\bTheta^* \sim \pi(\bTheta)$ \hfill (prior)
+    \Else
+      \State Draw $\bTheta_n$ from $\mathcal{P}_{\ell-1}$ with probability $W_n$
+      \State $\bTheta^* \sim K_\ell(\bTheta \mid \bTheta_n)$ \hfill (Gaussian perturbation)
+    \EndIf
+    \State Draw emulated summary: $\tilde{\bs} \sim q_{\bomega}(\cdot \mid \bTheta^*)$
+    \If{$\rho(\tilde{\bs},\, \bs_{\mathrm{obs}}) \leq \epsilon_\ell$}
+      \State Add $\bTheta^*$ to $\mathcal{P}_\ell$; $\mathrm{accepted} \leftarrow \mathrm{accepted}+1$
+    \EndIf
+  \EndWhile
+  \State Compute importance weights:
+    $W_n \propto \pi(\bTheta_n^*)\big/{\sum_m W_m K_\ell(\bTheta_n^* \mid \bTheta_m)}$
+  \State Normalise: $W_n \leftarrow W_n / \sum_n W_n$
+  \State Set $\epsilon_{\ell+1} = \alpha$-quantile of
+    $\{\rho(\tilde{\bs}_n, \bs_{\mathrm{obs}})\}$
+    \hfill ($\alpha \in [0.3, 0.5]$)
+  \State Update transition kernel $K_{\ell+1}$ from $\mathcal{P}_\ell$
+    (Gaussian, Silverman bandwidth)
+\EndFor
+\State \Return $\{(\bTheta_n, W_n)\}_{n=1}^{N} \approx [\bTheta \mid
+  \rho(\bs(\mathbf{Y}_{\mathrm{obs}}), \bs) \leq \epsilon_L]$
+\end{algorithmic}
+\end{algorithm}
+
+\paragraph{Computational advantage.}  The NP emulator captures multi-modal
+and high-dimensional relationships between $\bTheta$ and $\bs$ without tree
+partitioning, and emulator uncertainty is propagated through the latent
+variable $\bz$ --- a form of \emph{emulator-aware} ABC that avoids
+over-accepting under emulator uncertainty.
+
+\subsection{Consistency of the ABC-SMC Posterior}
+
+\begin{theorem}[ABC posterior concentration]
+\label{thm:abc-consistency}
+Let $\bTheta_0 \in \Theta$ be the true parameter vector generating the
+observed data $\mathbf{Y}^{\mathrm{obs}}$, and let
+$\hat{\pi}_\epsilon(\,\cdot\mid\bs_{\mathrm{obs}})$ denote the ABC posterior
+at tolerance $\epsilon > 0$ using the weighted Euclidean discrepancy
+\begin{equation}
+  \rho(\bs, \bs') = \left(\sum_{k=1}^5
+    \frac{(s_k - s_k')^2}{\hat{\sigma}_k^2}\right)^{1/2}.
+  \label{eq:abc-distance}
+\end{equation}
+Assume:
+\begin{enumerate}[label=(\roman*),noitemsep]
+  \item The prior $\pi$ is absolutely continuous and positive in a
+        neighbourhood of $\bTheta_0$.
+  \item The summary map $\bTheta \mapsto \E_{\bTheta}[\bs]$ is continuous and
+        satisfies $\E_{\bTheta}[\bs] = \E_{\bTheta_0}[\bs]$ only at
+        $\bTheta = \bTheta_0$ (sufficiency).
+  \item As $m, T \to \infty$, the sample summaries satisfy
+        $\bs_{\mathrm{obs}} \to \E_{\bTheta_0}[\bs]$ in probability.
+\end{enumerate}
+Then for any $\delta > 0$, as $m, T \to \infty$ and $\epsilon \to 0$:
+\begin{equation}
+  \hat{\pi}_\epsilon\!\left(
+    \left\|\bTheta - \bTheta_0\right\| > \delta
+    \;\middle|\; \bs_{\mathrm{obs}}
+  \right) \xrightarrow{\;P\;} 0.
+  \label{eq:abc-consistency}
+\end{equation}
+Furthermore, under the additional regularity conditions of
+\citet{legramanti2025}, the posterior contraction rate is
+$\epsilon_m = O\!\left(m^{-1/2} + T^{-1/2}\right)$,
+and the discrepancy $\rho(\bs_{\mathrm{sim}}, \bs_{\mathrm{obs}})$ achieves
+minimax-optimal posterior concentration.
+\end{theorem}
+
+\begin{proof}[Proof sketch]
+By assumption~(iii), $\bs_{\mathrm{obs}} \to \bs^* := \E_{\bTheta_0}[\bs]$
+in probability.  For any $\epsilon > 0$, the ABC acceptance set
+$A_\epsilon = \{\bTheta : \rho(\E_\bTheta[\bs], \bs^*) \leq \epsilon\}$
+shrinks to $\{\bTheta_0\}$ as $\epsilon \to 0$ by continuity (assumption~(ii))
+and the fact that $\bs^*$ uniquely determines $\bTheta_0$ (sufficiency).
+The ABC posterior probability outside any ball $\|\bTheta - \bTheta_0\|>\delta$
+equals $\pi(A_\epsilon \setminus B_\delta) / \pi(A_\epsilon)$, which tends to
+zero since $A_\epsilon \subseteq B_\delta$ for small enough $\epsilon$.
+The minimax contraction rate follows from Theorem~1 of \citet{legramanti2025},
+applied to the maximum mean discrepancy upper-bounding $\rho$.
+\end{proof}
+
+\begin{theorem}[Neural Process emulator consistency]
+\label{thm:np-consistency}
+Let $q_\bomega(\bs \mid \bTheta^*)$ be the trained Neural Process emulator
+with $K$ pilot simulations $\{(\bTheta^{(k)}, \bs^{(k)})\}_{k=1}^K$ drawn
+from $\pi(\bTheta)[\bs\mid\bTheta]$.  Under the universal approximation
+property of the encoder--decoder architecture and assuming the simulator mean
+$\E_\bTheta[\bs]$ is continuously differentiable in $\bTheta$:
+\begin{equation}
+  \E\!\left[\bigl\|q_\bomega(\bs\mid\bTheta^*) - [\bs\mid\bTheta^*]\bigr\|_{\mathrm{KL}}\right]
+  \;\leq\; \frac{C_\sigma}{K^{1/2}} + \varepsilon_{\mathrm{arch}},
+  \label{eq:np-bound}
+\end{equation}
+where $C_\sigma^2 = \Var_{[\bs\mid\bTheta]}[\bs]$ is the simulator variance,
+$\varepsilon_{\mathrm{arch}} \to 0$ as network width and depth grow, and
+$\|\cdot\|_{\mathrm{KL}}$ denotes the Kullback--Leibler divergence.
+\end{theorem}
+
+\begin{proof}[Proof sketch]
+The KL divergence between the NP predictive distribution and the true
+simulator decomposes into a \emph{bias} term (approximation error of the
+encoder $h_\bomega$ and decoder $m_\bomega$, which vanishes as network capacity
+grows by universal approximation) and a \emph{variance} term controlled by the
+Monte Carlo error in the aggregated representation $\bar{\br} = K^{-1}\sum_k
+h_\bomega(\bTheta^{(k)},\bs^{(k)})$.  By the law of large numbers,
+$\Var[\bar{\br}] = O(K^{-1})$, yielding the $K^{-1/2}$ rate in the KL bound
+via the Cauchy--Schwarz inequality applied to the information inequality.
+\end{proof}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Model Identifiability and Validation}
+\label{sec:validation}
+% ─────────────────────────────────────────────────────────────────────────────
+
+\subsection{Identifiability}
+
+\begin{theorem}[Identifiability of the joint observation model]
+\label{thm:identifiability}
+Suppose that at cell $i$ and times $t=1,2$ the latent counts satisfy
+$N_{i,1} \neq N_{i,2}$ almost surely, that $N_{i,t} > 0$ with positive
+probability, and that $(\rho_i, \kappa) \in (0,1] \times (0,\infty)$.
+Then the parameters $(\rho_i, \kappa)$ are \emph{jointly identified} from
+the pair of observations $\bigl(Y_{i,t}^{(C)}, Y_{i,t}^{(P)}\bigr)$,
+$t=1,2$, given $N_{i,1}$ and $N_{i,2}$.
+\end{theorem}
+
+\begin{proof}
+Consider the moment system formed by the two observation channels:
+\begin{align}
+  \E\!\left[Y_{i,t}^{(C)}\right] &= \rho_i\, N_{i,t}
+  \label{eq:id-count}\\
+  \Pr\!\left(Y_{i,t}^{(P)}=1\right) &= 1 - e^{-\kappa N_{i,t}}
+  \label{eq:id-binary}
+\end{align}
+Equation~\eqref{eq:id-binary} is invertible in $\kappa N_{i,t}$ since
+$x\mapsto 1-e^{-x}$ is strictly increasing on $[0,\infty)$; thus
+$\kappa N_{i,t}$ is identified from the Bernoulli channel.
+Combined with~\eqref{eq:id-count}, the ratio
+\[
+  \frac{\kappa N_{i,t}}{\rho_i N_{i,t}}
+  = \frac{\kappa}{\rho_i}
+\]
+is identified at any single time $t$.  At $t=1$ and $t=2$ with
+$N_{i,1} \neq N_{i,2}$, Equation~\eqref{eq:id-count} gives two equations
+$\rho_i N_{i,1} = \mu_1$ and $\rho_i N_{i,2} = \mu_2$ with
+$N_{i,1} \neq N_{i,2}$, so $\rho_i$ is determined by
+$\rho_i = \mu_1 / N_{i,1}$.
+With $\rho_i$ identified, $\kappa$ follows from $\kappa = (\kappa/\rho_i)\rho_i$.
+\end{proof}
+
+\begin{corollary}[Latent count identifiability]
+\label{cor:latent-id}
+Under the hypotheses of Theorem~\ref{thm:identifiability}, the latent count
+$N_{i,t}$ is identified up to a finite-population uncertainty:
+$\hat{N}_{i,t} = \E[Y_{i,t}^{(C)}]/\hat{\rho}_i$ is a consistent estimator
+of $N_{i,t}$ as $|\OC| \to \infty$.
+\end{corollary}
+
+\noindent\textbf{Neural kernel identifiability.}
+Formal identifiability of $\theta_{NN}$ requires $L_2$ regularisation and
+sufficient spatial replication: each direction of dispersal must be observed
+at multiple density levels, ensured when $|\OC| \gg \dim(\theta_{NN})$.
+
+\subsection{Internal Validation (following Heard 2014)}
+
+\paragraph{Sensitivity analysis.}
+Sobol' total-effect indices for each parameter $\bTheta_k$ with respect to
+each summary statistic $s_j$:
+
+\begin{equation}
+  S_{T,k}^{(j)}
+  = 1 - \frac{\Var_{\bTheta_k}\!\left[\E[s_j \mid \bTheta_{-k}]\right]}
+             {\Var[s_j]}
+  \label{eq:sobol}
+\end{equation}
+
+\paragraph{Model complexity.}
+Following \citet{heard2014} Section~2.4, the compression-ratio complexity
+measure and the $R^2_{\mathrm{adj}}(\gamma_0)$ criterion identify irrelevant
+rules: parameter $\bTheta_k$ is declared irrelevant if removing it reduces
+adjusted $R^2$ by less than $\gamma_0 = 0.05$.
+
+\paragraph{Posterior predictive check.}
+Simulate $B=500$ replicates $\mathbf{Y}^{(\mathrm{rep})} \sim [\mathbf{Y}\mid\bTheta^{(b)}]$
+for $\bTheta^{(b)}$ drawn from the ABC posterior, then test
+$\bs(\mathbf{Y}^{(\mathrm{rep})})$ versus $\bs(\mathbf{Y}^{\mathrm{obs}})$
+component-wise using the Kolmogorov--Smirnov statistic.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Connection to Research Datasets}
+\label{sec:data}
+% ─────────────────────────────────────────────────────────────────────────────
+
+\begin{table}[h!]
+\centering
+\small
+\renewcommand{\arraystretch}{1.35}
+\begin{tabular}{p{5.4cm}p{8.2cm}}
+\toprule
+\textbf{Dataset} & \textbf{Role in SC-ABM-NKD} \\
+\midrule
+\texttt{fire\_viirs\_2018.parquet} (19.2M detections) &
+  $\mathbf{Y}^{(P)}$ binary remote-sensing layer; FRP maps to detection
+  rate $\kappa N_{i,t}$ via Eq.~\eqref{eq:obs-binary} \\[4pt]
+\texttt{ebd\_observations.parquet} (eBird, Tuscaloosa AL) &
+  $\mathbf{Y}^{(C)}$ count survey layer; effort variables feed detection
+  model \eqref{eq:detection} \\[4pt]
+\texttt{ebd\_checklist\_summary.csv} &
+  Effort covariates $\bm{e}_{i,t}$ (duration, observers, distance) \\[4pt]
+\texttt{ebd\_species\_summary.csv} &
+  Species-level frequency for species-specific $\phi_i$, $K_i$ \\[4pt]
+MODIS TPW (when downloaded) &
+  Environmental covariate $\bx_i$ in habitat GP \eqref{eq:habitat-gp};
+  atmospheric moisture as bird habitat proxy \\
+\bottomrule
+\end{tabular}
+\caption{Research datasets and their roles in SC-ABM-NKD.}
+\label{tab:data}
+\end{table}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Summary of Mathematical Novelty}
+\label{sec:summary}
+% ─────────────────────────────────────────────────────────────────────────────
+
+\begin{table}[h!]
+\centering
+\small
+\renewcommand{\arraystretch}{1.4}
+\begin{tabular}{p{2.9cm}p{2.9cm}p{2.8cm}p{2.6cm}p{2.6cm}}
+\toprule
+\textbf{Feature} &
+\textbf{H\&W (2010)} &
+\textbf{Heard (2014)} &
+\textbf{Phase~1 draft} &
+\textbf{SC-ABM-NKD} \\
+\midrule
+State space &
+  Binary $\{0,1\}$ &
+  Any (emulated) &
+  Count $\mathbb{Z}_{\geq 0}$ &
+  \textbf{Count} $\mathbb{Z}_{\geq 0}$ \\
+Survival &
+  Constant $\phi$ &
+  --- &
+  Constant $\phi$ &
+  \textbf{Density-regulated} $\phi e^{-N/K}$ \\
+Dispersal &
+  Dirichlet $\Dir(\mathbf{a}_i)$ &
+  Black box &
+  Exponential kernel &
+  \textbf{Neural kernel} $\nn(\bz_{ji})$ \\
+Density dependence &
+  None &
+  None &
+  Saturating $g(N)$ &
+  \textbf{Saturating $g(N)$} + logistic survival \\
+Independence &
+  Yes (product formula) &
+  --- &
+  Relaxed &
+  \textbf{Relaxed} (Poisson superposition) \\
+Detection model &
+  Perfect &
+  Discrepancy $\delta$ &
+  Poisson thinning &
+  \textbf{NegBin + Bernoulli joint} \\
+PDE limit &
+  Linear adv-diff &
+  None &
+  None &
+  \textbf{Nonlinear ADR} Eq.~\eqref{eq:adr} \\
+Inference &
+  Gibbs + MH MCMC &
+  Treed GP + ABC &
+  ABC-SMC &
+  \textbf{NP-emulated ABC-SMC} \\
+Data sources &
+  Binary only &
+  Any &
+  Counts only &
+  \textbf{Multi-source} (count + binary) \\
+Spatial heterogeneity &
+  Via $\balpha$ + $\Dir$ &
+  N/A &
+  Implicit &
+  \textbf{$\balpha$-GP + neural kernel} \\
+\bottomrule
+\end{tabular}
+\caption{Comparison of SC-ABM-NKD with predecessor models.}
+\label{tab:novelty}
+\end{table}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section*{Notation Index}
+\addcontentsline{toc}{section}{Notation Index}
+% ─────────────────────────────────────────────────────────────────────────────
+
+\begin{longtable}{clc}
+\toprule
+\textbf{Symbol} & \textbf{Meaning} & \textbf{Defined} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Symbol} & \textbf{Meaning} & \textbf{Defined} \\
+\midrule
+\endhead
+\bottomrule
+\endlastfoot
+$N_{i,t}$ & Latent count at cell $i$, time $t$ & \eqref{eq:decomp} \\
+$Y_{i,t}^{(C)}$ & Observed count (survey) & \eqref{eq:obs-count} \\
+$Y_{i,t}^{(P)}$ & Observed binary (remote sensing) & \eqref{eq:obs-binary} \\
+$S_{i,t}$ & Surviving individuals & \eqref{eq:survival} \\
+$I_{i,t}$ & Neighbourhood immigrants & \eqref{eq:immigration} \\
+$L_{i,t}$ & Long-distance dispersal arrivals & \eqref{eq:ldd} \\
+$p_{s,i,t}$ & Density-regulated survival probability & \eqref{eq:survival-prob} \\
+$\Lambda_{i,t}$ & Total neighbourhood dispersal rate & \eqref{eq:immigration} \\
+$\lambda_{j\to i}$ & Pairwise dispersal intensity & \eqref{eq:kernel} \\
+$\nn$ & Neural dispersal kernel & \eqref{eq:nn3} \\
+$g(N;\gamma)$ & Density-scaling function & \eqref{eq:density-scale} \\
+$\alpha_i$ & Latent habitat suitability & \eqref{eq:habitat-gp} \\
+$\tilde{a}_{ji,k}$ & Directional habitat gradient & \eqref{eq:gradient} \\
+$\mathbf{v}(s)$ & Advection velocity (PDE) & \eqref{eq:velocity} \\
+$\mathbf{D}(s)$ & Diffusion tensor (PDE) & \eqref{eq:diffusion-tensor} \\
+$G_{N_{i,t}}(z)$ & Probability generating function & \eqref{eq:pgf} \\
+$\rho_{i,t}$ & Detection probability (survey) & \eqref{eq:detection} \\
+$\kappa$ & Remote-sensing detection rate & \eqref{eq:obs-binary} \\
+$r$ & NegBin overdispersion & \eqref{eq:obs-count} \\
+$\bs(\mathbf{Y})$ & ABC summary statistics & \eqref{eq:s1}--\eqref{eq:s5} \\
+$q_{\bomega}(\cdot)$ & Neural Process emulator & \eqref{eq:decoder} \\
+$\epsilon_\ell$ & ABC tolerance at population $\ell$ & Algorithm~\ref{alg:abc} \\
+\end{longtable}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\bibliographystyle{apalike}
+\bibliography{novel_model_SC_ABM_NKD}
+
+\end{document}

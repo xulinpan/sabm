@@ -1,0 +1,1073 @@
+\documentclass[12pt, a4paper]{article}
+
+% ── Packages ──────────────────────────────────────────────────────────────────
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{amsmath, amssymb, amsthm}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{multirow}
+\usepackage{tabularx}
+\usepackage{longtable}
+\usepackage[table]{xcolor}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{enumitem}
+\usepackage{parskip}
+\usepackage{titlesec}
+\usepackage{fancyhdr}
+\usepackage{caption}
+\usepackage{tcolorbox}
+\usepackage{mdframed}
+\usepackage{microtype}
+\usepackage{url}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+
+% ── Colours ───────────────────────────────────────────────────────────────────
+\definecolor{gapblue}{RGB}{13, 71, 161}
+\definecolor{gapgold}{RGB}{230, 162, 0}
+\definecolor{gapgreen}{RGB}{27, 94, 32}
+\definecolor{gapred}{RGB}{183, 28, 28}
+\definecolor{lightgray}{RGB}{245, 245, 245}
+\definecolor{headerblue}{RGB}{227, 242, 253}
+\definecolor{ideabg}{RGB}{232, 245, 233}
+\definecolor{warnbg}{RGB}{255, 243, 224}
+\definecolor{critbg}{RGB}{255, 235, 238}
+
+% ── Section formatting ────────────────────────────────────────────────────────
+\titleformat{\section}{\large\bfseries\color{gapblue}}{{\thesection}}{1em}{}[\titlerule]
+\titleformat{\subsection}{\normalsize\bfseries\color{gapblue!80!black}}{\thesubsection}{1em}{}
+\titleformat{\subsubsection}{\normalsize\bfseries\itshape}{\thesubsubsection}{1em}{}
+
+% ── tcolorbox styles ──────────────────────────────────────────────────────────
+\tcbuselibrary{skins, breakable}
+
+\newtcolorbox{ideabox}[2][]{
+  colback=ideabg, colframe=gapgreen!70!black,
+  fonttitle=\bfseries\color{gapgreen!30!black},
+  title={#2}, #1, breakable,
+  left=6pt, right=6pt, top=4pt, bottom=4pt
+}
+
+\newtcolorbox{gapbox}[2][]{
+  colback=headerblue, colframe=gapblue!70!black,
+  fonttitle=\bfseries\color{gapblue!30!black},
+  title={#2}, #1, breakable,
+  left=6pt, right=6pt, top=4pt, bottom=4pt
+}
+
+\newtcolorbox{warnbox}[1][]{
+  colback=warnbg, colframe=gapgold!80!black,
+  fonttitle=\bfseries, #1, breakable,
+  left=6pt, right=6pt, top=4pt, bottom=4pt
+}
+
+\newtcolorbox{critbox}[1][]{
+  colback=critbg, colframe=gapred!70!black,
+  fonttitle=\bfseries\color{gapred!30!black}, #1, breakable,
+  left=6pt, right=6pt, top=4pt, bottom=4pt
+}
+
+% ── Header / footer ───────────────────────────────────────────────────────────
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\textcolor{gapblue}{\textbf{REX-SUB Gap Analysis}}}
+\fancyhead[R]{\small\textcolor{gray}{Research Extension Report}}
+\fancyfoot[C]{\small\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+
+% ── Hyperref setup ────────────────────────────────────────────────────────────
+\hypersetup{
+  colorlinks=true, linkcolor=gapblue, citecolor=gapblue, urlcolor=gapblue,
+  pdftitle={REX-SUB: Research Gap Analysis and Extension Directions},
+  pdfauthor={Auto-Research Skills Analysis}
+}
+
+% ── Custom commands ───────────────────────────────────────────────────────────
+\newcommand{\gap}[1]{\textcolor{gapred}{\textbf{Gap:} #1}}
+\newcommand{\highlight}[1]{\textcolor{gapblue}{\textbf{#1}}}
+\newcommand{\novelty}[1]{\textbf{Novelty:} #1/5}
+\newcommand{\feasibility}[1]{\textbf{Feasibility:} #1/5}
+\newcommand{\mspe}{$\phi_{\text{MSPE}}$}
+\newcommand{\IS}{$\phi_{\text{IS}}$}
+\newcommand{\Vecchia}{\textsc{Vecchia}}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\begin{document}
+
+% ── Title page ────────────────────────────────────────────────────────────────
+\begin{titlepage}
+  \centering
+  \vspace*{2cm}
+  {\Huge\bfseries\color{gapblue}
+    REX-SUB: Research Gap Analysis\\[0.4em]
+    \& Extension Directions\par}
+  \vspace{1.5em}
+  {\large\itshape
+    A systematic analysis of \emph{REX-SUB: A scalable subsampling strategy\\
+    for modeling large spatial datasets}\\[0.3em]
+    Rios \& Lee, \emph{Computational Statistics and Data Analysis}
+    224 (2026) 108404\par}
+  \vspace{2em}
+  \hrule height 0.8pt
+  \vspace{1em}
+  {\normalsize
+    Produced using the \textbf{AI Auto-Research Skill Suite}\\
+    Skills applied: \texttt{/literature-review} \quad
+                    \texttt{/peer-review} \quad
+                    \texttt{/idea-generation}\par}
+  \vspace{0.5em}
+  {\small\color{gray}Based on: Kong et al.\ (2026).
+    \emph{AI for Auto-Research: Roadmap \& User Guide.}
+    arXiv:2605.18661v1\par}
+  \vspace{1em}
+  \hrule height 0.8pt
+  \vspace{2em}
+  {\small Generated: June 2026}
+  \vfill
+  \begin{tcolorbox}[colback=headerblue, colframe=gapblue, width=0.9\textwidth]
+    \centering\small
+    This document applies a structured AI-assisted research lifecycle framework
+    to identify gaps in the REX-SUB paper and generate specific,
+    scored, and feasibility-assessed research extension hypotheses.
+  \end{tcolorbox}
+\end{titlepage}
+
+% ── Table of Contents ─────────────────────────────────────────────────────────
+\tableofcontents
+\newpage
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Paper Overview and Core Message}
+% ─────────────────────────────────────────────────────────────────────────────
+
+\subsection{Bibliographic Information}
+
+\begin{tabular}{@{}ll@{}}
+  \toprule
+  \textbf{Title}   & REX-SUB: A scalable subsampling strategy for modeling large spatial datasets \\
+  \textbf{Authors} & Nicholas Rios, Ben Seiyon Lee \\
+  \textbf{Journal} & Computational Statistics and Data Analysis, 224 (2026) 108404 \\
+  \textbf{DOI}     & \texttt{10.1016/j.csda.2026.108404} \\
+  \textbf{Keywords}& Design of experiments, Spatial statistics, Optimal subsampling \\
+  \bottomrule
+\end{tabular}
+
+\subsection{Core Message Card}
+
+\begin{gapbox}{Paper Core Message}
+\begin{description}[leftmargin=3em, labelwidth=2.5em]
+  \item[\textbf{Problem}]
+    Standard Gaussian process (GP) fitting is $\mathcal{O}(N^3)$ in the number of
+    spatial locations $N$, making it computationally infeasible for massive spatial
+    datasets ($N > 10^4$, e.g.\ satellite data with $N = 2{,}748{,}620$).
+
+  \item[\textbf{Approach}]
+    REX-SUB: a \emph{Randomized Exchange algorithm for Spatial SUBsampling} that
+    iteratively selects a small subsample of size $n \ll N$ by exchanging locations
+    to minimise prediction-based optimality criteria
+    (\mspe{} or \IS{}), using the \Vecchia{} approximation for fast GP
+    re-fitting at each iteration.
+
+  \item[\textbf{Key result}]
+    REX-SUB achieves lower MSPE and interval scores than random subsampling, Latin
+    Hypercube Sampling (LHS), and sequential IMSPE-based design (hetGP) across all
+    16 simulation scenarios and on the MODIS precipitable water dataset
+    ($N = 2{,}748{,}620$) for $n \in \{25, 36\}$.
+
+  \item[\textbf{Who benefits}]
+    Environmental statisticians, geostatisticians, and data scientists fitting GP
+    models to remotely sensed or sensor-network data at million-location scales.
+
+  \item[\textbf{Important caveat}]
+    Assumes a \emph{stationary, isotropic} Matérn covariance; tested only for
+    $n \in \{25, 36\}$; no theoretical convergence guarantees; single time-point
+    spatial data only.
+\end{description}
+\end{gapbox}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Literature Synthesis (\texttt{/literature-review})}
+% ─────────────────────────────────────────────────────────────────────────────
+
+We organise the existing literature into six thematic clusters and assess how
+REX-SUB is positioned relative to each.
+
+% ── Cluster A ─────────────────────────────────────────────────────────────────
+\subsection{Cluster A: Scalable GP Approximations (Modify the Model)}
+
+\textbf{Representative works:} Vecchia (1988a), Datta et al.\ (2016) [NNGP],
+Katzfuss (2017) [MRA], Furrer et al.\ (2006) [tapering], Cressie \& Johannesson
+(2008) [fixed-rank kriging], Banerjee et al.\ (2008) [predictive processes],
+Katzfuss et al.\ (2020).
+
+\textbf{Shared assumption:} retain all $N$ observations but approximate the
+covariance or likelihood structure to achieve sub-cubic computational cost.  These
+methods trade approximation fidelity for scalability by modifying the model, not the
+data.
+
+\textbf{Relationship to REX-SUB:} orthogonal.  REX-SUB uses the \Vecchia{}
+approximation as an \emph{ingredient} within each exchange step rather than treating
+it as a competitor.  The two families are complementary: scalable GPs model the full
+dataset with approximate likelihoods; REX-SUB models a small, optimally chosen
+dataset with an exact (Vecchia-approximated) likelihood.
+
+\begin{warnbox}
+  \textbf{Remaining gap:} No work jointly optimises (a) which subsample to select
+  \emph{and} (b) which GP approximation to use.  Could REX-SUB choose subsamples
+  that improve the conditioning of \Vecchia{} conditioning sets, reducing
+  approximation error simultaneously with prediction error?
+\end{warnbox}
+
+% ── Cluster B ─────────────────────────────────────────────────────────────────
+\subsection{Cluster B: Spatial Subsampling (Reduce the Data)}
+
+\textbf{Representative works:} Hayashi et al.\ (2020) [random subsampling theory],
+McKay et al.\ (1979) \& Zhao et al.\ (2018) [LHS], Heaton et al.\ (2019)
+[large-spatial-data competition], Binois \& Gramacy (2021) [hetGP/IMSPE],
+Saha \& Bradley (2024) [Bayesian data subset model], Lee \& Park (2023).
+
+\textbf{Shared motivation:} reduce the data size prior to GP fitting to avoid
+costly matrix operations.  Most methods rely on geometric space-filling heuristics
+(LHS, domain partitioning) or block-independence assumptions rather than
+prediction-based optimality.
+
+\textbf{Key tension:} hetGP (Binois \& Gramacy, 2021) uses a prediction-based
+criterion (IMSPE) but requires known covariance parameters as input, limiting its
+use to iterative sequential settings.  REX-SUB avoids this by simultaneously
+estimating parameters and optimising the subsample.  Saha \& Bradley (2024) embed
+subsampling in a Bayesian hierarchical framework but provide no optimality criterion
+for prediction accuracy.
+
+\begin{warnbox}
+  \textbf{Remaining gap:} No method provides principled guidance on the choice of
+  subsample size $n$.  All methods, including REX-SUB, require $n$ to be
+  pre-specified by the user.
+\end{warnbox}
+
+% ── Cluster C ─────────────────────────────────────────────────────────────────
+\subsection{Cluster C: Optimal Subsampling for Non-Spatial Models}
+
+\textbf{Representative works:} Wang et al.\ (2019) [IBOSS -- D-optimality for
+linear regression], Cheng et al.\ (2020) [logistic IBOSS], Singh \& Stufken (2023)
+[LASSO], Liu et al.\ (2023) [cluster-wise regression], Shi \& Tang (2021)
+[maximin-robust subsampling].
+
+\textbf{Shared assumption:} independent and identically distributed (IID) or
+exchangeable observations.  The D-optimality criterion (Fisher information
+maximisation) is used because it leads to closed-form solutions and asymptotic
+efficiency guarantees.
+
+\textbf{REX-SUB's contribution:} first extension of prediction-optimised subsampling
+into the spatially correlated GP setting, where IID assumptions fail and D-optimality
+cannot be directly applied because the GP likelihood couples all observations through
+the covariance matrix.
+
+\begin{warnbox}
+  \textbf{Remaining gap:} IBOSS provides asymptotic efficiency theory and
+  consistency results.  REX-SUB provides neither.  The bridge between optimal
+  experimental design theory and spatial GP subsampling is entirely absent.
+\end{warnbox}
+
+% ── Cluster D ─────────────────────────────────────────────────────────────────
+\subsection{Cluster D: Non-Stationary Spatial Models}
+
+\textbf{Representative works:} Fuentes (2001), Kim et al.\ (2005) [locally
+stationary], Risser \& Calder (2015) [convoSPAT], Hefley et al.\ (2017) [basis
+functions], Katzfuss (2017) [MRA], Lee \& Park (2023) [scalable partitioned model].
+
+\textbf{Shared motivation:} many real spatial processes exhibit covariance parameters
+that vary across the domain (e.g.\ ocean temperature varies with latitude; urban
+versus rural aerosol optical depth shows different spatial scales).
+
+\textbf{REX-SUB's assumption:} a single stationary, isotropic Matérn covariance
+$K(\mathbf{s}, \mathbf{s}'; \boldsymbol{\Theta})$ with global parameters
+$\boldsymbol{\Theta} = (\nu, \phi, \sigma^2, \tau^2)'$.  This is the most
+restrictive assumption in the paper.
+
+\begin{critbox}[title=\textbf{Critical Gap (Most Restrictive Assumption)}]
+  Non-stationarity fundamentally changes which locations are informative.  In a
+  non-stationary field, high-variation regions demand denser subsampling; smooth
+  regions need fewer points.  REX-SUB's global GP criterion cannot detect or respond
+  to local spatial structure.  The MODIS precipitable water field shown in Figure~2
+  of the paper exhibits strong spatial heterogeneity (smooth Atlantic Ocean vs.\
+  complex land--ocean boundary), yet the method assumes a single spatial range
+  parameter.
+\end{critbox}
+
+% ── Cluster E ─────────────────────────────────────────────────────────────────
+\subsection{Cluster E: Spatio-Temporal Models}
+
+\textbf{Representative works:} Gneiting (2002), Cressie \& Huang (1999)
+[nonseparable covariance functions], Cressie \& Wikle (2011) [textbook],
+Zammit-Mangion \& Cressie (2021) [FRK-ST].
+
+\textbf{Shared motivation:} spatial data collected repeatedly over time requires
+models that capture both spatial and temporal dependence jointly.
+
+\textbf{REX-SUB's scope:} single spatial snapshot only.  The MODIS dataset used is
+from a single day (June 22, 2023), despite the satellite collecting data daily.
+
+\begin{warnbox}
+  \textbf{Remaining gap:} No optimal subsampling strategy exists for
+  spatio-temporal GPs.  Selecting which (location, time) pairs to include in a
+  subsample for spatio-temporal GP fitting is an entirely open problem with
+  significantly higher dimensionality.
+\end{warnbox}
+
+% ── Cluster F ─────────────────────────────────────────────────────────────────
+\subsection{Cluster F: Non-Gaussian Spatial Responses}
+
+\textbf{Representative works:} Zilber \& Katzfuss (2021) [Vecchia-Laplace for
+non-Gaussian spatial data], Wood (2004) [GAMs], Lee \& Park (2023) [non-Gaussian
+hierarchical models].
+
+\textbf{REX-SUB's scope:} Gaussian responses only.  The precipitable water data are
+log-transformed to approximate Gaussianity.  Many spatial datasets (species counts,
+disease incidence, habitat presence/absence) cannot be usefully Gaussianised.
+
+\begin{warnbox}
+  \textbf{Remaining gap:} The MSPE and Interval Score criteria are derived for
+  Gaussian responses.  For non-Gaussian likelihoods, proper scoring rules (log-score,
+  CRPS) must replace MSPE.  No prediction-optimal subsampling exists for latent GP
+  models.
+\end{warnbox}
+
+% ── Master gap table ──────────────────────────────────────────────────────────
+\subsection{Consolidated Gap Summary}
+
+\begin{table}[ht]
+\centering
+\caption{Identified research gaps in REX-SUB and the broader scalable spatial
+  statistics literature.  Severity: \textcolor{gapred}{\textbf{H}} = High,
+  \textcolor{gapgold}{\textbf{M}} = Medium,
+  \textcolor{gapgreen}{\textbf{L}} = Low.}
+\label{tab:gaps}
+\small
+\setlength{\tabcolsep}{5pt}
+\begin{tabular}{@{}clp{4.2cm}p{4.2cm}c@{}}
+\toprule
+\textbf{\#} & \textbf{Gap} & \textbf{Prior work addressing it} &
+  \textbf{What is missing} & \textbf{Sev.} \\
+\midrule
+G1 & Non-stationary covariance
+   & convoSPAT, MRA, SPDE, Lee \& Park (2023)
+   & Subsampling strategy for non-stationary GPs
+   & \textcolor{gapred}{\textbf{H}} \\
+\addlinespace[2pt]
+G2 & Spatio-temporal extension
+   & FRK-ST, Gneiting (2002)
+   & Optimal subsampling for space--time GPs
+   & \textcolor{gapred}{\textbf{H}} \\
+\addlinespace[2pt]
+G3 & Expensive GP re-fit per exchange
+   & Rank-1 Cholesky updates (general)
+   & Fast Vecchia precision-matrix updates on location swap
+   & \textcolor{gapred}{\textbf{H}} \\
+\addlinespace[2pt]
+G4 & Local optima (greedy exchange)
+   & Simulated annealing, threshold accepting
+   & Global optimisation for spatial subsampling
+   & \textcolor{gapgold}{\textbf{M}} \\
+\addlinespace[2pt]
+G5 & Optimal subsample size $n$
+   & Cross-validation (general)
+   & Theory or method for adaptive $n$ in spatial GP setting
+   & \textcolor{gapgold}{\textbf{M}} \\
+\addlinespace[2pt]
+G6 & Non-Gaussian responses
+   & Vecchia-Laplace (Zilber \& Katzfuss, 2021)
+   & CRPS/log-score optimal subsampling for latent GPs
+   & \textcolor{gapgold}{\textbf{M}} \\
+\addlinespace[2pt]
+G7 & Multivariate/co-kriging
+   & Co-kriging, multivariate GP literature
+   & Joint optimal subsampling for multiple spatial responses
+   & \textcolor{gapgold}{\textbf{M}} \\
+\addlinespace[2pt]
+G8 & Theoretical guarantees
+   & IBOSS theory (Wang et al., 2019)
+   & Convergence rates and consistency for REX-SUB
+   & \textcolor{gapred}{\textbf{H}} \\
+\addlinespace[2pt]
+G9 & Bias in $\hat{\boldsymbol{\Theta}}$ from informative subsample
+   & Informative sampling literature (general)
+   & Bias characterisation for GP parameters under optimal subsampling
+   & \textcolor{gapgold}{\textbf{M}} \\
+\addlinespace[2pt]
+G10 & Online/streaming subsampling
+   & Online learning (general)
+   & Incremental REX-SUB as new spatial data arrives
+   & \textcolor{gapgreen}{\textbf{L}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Critical Review (\texttt{/peer-review})}
+% ─────────────────────────────────────────────────────────────────────────────
+
+\subsection{Paper Summary}
+
+REX-SUB proposes a randomised exchange algorithm for selecting prediction-optimal
+subsamples from large spatial datasets, embedding the \Vecchia{} approximation for
+scalable GP inference.  Evidence is provided from 16 simulation scenarios covering
+combinations of Matérn smoothness $\nu \in \{0.5, 1.5\}$, effective range
+$\rho^* \in \{0.3, 0.6\}$, noise proportion $\tau^2/(\tau^2 + \sigma^2) \in
+\{0.01, 0.10\}$, and subsample size $n \in \{25, 36\}$, plus one real MODIS
+application ($N = 2{,}748{,}620$).
+
+\subsection{Strengths}
+
+\begin{enumerate}[label=\textbf{S\arabic*.}, leftmargin=2.5em]
+  \item \textbf{Compelling real application.}  Finding a near-optimal subsample of
+    size $n=25$ from 2.7~million locations in $\approx 7$ minutes versus $>1$~hour
+    for full-data Vecchia fitting is a practically meaningful result.
+
+  \item \textbf{Elegant Vecchia integration.}  Embedding the \Vecchia{}
+    approximation inside each exchange step is a non-trivial engineering choice that
+    avoids modifying the GP model while enabling fast per-step evaluation.
+
+  \item \textbf{Comprehensive simulation design.}  The full factorial over
+    $\nu \times \rho^* \times \tau^2/(\tau^2+\sigma^2) \times n$ with 100 replicates
+    per cell is systematic and reproducible; standard errors are consistently
+    reported.
+
+  \item \textbf{Two complementary criteria.}  Jointly assessing MSPE (point
+    prediction quality) and Interval Score (uncertainty quantification quality)
+    is more rigorous than using MSPE alone.
+\end{enumerate}
+
+\subsection{Weaknesses}
+
+\begin{enumerate}[label=\textbf{W\arabic*.}, leftmargin=2.5em]
+  \item \textbf{[Decisive] Missing comparison against full-data scalable GP at
+    equivalent computational budget.}  The paper does not include an experiment
+    comparing REX-SUB ($n=25$, ${\sim}75$\,s) against a full-data NNGP or \Vecchia{}
+    fit truncated to the same 75-second budget.  Without this, the central practical
+    claim --- that subsampling outperforms scalable approximations at fixed compute
+    --- is unsubstantiated.
+
+  \item \textbf{[Major] Subsample sizes $n \in \{25, 36\}$ are unrealistically
+    small.}  For $N = 12{,}500$, $n=25$ is $0.2\%$ of the data; for $N=2{,}748{,}620$,
+    it is $0.0009\%$.  No MSPE-vs-$n$ tradeoff curve is provided.  Practitioners
+    cannot generalise these results to any other $n$.
+
+  \item \textbf{[Major] Stationarity assumption untested under violation.}  All 16
+    simulation settings use a stationary isotropic Matérn process --- the exact model
+    REX-SUB assumes.  No experiment evaluates performance when the true process is
+    non-stationary, despite strong spatial heterogeneity being visible in the MODIS
+    application (Figure~2 of the paper).
+
+  \item \textbf{[Major] No theoretical analysis.}  REX-SUB is a greedy heuristic
+    with no convergence guarantees, no consistency results, and no bounds on the
+    gap between REX-SUB predictions and oracle (full-data GP) predictions.  IBOSS
+    --- the closest analogue for non-spatial models --- provides asymptotic efficiency
+    theory \cite{Wang2019}.
+
+  \item \textbf{[Minor] Single application domain.}  One NASA satellite dataset on
+    one day and one geographic region is insufficient evidence for the claimed broad
+    applicability.  A second application (e.g.\ species count surveys or subsurface
+    geology) would strengthen generalisability.
+
+  \item \textbf{[Minor] Parallelisation mentioned but not benchmarked.}
+    The text states that $n_\text{cand}$ evaluations can be parallelised, but
+    no parallel timing results are reported.  Table~5 CPU times therefore represent
+    the worst-case sequential implementation.
+\end{enumerate}
+
+\subsection{Questions for Future Research}
+
+\begin{enumerate}[label=\textbf{Q\arabic*.}, leftmargin=2.5em]
+  \item At what subsample size $n$ does REX-SUB's advantage over LHS vanish?  Is
+    there a crossover point where the exchange computation is not worth the MSPE
+    gain?
+
+  \item How does REX-SUB perform when the true process is non-stationary?  Does it
+    preferentially select locations from smooth or rough regions?
+
+  \item Can the \Vecchia{} precision matrix $\mathbf{Q} = \mathbf{U}\mathbf{U}^\top$
+    be updated via a rank-1 (or rank-$m$) modification when a single location is
+    swapped, avoiding a full GP re-fit at each exchange?
+
+  \item Are covariance parameter estimates $\hat{\boldsymbol{\Theta}}$ from the
+    informatively selected subsample biased?  Does this bias propagate to prediction
+    intervals?
+
+  \item Can REX-SUB be extended to multiple time points of MODIS data?  What
+    changes in Algorithm~1 when candidates are (location, time) pairs?
+\end{enumerate}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Research Extension Ideas (\texttt{/idea-generation})}
+% ─────────────────────────────────────────────────────────────────────────────
+
+Six specific, scored, and feasibility-assessed research hypotheses are presented
+below, ordered by strategic priority.
+
+% ── Idea 1 ───────────────────────────────────────────────────────────────────
+\subsection{Idea 1: Efficient REX-SUB via Vecchia Rank-1 Updates}
+
+\begin{ideabox}{Idea~1 \textbullet{} Algorithmic Efficiency [Gap~G3]}
+
+\begin{description}[leftmargin=5em, labelwidth=4.5em]
+  \item[\textbf{Hypothesis}]
+    Deriving closed-form rank-1 updates to the \Vecchia{} precision matrix
+    $\mathbf{Q}$ when a single subsample location is swapped will reduce REX-SUB's
+    dominant computational cost by an order of magnitude, making subsample sizes
+    $n \geq 200$ practical.
+
+  \item[\textbf{Motivation}]
+    Table~5 of the paper shows that 99\% of REX-SUB's CPU time is spent in Steps~2
+    and 5 of Algorithm~1 --- fitting GPs and evaluating the \mspe{} criterion.
+    Each exchange modifies exactly \emph{one} location while the remaining $n-1$
+    locations and their conditioning sets are unchanged.  The \Vecchia{} precision
+    matrix $\mathbf{Q} = \mathbf{U}\mathbf{U}^\top$ (where $\mathbf{U}$ is an
+    upper-triangular Cholesky factor) can potentially be updated via a rank-$m$
+    modification when location $\mathbf{s}_j$ is replaced by $\mathbf{s}_{j'}$,
+    analogous to classical Cholesky rank-1 updates in numerical linear algebra.
+    A factor-of-$n$ speedup would make REX-SUB applicable to $n \in \{100, 500\}$
+    within the same 75-second budget.
+
+  \item[\textbf{Approach}]
+    (i) Derive the algebraic form of $\Delta\mathbf{Q}$ when location
+    $\mathbf{s}_j$ is replaced in a maxmin-ordered \Vecchia{} subsample.
+    (ii)~Identify which rows/columns of $\mathbf{U}$ change --- only those
+    involving $\mathbf{s}_j$ or its downstream dependents in the directed acyclic
+    graph $G = (S, N_S)$.  (iii)~Implement in C++ via the \texttt{GpGp}
+    package infrastructure and wrap in R.
+
+  \item[\textbf{Key experiment}]
+    Benchmark REX-SUB (standard) vs.\ REX-SUB (rank-1 update) on the MODIS dataset
+    for $n \in \{25, 100, 500\}$.  Report: speedup ratio, MSPE equivalence (updates
+    should be mathematically exact), and the resulting MSPE-vs-$n$ curve.
+
+  \item[\textbf{Success criterion}]
+    Rank-1 update reduces per-exchange computation by $\geq 10\times$ while
+    producing identical MSPE to the full re-fit implementation across all
+    tested settings.
+
+  \item[\novelty{4}]
+    Rank-1 Cholesky updates are classical; applying them to \Vecchia{} precision
+    matrices in the exchange-subsampling context is new.
+
+  \item[\feasibility{4}]
+    Algebraically tractable; requires careful treatment of the \Vecchia{} DAG
+    structure when a location is swapped.
+\end{description}
+
+\end{ideabox}
+
+% ── Idea 2 ───────────────────────────────────────────────────────────────────
+\subsection{Idea 2: Adaptive Subsample Size Selection}
+
+\begin{ideabox}{Idea~2 \textbullet{} Practical Guidance [Gap~G5]}
+
+\begin{description}[leftmargin=5em, labelwidth=4.5em]
+  \item[\textbf{Hypothesis}]
+    A cross-validation procedure tracking marginal MSPE reduction as $n$ increases
+    within REX-SUB will identify a data-adaptive elbow point, eliminating the need
+    to pre-specify $n$ while providing the first principled guidance on subsample
+    size for spatial GP models.
+
+  \item[\textbf{Motivation}]
+    REX-SUB requires $n$ to be pre-specified; the paper tests only $n \in \{25, 36\}$
+    for $N \in \{10{,}000;\, 2{,}748{,}620\}$.  In practice, the optimal $n$ depends
+    on: the spatial range $\phi$ (more informative observations when $\phi$ is large),
+    the noise ratio $\tau^2/(\tau^2+\sigma^2)$ (higher noise requires larger $n$),
+    and available compute budget.  Adaptive selection analogous to scree plots in PCA
+    or BIC in model selection does not exist for spatial subsampling.
+
+  \item[\textbf{Approach}]
+    Run REX-SUB for a sequence $n = n_{\min}, n_{\min}+\Delta, \ldots, n_{\max}$
+    using previous solutions as warm starts (reducing marginal cost).  At each $n$,
+    record MSPE on a held-out test set.  Fit a parametric decay model
+    $\widehat{\text{MSPE}}(n) = a\,n^{-\beta} + c$ and identify the elbow via the
+    point of maximum curvature.  Alternatively, stop when
+    $|\Delta\widehat{\text{MSPE}}| < \varepsilon$ for a user-specified tolerance.
+
+  \item[\textbf{Key experiment}]
+    Across 8 simulation settings (Table~1 of the paper), generate MSPE($n$) curves
+    for $n \in \{10, 15, 25, 36, 50, 75, 100, 150, 200\}$.  Characterise how the
+    elbow location depends on $\nu$, $\rho^*$, and noise.
+
+  \item[\textbf{Success criterion}]
+    Adaptive $n$-selection matches the MSPE-optimal $n$ (chosen by oracle knowledge
+    of the test set) within $\pm 10$ on $\geq 12$ of 16 simulation settings.
+
+  \item[\novelty{4}]
+    Adaptive subsample size for GP subsampling is entirely unaddressed.
+
+  \item[\feasibility{5}]
+    Computationally straightforward; warm-starting makes the sequence affordable.
+\end{description}
+
+\end{ideabox}
+
+% ── Idea 3 ───────────────────────────────────────────────────────────────────
+\subsection{Idea 3: REX-SUB-ST --- Spatio-Temporal Subsampling}
+
+\begin{ideabox}{Idea~3 \textbullet{} Model Extension [Gap~G2]}
+
+\begin{description}[leftmargin=5em, labelwidth=4.5em]
+  \item[\textbf{Hypothesis}]
+    Extending REX-SUB to spatio-temporal GPs by treating $(\mathbf{s}_i, t_j)$
+    pairs as candidate subsample points will yield lower MSPE on multi-temporal
+    satellite data than applying REX-SUB independently to each time snapshot.
+
+  \item[\textbf{Motivation}]
+    The MODIS satellite collects precipitable water data daily; the paper uses only
+    June 22, 2023.  Atmospheric and environmental processes exhibit strong temporal
+    autocorrelation --- subsampling across time is not equivalent to independently
+    subsampling $T$ spatial snapshots.  No spatio-temporal optimal subsampling
+    method exists.  Nonseparable covariance functions (Gneiting, 2002) and
+    spatio-temporal \Vecchia{} approximations (Guinness, 2018) provide the necessary
+    modelling infrastructure.
+
+  \item[\textbf{Approach}]
+    (i) Index candidate points as $(\mathbf{s}_i, t_j)$ pairs.
+    (ii)~Use a spatio-temporal \Vecchia{} approximation with maxmin ordering adapted
+    for space--time (ordering by $\|\mathbf{s}\| + \lambda t$ for a scale parameter
+    $\lambda$).  (iii)~Define a spatio-temporal \mspe{} criterion over a held-out
+    space--time test set.  (iv)~Run Algorithm~1 with swaps on $(\mathbf{s}, t)$ pairs.
+
+  \item[\textbf{Key experiment}]
+    Apply to 30 days of MODIS data ($N_{\text{total}} \approx 80$M).  Compare:
+    (a) REX-SUB applied independently per day ($T \times n$ total subsample),
+    (b) REX-SUB-ST jointly across days (same total subsample budget).
+
+  \item[\textbf{Success criterion}]
+    REX-SUB-ST achieves lower spatio-temporal MSPE than $T$ independent REX-SUB
+    runs at the same total subsample size for $\geq 80\%$ of held-out space--time
+    locations.
+
+  \item[\novelty{5}]
+    First optimal subsampling method for spatio-temporal GP models.
+
+  \item[\feasibility{3}]
+    Spatio-temporal \Vecchia{} exists; the main challenge is the larger candidate
+    space and higher GP fitting cost per exchange.
+\end{description}
+
+\end{ideabox}
+
+% ── Idea 4 ───────────────────────────────────────────────────────────────────
+\subsection{Idea 4: REX-SUB-NS --- Non-Stationary Spatial Subsampling}
+
+\begin{ideabox}{Idea~4 \textbullet{} Model Extension [Gap~G1]}
+
+\begin{description}[leftmargin=5em, labelwidth=4.5em]
+  \item[\textbf{Hypothesis}]
+    Replacing the global stationary GP criterion in REX-SUB with a locally adaptive
+    non-stationary criterion will yield lower MSPE on spatially heterogeneous fields
+    while selecting subsample locations that cluster in high-variation regions.
+
+  \item[\textbf{Motivation}]
+    REX-SUB fits a single Matérn covariance to the entire domain.  On non-stationary
+    fields, this misspecification causes the exchange algorithm to either under-sample
+    high-variation regions (if global $\phi$ is over-estimated) or over-sample smooth
+    regions (if $\phi$ is under-estimated).  Locally stationary GP approximations
+    such as the scalable partitioned model of Lee \& Park (2023) can characterise
+    local spatial structure, providing a heterogeneous criterion for the exchange.
+
+  \item[\textbf{Approach}]
+    Replace the Vecchia-fitted global GP within Algorithm~1 with a partition-based
+    locally stationary GP (e.g.\ Lee \& Park, 2023).  Define the \mspe{} criterion
+    as a spatially weighted average $\phi_{\text{NS}} = \sum_i w(\mathbf{s}_i)
+    (\hat{Z}(\mathbf{s}_i) - Z(\mathbf{s}_i))^2$ where $w(\mathbf{s})$ reflects
+    local variance.  Alternatively, fit separate covariance parameters per partition
+    and propagate these through the exchange.
+
+  \item[\textbf{Key experiment}]
+    Simulate a non-stationary field with known spatially varying range parameter
+    $\phi(\mathbf{s})$ (e.g.\ using the SPDE approach or convoSPAT).  Compare
+    (a) REX-SUB (stationary criterion), (b) REX-SUB-NS (locally adaptive criterion),
+    and (c) LHS on MSPE separately in smooth vs.\ rough regions.
+
+  \item[\textbf{Success criterion}]
+    REX-SUB-NS achieves $\geq 15\%$ lower MSPE in non-stationary regions compared
+    to standard REX-SUB, with computation time $\leq 2\times$ the standard method.
+
+  \item[\novelty{5}]
+    No subsampling method accounts for spatial non-stationarity in its criterion.
+
+  \item[\feasibility{3}]
+    Non-stationary GP fitting within the exchange loop increases complexity; local
+    parameter estimation must remain scalable.
+\end{description}
+
+\end{ideabox}
+
+% ── Idea 5 ───────────────────────────────────────────────────────────────────
+\subsection{Idea 5: REX-SUB-NG --- Non-Gaussian Spatial Responses}
+
+\begin{ideabox}{Idea~5 \textbullet{} Model Extension [Gap~G6]}
+
+\begin{description}[leftmargin=5em, labelwidth=4.5em]
+  \item[\textbf{Hypothesis}]
+    Adapting REX-SUB's optimality criterion to the Continuous Ranked Probability
+    Score (CRPS) under a latent GP with non-Gaussian likelihood will enable
+    prediction-optimal subsampling for spatial count, binary, and ordinal data.
+
+  \item[\textbf{Motivation}]
+    Many environmental and ecological spatial datasets are non-Gaussian: bird species
+    counts (Poisson), disease incidence rates (negative binomial), habitat
+    presence/absence (Bernoulli), and soil quality categories (ordinal).
+    Log-transforming count data to approximate Gaussianity, as done in the paper,
+    is valid only for certain distributions and may distort prediction intervals.
+    Zilber \& Katzfuss (2021) provide a Vecchia-Laplace approximation for
+    non-Gaussian spatial likelihoods --- this can serve as a direct replacement for
+    the Gaussian Vecchia within Algorithm~1.
+
+  \item[\textbf{Approach}]
+    Replace the Vecchia-Gaussian likelihood with Vecchia-Laplace (Zilber \&
+    Katzfuss, 2021) in Algorithm~1.  Replace $\phi_{\text{MSPE}}$ with
+    $\phi_{\text{CRPS}} = \frac{1}{|I_{\text{test}}|}\sum_{i} \text{CRPS}(F_i,
+    Z(\mathbf{s}_i))$ where $F_i$ is the predictive CDF at test location
+    $\mathbf{s}_i$.  Maintain the same exchange structure.
+
+  \item[\textbf{Key experiment}]
+    Apply to the North American Breeding Bird Survey dataset (species counts across
+    spatial locations in North America).  Compare REX-SUB-NG (CRPS, Vecchia-Laplace)
+    vs.\ REX-SUB on log-counts vs.\ LHS on held-out log-score.
+
+  \item[\textbf{Success criterion}]
+    REX-SUB-NG achieves lower predictive CRPS than all baselines on $\geq 3$
+    species with markedly non-Gaussian count distributions.
+
+  \item[\novelty{5}]
+    No prediction-optimal subsampling exists for non-Gaussian spatial GP models.
+
+  \item[\feasibility{3}]
+    Vecchia-Laplace integration is more complex; gradient computation for the
+    Laplace approximation within the exchange adds overhead.
+\end{description}
+
+\end{ideabox}
+
+% ── Idea 6 ───────────────────────────────────────────────────────────────────
+\subsection{Idea 6: Theoretical Analysis --- Convergence and Consistency}
+
+\begin{ideabox}{Idea~6 \textbullet{} Theory [Gap~G8]}
+
+\begin{description}[leftmargin=5em, labelwidth=4.5em]
+  \item[\textbf{Hypothesis}]
+    Under regularity conditions on the spatial covariance function and spatial
+    domain filling, the predictions from a REX-SUB-selected subsample converge
+    to the full-data GP predictions at a characterisable rate in $n$, $N$, $\phi$,
+    and $\nu$.
+
+  \item[\textbf{Motivation}]
+    REX-SUB is entirely empirical.  IBOSS (Wang et al., 2019) shows that for linear
+    regression, D-optimal subsampling achieves asymptotic efficiency equal to the
+    full dataset.  Three theoretical questions are open for REX-SUB:
+    (i)~Is the exchange-algorithm solution consistent for the oracle
+    (IMSPE-minimising) subsample as $n_{\text{cand}}, n_{\text{repeat}} \to \infty$?
+    (ii)~What is the convergence rate of subsample-GP MSPE to full-data GP MSPE as
+    $n \to N$?
+    (iii)~Are covariance parameter estimates from the informative subsample
+    asymptotically unbiased?
+
+  \item[\textbf{Approach}]
+    Frame REX-SUB as a stochastic approximation to the MSPE-minimising subsampling
+    problem.  Use spatial mixing conditions (strong mixing or $m$-dependence) to
+    handle correlated observations.  Derive an upper bound on
+    $\mathbb{E}[\text{MSPE}_{\text{subsample}}] - \text{MSPE}_{\text{oracle}}$
+    as a function of $n$, $N$, $\phi$, $\nu$, and the exchange stopping criteria.
+    For parameter bias, use the theory of informative sampling (cf.\ Pfeffermann,
+    1993) adapted to the spatial GP setting.
+
+  \item[\textbf{Key experiment}]
+    Empirically validate derived rates by running REX-SUB across
+    $n \in \{10, 25, 50, 100, 250\}$ for large $N = 100{,}000$ simulated
+    datasets.  Plot observed MSPE decay rate against theoretical predictions.
+
+  \item[\textbf{Success criterion}]
+    Derived upper bound matches observed convergence rate within a constant factor
+    across $\geq 6$ of 8 simulation settings.
+
+  \item[\novelty{5}]
+    No convergence theory for prediction-optimal spatial subsampling exists.
+
+  \item[\feasibility{2}]
+    Requires significant probabilistic spatial analysis; hardest idea to execute
+    but highest long-term scientific impact.
+\end{description}
+
+\end{ideabox}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Prioritised Research Roadmap}
+% ─────────────────────────────────────────────────────────────────────────────
+
+\begin{table}[ht]
+\centering
+\caption{Prioritised research extension roadmap.  Effort estimates are for a
+  single PhD student or postdoc.  Dependencies are noted where one idea unlocks
+  another.}
+\label{tab:roadmap}
+\small
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{@{}clccp{3.8cm}c@{}}
+\toprule
+\textbf{Priority} & \textbf{Idea} & \textbf{Novelty} & \textbf{Feasibility}
+  & \textbf{Justification} & \textbf{Effort} \\
+\midrule
+\rowcolor{ideabg}
+1 & Idea~3: Rank-1 Vecchia Updates & 4/5 & 4/5
+  & Unlocks all other extensions by making large $n$ practical;
+    algebraically well-scoped
+  & 3--6 mo. \\
+\addlinespace[2pt]
+2 & Idea~2: Adaptive subsample size $n$ & 4/5 & 5/5
+  & Resolves most common practitioner question; computationally
+    straightforward with warm-starting
+  & 2--4 mo. \\
+\addlinespace[2pt]
+\rowcolor{ideabg}
+3 & Idea~1: REX-SUB-NS (non-stationary) & 5/5 & 3/5
+  & Most restrictive assumption; highest practical relevance for
+    real environmental data
+  & 6--12 mo. \\
+\addlinespace[2pt]
+4 & Idea~3: REX-SUB-ST (spatio-temporal) & 5/5 & 3/5
+  & Natural next application given the MODIS motivation;
+    \textit{requires Priority~1}
+  & 6--12 mo. \\
+\addlinespace[2pt]
+\rowcolor{ideabg}
+5 & Idea~5: REX-SUB-NG (non-Gaussian) & 5/5 & 3/5
+  & Opens entirely new application domains (ecology, epidemiology);
+    \textit{requires Priority~1}
+  & 6--12 mo. \\
+\addlinespace[2pt]
+6 & Idea~6: Convergence theory & 5/5 & 2/5
+  & Highest scientific prestige; needed for the methodology to be
+    a lasting contribution; \textit{benefits from Priorities 1--5}
+  & 12--24 mo. \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section{Cross-Cutting Insight}
+% ─────────────────────────────────────────────────────────────────────────────
+
+\begin{critbox}[title=\textbf{The Single Highest-Leverage Gap}]
+
+The deepest structural gap --- cutting across all six extension directions --- is
+the \textbf{absence of a fast criterion update rule} (Gap~G3, Idea~1).
+
+Every proposed extension (non-stationary, spatio-temporal, non-Gaussian, larger $n$)
+is computationally gated by the cost of re-fitting the GP at each exchange step.
+Table~5 of the paper shows that for $n_{\text{cand}} = 10$ and
+$n_{\text{repeat}} = 2$, REX-SUB fits
+$n_{\text{repeat}} \times n \times n_{\text{cand}} = 2 \times 25 \times 10 = 500$
+GPs per subsample.  Rank-1 Vecchia updates would reduce each of these 500 fits to a
+$\mathcal{O}(m^2)$ matrix update rather than a full $\mathcal{O}(m^2 n)$
+re-factorisation --- a factor of $n$ speedup.
+
+\textbf{Idea~1 is therefore the recommended first contribution}: it is a prerequisite
+that multiplicatively accelerates all subsequent extensions and transforms REX-SUB
+from a method feasible for $n \leq 36$ into one usable for $n \leq 500$.
+
+\end{critbox}
+
+\medskip
+
+\begin{warnbox}
+  \textbf{Second structural gap:}
+  The stationarity assumption (Gap~G1) makes REX-SUB unreliable for the most common
+  real-world spatial datasets.  The strong spatial heterogeneity visible in Figure~2
+  of the paper (smooth Atlantic Ocean vs.\ complex land--ocean boundary with high
+  precipitable water contrast) suggests the method's MODIS success may be partially
+  coincidental --- the log-transformation and chosen geographic extent may happen to
+  produce approximately stationary residuals.  REX-SUB-NS (Idea~4) addresses this
+  directly.
+\end{warnbox}
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section*{Acknowledgements}
+% ─────────────────────────────────────────────────────────────────────────────
+
+This gap analysis was produced using the AI Auto-Research Skill Suite, implementing
+the research lifecycle framework described in:
+
+\begin{quote}
+  Kong, L., Sun, X., Chow, W., et al.\ (2026).
+  \emph{AI for Auto-Research: Roadmap \& User Guide.}
+  arXiv:2605.18661v1 [cs.AI], 18 May 2026.
+\end{quote}
+
+Skills applied: \texttt{/literature-review} (Phase~1, Stage~2),
+\texttt{/peer-review} (Phase~3, Stage~6), and
+\texttt{/idea-generation} (Phase~1, Stage~1).
+
+% ─────────────────────────────────────────────────────────────────────────────
+\section*{References}
+% ─────────────────────────────────────────────────────────────────────────────
+
+\begin{thebibliography}{99}
+
+\bibitem{Banerjee2008}
+Banerjee, S., Gelfand, A.E., Finley, A.O., Sang, H. (2008).
+Gaussian predictive process models for large spatial data sets.
+\textit{Journal of the Royal Statistical Society: Series B}, 70(4), 825--848.
+
+\bibitem{Binois2021}
+Binois, M., Gramacy, R.B. (2021).
+hetGP: Heteroskedastic Gaussian process modeling and sequential design in R.
+\textit{Journal of Statistical Software}, 98(13), 1--44.
+
+\bibitem{Cheng2020}
+Cheng, Q., Wang, H., Yang, M. (2020).
+Information-based optimal subdata selection for big data logistic regression.
+\textit{Journal of Statistical Planning and Inference}, 209, 112--122.
+
+\bibitem{Cressie1999}
+Cressie, N., Huang, H.C. (1999).
+Classes of nonseparable, spatio-temporal stationary covariance functions.
+\textit{Journal of the American Statistical Association}, 94(448), 1330--1339.
+
+\bibitem{Cressie2008}
+Cressie, N., Johannesson, G. (2008).
+Fixed rank kriging for very large spatial data sets.
+\textit{Journal of the Royal Statistical Society: Series B}, 70(1), 209--226.
+
+\bibitem{CressieWikle2011}
+Cressie, N., Wikle, C.K. (2011).
+\textit{Statistics for Spatio-Temporal Data}.
+John Wiley \& Sons.
+
+\bibitem{Datta2016}
+Datta, A., Banerjee, S., Finley, A.O., Gelfand, A.E. (2016).
+Hierarchical nearest-neighbor Gaussian process models for large geostatistical datasets.
+\textit{Journal of the American Statistical Association}, 111(514), 800--812.
+
+\bibitem{Fuentes2001}
+Fuentes, M. (2001).
+A high frequency kriging approach for non-stationary environmental processes.
+\textit{Environmetrics}, 12(5), 469--483.
+
+\bibitem{Furrer2006}
+Furrer, R., Genton, M.G., Nychka, D. (2006).
+Covariance tapering for interpolation of large spatial datasets.
+\textit{Journal of Computational and Graphical Statistics}, 15(3), 502--523.
+
+\bibitem{Gneiting2002}
+Gneiting, T. (2002).
+Nonseparable, stationary covariance functions for space--time data.
+\textit{Journal of the American Statistical Association}, 97(458), 590--600.
+
+\bibitem{Guinness2018}
+Guinness, J. (2018).
+Permutation and grouping methods for sharpening Gaussian process approximations.
+\textit{Technometrics}, 60(4), 415--429.
+
+\bibitem{Hayashi2020}
+Hayashi, K., Imaizumi, M., Yoshida, Y. (2020).
+On random subsampling of Gaussian process regression.
+\textit{PMLR}, pp.\ 2055--2065.
+
+\bibitem{Heaton2019}
+Heaton, M.J., Datta, A., Finley, A.O., et al.\ (2019).
+A case study competition among methods for analyzing large spatial data.
+\textit{Journal of Agricultural, Biological and Environmental Statistics},
+24(3), 398--425.
+
+\bibitem{Hefley2017}
+Hefley, T.J., Broms, K.M., Brost, B.M., et al.\ (2017).
+The basis function approach for modeling autocorrelation in ecological data.
+\textit{Ecology}, 98(3), 632--646.
+
+\bibitem{Katzfuss2017}
+Katzfuss, M. (2017).
+A multi-resolution approximation for massive spatial datasets.
+\textit{Journal of the American Statistical Association}, 112(517), 201--214.
+
+\bibitem{Katzfuss2020}
+Katzfuss, M., Guinness, J., Gong, W., Zilber, D. (2020).
+Vecchia approximations of Gaussian-process predictions.
+\textit{Journal of Agricultural, Biological and Environmental Statistics},
+25(3), 383--414.
+
+\bibitem{Kim2005}
+Kim, H.M., Mallick, B.K., Holmes, C.C. (2005).
+Analyzing nonstationary spatial data using piecewise Gaussian processes.
+\textit{Journal of the American Statistical Association}, 100(470), 653--668.
+
+\bibitem{Lee2023}
+Lee, B.S., Park, J. (2023).
+A scalable partitioned approach to model massive nonstationary non-Gaussian spatial datasets.
+\textit{Technometrics}, 65(1), 105--116.
+
+\bibitem{Lindgren2011}
+Lindgren, F., Rue, H., Lindström, J. (2011).
+An explicit link between Gaussian fields and Gaussian Markov random fields.
+\textit{Journal of the Royal Statistical Society: Series B}, 73(4), 423--498.
+
+\bibitem{Liu2023}
+Liu, Y., Stufken, J., Yang, M. (2023).
+Information-based optimal subdata selection for clusterwise linear regression.
+arXiv preprint arXiv:2309.00720.
+
+\bibitem{McKay1979}
+McKay, M.D., Beckman, R.J., Conover, W.J. (1979).
+A comparison of three methods for selecting values of input variables.
+\textit{Technometrics}, 21(2), 239--245.
+
+\bibitem{Rasmussen2005}
+Rasmussen, C.E., Williams, C.K.I. (2005).
+\textit{Gaussian Processes for Machine Learning}.
+The MIT Press.
+
+\bibitem{Risser2015}
+Risser, M.D., Calder, C.A. (2015).
+Local likelihood estimation for covariance functions with spatially varying parameters.
+arXiv preprint arXiv:1507.08613.
+
+\bibitem{Saha2024}
+Saha, A., Bradley, J.R. (2024).
+Incorporating subsampling into Bayesian models for high-dimensional spatial data.
+\textit{Bayesian Analysis}, 1(1), 1--40.
+
+\bibitem{Sang2011}
+Sang, H., Jun, M., Huang, J.Z. (2011).
+Covariance approximation for large multivariate spatial data sets with an application
+to multiple climate model errors.
+\textit{Annals of Applied Statistics}, 5(4), 2494--2526.
+
+\bibitem{ShiTang2021}
+Shi, C., Tang, B. (2021).
+Model-robust subdata selection for big data.
+\textit{Journal of Statistical Theory and Practice}, 15, 1--17.
+
+\bibitem{Singh2023}
+Singh, B., Stufken, J. (2023).
+Subdata selection with a large number of variables.
+\textit{New England Journal of Statistical Data Science}, 1(3), 426--438.
+
+\bibitem{Vecchia1988}
+Vecchia, A.V. (1988).
+Estimation and model identification for continuous spatial processes.
+\textit{Journal of the Royal Statistical Society: Series B}, 50, 297--312.
+
+\bibitem{Wang2019}
+Wang, H., Stufken, J., Yang, M. (2019).
+Information-based optimal subdata selection for big data linear regression.
+\textit{Journal of the American Statistical Association}, 114(525), 393--405.
+
+\bibitem{Zilber2021}
+Zilber, D., Katzfuss, M. (2021).
+Vecchia--Laplace approximations of generalised Gaussian processes for big
+non-Gaussian spatial data.
+\textit{Computational Statistics and Data Analysis}, 153, 107081.
+
+\bibitem{ZammitMangion2021}
+Zammit-Mangion, A., Cressie, N. (2021).
+FRK: An R package for spatial and spatio-temporal prediction with large datasets.
+\textit{Journal of Statistical Software}, 98(4), 1--48.
+
+\end{thebibliography}
+
+\end{document}

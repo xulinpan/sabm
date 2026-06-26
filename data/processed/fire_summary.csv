@@ -1,0 +1,2 @@
+total_detections,date_min,date_max,lat_min,lat_max,lon_min,lon_max,frp_mean_mw,frp_max_mw,brightness_mean_k
+19170193,2018-01-01,2018-12-31,-89.69073,81.13106,-179.99501,179.97566,9.733343132226159,2795.01,335.1049891777302
