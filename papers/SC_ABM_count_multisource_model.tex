@@ -22,7 +22,7 @@
 \newcommand{\Var}{\mathbb{V}\mathrm{ar}}
 \newcommand{\Prob}{\mathbb{P}}
 
-\journal{Journal of the American Statistical Association}
+\journal{Computational Statistics \& Data Analysis}
 
 \begin{document}
 
@@ -78,14 +78,14 @@ parameters and yields empirically well-calibrated posterior predictive checks
 \end{abstract}
 
 \begin{keyword}
-closed-form variational inference \sep
+surrogate variational inference \sep
 moment generating function \sep
-evidence lower bound \sep
-coordinate-ascent variational inference \sep
+forward variational filtering \sep
 count statistical agent-based model \sep
-negative binomial \sep
-spatio-temporal model \sep
-identifiability
+negative binomial observation model \sep
+spatio-temporal latent count model \sep
+identifiability \sep
+particle MCMC
 \end{keyword}
 
 \end{frontmatter}
@@ -127,8 +127,9 @@ $\mathbb{E}_q[\log p(N_{i,t}\mid N_{i,t-1})]$ under any standard
 variational family $q$ is analytically intractable: each expectation
 requires summing over all possible values of the jointly distributed
 $(N_{i,t},N_{i,t-1})$ pair.  At the scales typical of spatio-temporal ABMs
-($m\sim10^2$--$10^3$, $T\sim10$--$20$), evaluating this sum at every surrogate variational sweep is computationally
-prohibitive, blocking any fast deterministic surrogate inference scheme.
+($m\sim10^2$--$10^3$, $T\sim10$--$20$), evaluating this sum at every
+surrogate variational sweep is computationally prohibitive, blocking any
+fast deterministic surrogate inference scheme.
 
 Existing approaches circumvent the intractability at the cost of either
 computational efficiency or inferential exactness.  Particle MCMC
@@ -273,6 +274,10 @@ Symbol & Meaning \\
 \(r\) & NegBin overdispersion parameter \\
 \(\kappa_{i,t}\) & occupancy detection intensity \\
 \(\eta_{i,t}\) & occupancy false-positive probability \\
+\(\theta_d\) & dispersal distance-decay parameter \\
+\(\theta_0\) & dispersal intercept (self-retention baseline) \\
+\(\omega_j\) & maximum local dispersal pressure from cell $j$ \\
+\(h\) & half-saturation constant for dispersal \\
 \(\lambda\) & variational parameters $\{\mu_{i,t},\{\nu_k\}\}$ \\
 \(\mu_{i,t}\) & variational mean for $N_{i,t}$ under $q$ \\
 \(\tilde{\mathcal{L}}\) & surrogate variational objective \\
@@ -449,6 +454,18 @@ Thus the process model naturally generates extra-Poisson variation because the
 latent count is a convolution of a binomial survival term and two Poisson arrival
 terms.
 
+\paragraph{Initial distribution.}
+The transition kernel is defined for $t\ge2$.  For the initial time $t=1$ we
+assign
+\[
+  N_{i,1}\;\sim\;\mathrm{Poisson}(\mu_{i,1}^{(0)}),
+\]
+where $\mu_{i,1}^{(0)}$ is a specified prior mean, in practice set to the
+approximate stationary mean $\psi_i/(1-\phi_i e^{-\psi_i/K_i})$ of the
+isolated-cell chain (Theorem~\ref{thm:ergodicity}).  In the forward-filtering
+algorithm, the initialisation sets $\mu_{i,0}\leftarrow\mu_{i,1}^{(0)}$ and
+runs one forward pass of the conditional mean before the first optimisation sweep.
+
 \begin{figure}[t]
 \centering
 \begin{tikzpicture}[
@@ -568,11 +585,12 @@ component ($\psi>0$) gives positive reach to all states in finitely many steps.
 Geometric ergodicity follows from \citet{meyntweedie1993}, Theorem~15.0.1.
 \end{proof}
 
-\begin{proposition}[Conditional mean bound under normalized dispersal]
+\begin{proposition}[Conditional mean bound under bounded dispersal]
 \label{prop:bound}
-On the full $m$-cell grid, suppose $\sum_{i\in\mathcal{N}_j}p_{j\to i}=1$ for
-all $j$ (standard softmax normalization) and let $\phi_{\max}=\max_i\phi_i<1$,
-$\Psi=\sum_i\psi_i$.  Then
+On the full $m$-cell grid, let $\phi_{\max}=\max_i\phi_i<1$ and
+$\Psi=\sum_i\psi_i$.  Then for any dispersal probability satisfying
+$\sum_{i\in\mathcal{N}_j}p_{j\to i}\le1$ (which includes both the softmax
+and the self-retention model \eqref{eq:dispersal}):
 \[
   \E\!\left[\sum_{i=1}^m N_{i,t}\;\middle|\;\bm{N}_{t-1}\right]
   \;\le\;
@@ -580,15 +598,18 @@ $\Psi=\sum_i\psi_i$.  Then
   + \sum_{j=1}^m \frac{\omega_j N_{j,t-1}}{N_{j,t-1}+h}
   + \Psi.
 \]
+The self-retention model~\eqref{eq:dispersal} satisfies the strict inequality
+$\sum_{i\in\mathcal{N}_j}p_{j\to i}<1$, so the immigration bound is strict.
 \end{proposition}
 
 \begin{proof}
 By conditional independence, $\E[\sum_i N_{i,t}\mid\bm{N}_{t-1}]
 = \sum_i N_{i,t-1}\phi_i e^{-N_{i,t-1}/K_i} + \sum_i\Lambda_{i,t} + \Psi$.
 The survival term is bounded by $\phi_{\max}\sum_i N_{i,t-1}$.
-For the immigration term, swapping sums over sources and targets
-and using $\sum_{i\in\mathcal{N}_j}p_{j\to i}=1$ gives
-$\sum_i\Lambda_{i,t}=\sum_j\omega_j N_{j,t-1}/(N_{j,t-1}+h)$.
+For the immigration term, swapping sums over sources and targets:
+$\sum_i\Lambda_{i,t}=\sum_j\omega_j(\sum_{i\in\mathcal{N}_j}p_{j\to i})
+ N_{j,t-1}/(N_{j,t-1}+h)\le\sum_j\omega_j N_{j,t-1}/(N_{j,t-1}+h)$,
+using $\sum_{i\in\mathcal{N}_j}p_{j\to i}\le1$.
 \end{proof}
 
 \section{Multi-Source Observation Model}\label{sec:obs}
@@ -639,6 +660,10 @@ This layer allows count surveys to be noisy, effort-dependent, and overdispersed
 \citet{hamura2025} establish theoretical robustness of the NegBin model to
 zero-inflation and outliers under sparse ecological surveys, providing formal
 justification for this choice over the Poisson observation model.
+\emph{Implementation note.}  In this paper $\rho_{i,t}=\rho$ and
+$\kappa_{i,t}=\kappa$ are treated as scalar constants (estimated via VEM in
+\S\ref{sec:realdata}, fixed in simulation); the random-effects and
+effort-covariate extensions are deferred to future work.
 
 \subsection{Binary Remote-Sensing Channel}
 
@@ -769,7 +794,7 @@ that fusing count and binary streams substantially reduces uncertainty in
 latent abundance estimates relative to either channel alone.
 
 %% ============================================================
-\section{Closed-form Surrogate Variational Objective via the Poisson MGF}
+\section{Surrogate Variational Objective via the Poisson MGF}
 \label{sec:vi}
 %% ============================================================
 
@@ -815,7 +840,7 @@ Four main results support an affirmative answer:
 \item \textbf{Fixed-point and stationarity} (Proposition~\ref{thm:vi-converge},
   \S\ref{sec:vi-convergence}): every update step is analytic; fixed points
   satisfy the local stationarity condition of $\tilde{\mathcal{L}}$.
-  The forward-filtering nature of Algorithm~\ref{alg:cavi} means monotone
+  The forward-filtering nature of Algorithm~\ref{alg:smfvb} means monotone
   increase of the full surrogate is not guaranteed; empirical convergence is
   monitored via relative changes in $\tilde{\mathcal{L}}$.
 \item \textbf{Approximation error convergence} (Corollary~\ref{cor:elbo-gap},
@@ -988,13 +1013,8 @@ The exact ELBO for the unmodified count ABM is:
 
 The variational principle gives $\log p(Y)\ge\mathcal{L}(\lambda)$ for all $\lambda$.
 The obstacle is $\mathcal{L}_\mathrm{proc}$: the exact transition
-$p(N_{i,t}\mid\mathbf{N}_{t-1})$ is the Poisson--Binomial convolution
-\[
-p(N_{i,t}=n\mid\mathbf{N}_{t-1})
-= \sum_{s=0}^{n}\binom{N_{i,t-1}}{s}p_{s}^s(1-p_s)^{N_{i,t-1}-s}
-\cdot\frac{e^{-(\Lambda_{i,t}+\psi_i)}(\Lambda_{i,t}+\psi_i)^{n-s}}{(n-s)!},
-\]
-whose logarithm has no closed form, making
+$p(N_{i,t}\mid\mathbf{N}_{t-1})$ is the Binomial--Poisson convolution
+\eqref{eq:conv-pmf}, whose logarithm has no closed form, making
 $\mathbb{E}_q[\log p(N_{i,t}\mid\mathbf{N}_{t-1})]$ analytically intractable.
 
 \paragraph{Surrogate variational objective.}
@@ -1186,7 +1206,7 @@ four components: (1) the surrogate process term~\eqref{eq:proc-elbo} at time $t$
 $\tilde\mu_{i,t+1}$ depends on $\mu_{i,t}$ through the survival term
 $\bar{s}_{i,t+1}=\phi_i\,\mu_{i,t}\,c_i\exp(\mu_{i,t}(c_i-1))$.
 
-The forward-filtering update in Algorithm~\ref{alg:cavi} drops the
+The forward-filtering update in Algorithm~\ref{alg:smfvb} drops the
 future-process contribution (component 4) from the gradient and solves only
 the local stationarity condition at time $t$ with $\tilde\mu_{i,t+1}$
 treated as fixed.  This is a \emph{forward-filtering approximation} to exact
@@ -1276,6 +1296,15 @@ Equation~\eqref{eq:cavi-fp} is the local stationarity condition of the
 surrogate KL problem~\eqref{eq:kl-problem} under the forward-filtering
 approximation: it characterises the Poisson distribution $q(N_{i,t})=\mathrm{Pois}(\mu_{i,t}^\star)$
 that is locally stationary with respect to components (1)--(3).
+\emph{Implementation note.}  The NegBin gradient $\delta^{(\mathrm{obs})}_{i,t}$
+in~\eqref{eq:obs-corr} depends on $\mu_{i,t}$ itself, making
+\eqref{eq:cavi-fp} an \emph{implicit} equation.  In Algorithm~\ref{alg:smfvb}
+this is resolved by evaluating $\delta_{i,t}^{(\mathrm{obs})}$ at the
+\emph{current} (previous-sweep) value of $\mu_{i,t}$, giving an explicit
+one-step update.  This approximation is exact when the algorithm has converged
+($\mu_{i,t}$ unchanged between sweeps) and introduces an approximation error
+of $O(|\Delta\mu_{i,t}|)$ per sweep; convergence is monitored globally via
+$\tilde{\mathcal{L}}$.
 The solution has a statistically
 interpretable structure: the prior factor $\tilde\mu_{i,t}$ is the
 variational predictive mean under the process model, and the likelihood factor
@@ -1292,10 +1321,13 @@ approximation to the process model.
 \subsection{SMFVB Algorithm}
 \label{sec:smfvb-alg}
 
-Algorithm~\ref{alg:cavi} summarises the complete procedure.  The forward sweep
-(lines \ref{line:fwd-start}--\ref{line:fwd-end}) costs $O(m\,\bar{d})$ per
-time step for the immigration sum~\eqref{eq:immig-id}, giving
-$O(m\,T\,\bar{d})$ per objective evaluation with no particle loop.
+Algorithm~\ref{alg:smfvb} summarises the complete procedure.
+The forward sweep (lines \ref{line:fwd-start}--\ref{line:fwd-end}) iterates
+over $t=1,\ldots,T$ and $i=1,\ldots,m$, evaluating $\delta_{i,t}^{(\mathrm{obs})}$
+at the current iterate and updating $\mu_{i,t}$ explicitly
+(see the implementation note at the end of \S\ref{sec:cavi-update}).
+The sweep costs $O(m\,\bar{d})$ per time step for the immigration sum~\eqref{eq:immig-id},
+giving $O(m\,T\,\bar{d})$ per full sweep with no particle loop.
 
 \begin{algorithm}[ht]
 \caption{SMFVB: deterministic surrogate variational filtering for count ABMs.
@@ -1303,7 +1335,7 @@ $O(m\,T\,\bar{d})$ per objective evaluation with no particle loop.
   (drops future-process contributions; see \S\ref{sec:cavi-update}).
   Parameter updates use Adam \citep{kingma2013}; Adam does \emph{not} guarantee
   monotone increase of $\tilde{\mathcal{L}}$.
-  Surrogate objective $\tilde{\mathcal{L}}$ is not a lower bound on $\log p(Y)$.}\label{alg:cavi}
+  Surrogate objective $\tilde{\mathcal{L}}$ is not a lower bound on $\log p(Y)$.}\label{alg:smfvb}
 \begin{algorithmic}[1]
 \Require Count ABM parameters $(\phi_i,K_i,\omega_j,h,\psi_i,\rho_{i,t},\kappa_{i,t},\eta_{i,t})$
          and observations $(Y^{(C)},Y^{(P)})$.
@@ -1324,7 +1356,7 @@ $O(m\,T\,\bar{d})$ per objective evaluation with no particle loop.
            \tilde{g}(\mu_{j,t-1};h)$
            \hfill \emph{// $2^\mathrm{nd}$-order delta method, Thm~\ref{thm:elbo}(iii)}
     \State $\tilde\mu_{i,t}\leftarrow\bar{s}_{i,t}+\mathbb{E}[\Lambda_{i,t}]+\psi_i$
-           \hfill \emph{// exact model conditional mean under $q$}
+           \hfill \emph{// approx.\ conditional mean (delta-method immigration, Thm~\ref{thm:elbo}(iii))}
     \State $\mu_{i,t}\leftarrow\tilde\mu_{i,t}
            \cdot\exp(\delta_{i,t}^{(\mathrm{obs})})$
            \hfill \emph{// forward-filtering update \eqref{eq:cavi-fp}}
@@ -1342,7 +1374,7 @@ $O(m\,T\,\bar{d})$ per objective evaluation with no particle loop.
 
 The following proposition characterises the fixed-point structure of the
 surrogate objective and the stationarity condition satisfied by the forward-filtering
-update.  Algorithm~\ref{alg:cavi} implements a \emph{forward-filtering
+update.  Algorithm~\ref{alg:smfvb} implements a \emph{forward-filtering
 approximation} to coordinate ascent (dropping future-process contributions
 from the gradient; see \S\ref{sec:cavi-update}) rather than exact block-wise
 maximisation; the monotonicity claim below applies only to exact block
@@ -1360,7 +1392,7 @@ that block with all future-process contributions included and all
 other blocks held fixed, then
 $\tilde{\mathcal{L}}(\lambda^{(k+1)})\ge\tilde{\mathcal{L}}(\lambda^{(k)})$
 for all $k\ge0$.
-\emph{Algorithm~\ref{alg:cavi} uses a forward-filtering update that drops
+\emph{Algorithm~\ref{alg:smfvb} uses a forward-filtering update that drops
 future-process contributions; monotone increase under this scheme is not
 guaranteed in general.  Empirical convergence is monitored via relative
 changes in $\tilde{\mathcal{L}}$.}
@@ -1385,7 +1417,7 @@ assumption is left to future work.
 $\tilde{\mathcal{L}}$ over the current block with all others fixed---standard
 coordinate ascent monotonicity \citep{blei2017}.  Since $\tilde{\mathcal{L}}$
 is bounded above on $\mathcal{M}$, the sequence $\{\tilde{\mathcal{L}}(\lambda^{(k)})\}$
-converges.  The forward-filtering update of Algorithm~\ref{alg:cavi} does not
+converges.  The forward-filtering update of Algorithm~\ref{alg:smfvb} does not
 satisfy this condition because it omits the future-process contribution to the
 gradient of the current coordinate; monotonicity therefore need not hold.
 \textit{(ii):} The exact bound $\mathcal{L}\le\log p(Y)$ follows from
@@ -1436,9 +1468,11 @@ of the surrogate is assessed empirically in \S\ref{sec:simulation}.
 \end{corollary}
 
 \begin{proof}[Proof sketch]
-Parts (a)--(c): each error bound is $O(\phi_{\max}e^{-\mu_{\min}/K_i})$,
-$O(h^2\mu_{\min}^{-2})$, or $O(\mu_{\min}^{-1})$; all vanish as
-$\mu_{\min}:=\min_{i,t}\mu_{i,t}\to\infty$ with $K_i$ and $h$ fixed.
+Parts (a)--(c): for each cell $i$ and time $t$, the TV bound is
+$\phi_i e^{-\mu_{i,t-1}/K_i}$; with $K_i$ fixed and $\mu_{\min}:=\min_{i,t}\mu_{i,t}\to\infty$,
+we have $e^{-\mu_{i,t-1}/K_i}\le e^{-\mu_{\min}/K_{\max}}\to0$, so every
+individual TV bound vanishes.  The delta-method bounds
+$O(h^2\mu_{\min}^{-2})$ and $O(\mu_{\min}^{-1})$ vanish by the same condition.
 The TV-to-log-density step would additionally require, e.g., a bounded
 log-density ratio condition; we do not establish this here.
 \end{proof}
@@ -1622,7 +1656,7 @@ J & High false-positive   & 0.80 & 50   & 10   & 100  & 15 & 50\% & 80\% & $\eta
 \paragraph{Common protocol.}
 All scenarios use a regular lattice with queen neighbourhood ($\bar{d}=5$),
 $r=5$ NegBin overdispersion, $\psi=1.0$, and dispersal parameter $\theta_d=1.20$
-(except G).  SMFVB iterates Algorithm~\ref{alg:cavi} until the relative
+(except G).  SMFVB iterates Algorithm~\ref{alg:smfvb} until the relative
 surrogate variational objective change falls below $10^{-4}$, with a maximum of
 200 sweeps.  For Scenarios~A--E we also run PMCMC ($P=3\,000$ particles,
 $10\,000$ iterations, $5\,000$ burn-in, 8 cores) to establish accuracy
@@ -1698,15 +1732,14 @@ J & 0.039 & 0.88 & 8.2\%$^\ddagger$ & 4 min & $-2\,983$ & 10 & --- \\
 Figure~\ref{fig:sim-results} displays RMSE and coverage across all ten
 scenarios; numerical results appear in Table~\ref{tab:results}.
 On the baseline setting SMFVB achieves RMSE$_\phi=0.030$, 95\% CI coverage
-of 0.90, and runtime of 4 minutes — compared to PMCMC (coverage 0.93, runtime
-92 minutes) and ABC-SMC (coverage 0.88, RMSE$_\phi=0.045$, runtime 38 minutes).
-SMFVB is $22\times$ faster than PMCMC with only a 2--3~pp coverage penalty,
-a favourable accuracy--speed trade-off.  The 3~pp shortfall is consistent with
+of 0.90, and runtime of 4 minutes, compared to PMCMC (coverage 0.93,
+RMSE$_\phi=0.028$, runtime 92 minutes at $P=3{,}000$; see \S\ref{sec:pmcmc-diag}).
+SMFVB is $22\times$ faster than PMCMC with a 3~pp coverage penalty, a
+favourable accuracy--speed trade-off.  The 3~pp shortfall is consistent with
 the Binomial survival mean-field variance underestimation (\S\ref{sec:vi-family}),
 though we do not claim a formal proof of this connection.
 SMFVB provides the surrogate variational objective value ($\tilde{\mathcal{L}}^\star=-2\,847$)
-at no additional cost, enabling model comparison without re-running; ABC-SMC
-has no tractable likelihood estimate.
+at no additional cost, enabling model comparison without re-running inference.
 
 \paragraph{Scenario B (Small abundance, $\bar N<2$).}
 Coverage drops to 0.82 and relative bias rises to 5.8\%, the largest across
@@ -1719,11 +1752,15 @@ $\bar Y^{(C)}<2$, and treat SMFVB results as approximate in this regime.
 
 \paragraph{Scenario C (Large abundance, $\bar N>20$).}
 Coverage improves to 0.93 (within 1~pp of PMCMC's 0.94), and RMSE$_\phi=0.018$
-is 40\% below baseline.  This empirically validates Corollary~\ref{cor:elbo-gap}:
-as $\bar\mu\to\infty$ the surrogate approximation error vanishes, so
-$\tilde{\mathcal{L}}\to\mathcal{L}$ and SMFVB converges to exact mean-field VI.
-the algorithm converges in only 6 forward-filtering sweeps; the stronger data signal overcomes the
-process prior quickly.
+is 40\% below baseline.  The improved performance is consistent with the
+surrogate approximation errors being smaller at higher per-cell abundance
+(Corollary~\ref{cor:elbo-gap}): with $\bar N\approx25$ and $K=200$ the ratio
+$\bar\mu/K\approx0.125$ does not satisfy the formal condition
+$\min_{i,t}\mu_{i,t}/K_i\to\infty$, but the individual errors
+$O(\phi e^{-\mu/K})$, $O(h^2\mu^{-2})$, and $O(\mu^{-1})$ are all smaller
+than at baseline ($\bar N=10$), explaining the coverage improvement.
+The algorithm converges in only 6 forward-filtering sweeps; the stronger data
+signal overcomes the process prior quickly.
 
 \paragraph{Scenarios D (Strong density dependence) and E (Weak density dependence).}
 Scenario~D ($\phi=0.95$, $K=15$) represents the worst case for the mean-field
@@ -1751,10 +1788,11 @@ but the fitted model uses a single homogeneous $\theta_d$, the estimate of
 $\theta_d$ is biased by 18.3\%.  Importantly, the primary ecological parameters
 $\phi$ and $K$ remain well-recovered (RMSE$_\phi=0.041$, coverage 0.88) because
 the spatial count field absorbs the dispersal misspecification through the
-variational means $\mu_{i,t}$.  This robustness arises because SMFVB minimises
-the KL divergence between the variational and true posteriors: even under
-dispersal misspecification, the count field is fitted to the observation
-likelihood, partially correcting for model error at the latent-state level.
+variational means $\mu_{i,t}$.  This robustness arises because SMFVB fits the latent count field directly to
+the observation likelihood, and the observation-layer information for $\phi$
+and $K$ is largely orthogonal to the dispersal kernel: even under dispersal
+misspecification, the variational means $\mu_{i,t}$ adjust to remain
+consistent with the observed count and binary data.
 
 \paragraph{Scenario H (Large lattice, $m=1{,}000$).}
 SMFVB scales to $m=1\,000$ cells and $T=10$ time steps in 42 minutes per
@@ -1981,7 +2019,7 @@ $P$ & Runtime & ESS$_{\bar\phi}$ & RMSE$_\phi$ & Cover$_\phi$ & $\mathrm{Var}[\h
   the Binomial survival covariance (\S\ref{sec:vi-family}), not to
   numerical or algorithmic error in SMFVB.  For $m\ge200$ or $T\ge20$,
   PMCMC at $P=3\,000$ becomes computationally prohibitive, making SMFVB
-  the only available exact-model inference method.
+  the only computationally feasible deterministic inference method at these scales.
 \end{enumerate}
 
 \paragraph{Multi-modal behaviour.}
@@ -2034,9 +2072,10 @@ conducted in two visits per breeding season over $T=10$ years (2004--2013).
 We treat visit-1 counts as the count channel
 ($Y^{(C)}_{i,t}\in\mathbb{Z}_{\ge0}$, NegBin model) and visit-2
 presence/absence as the binary channel ($Y^{(P)}_{i,t}\in\{0,1\}$, Bernoulli
-model).  The two visits are conducted on different days by independent
-observers, so conditional on the true territory count $N_{i,t}$ the two
-channels are approximately independent, satisfying the model assumption.
+model).  The two visits are conducted on different days by independent observers; the
+model assumes that conditional on the true territory count $N_{i,t}$ the two
+channels are independent, and the two-visit design makes this assumption
+plausible.
 Of the $267\times10=2{,}670$ cell-year combinations, 77.6\% have both
 channels observed (missing data arise from years when a quadrat was not
 visited); the observed count mean is $\bar{Y}^{(C)}=8.15$ and the
@@ -2050,7 +2089,7 @@ and elevation, respectively, following \citet{glutz1993}.
 We estimate $\rho$ (NegBin count-detection fraction), $\kappa$ (Bernoulli
 detection rate), and $\psi$ (LDD immigration mean) jointly with the latent
 count field $\{N_{i,t}\}$ via \emph{variational EM} (VEM): the inner
-E-step runs the forward-filtering sweeps of Algorithm~\ref{alg:cavi} with the current
+E-step runs the forward-filtering sweeps of Algorithm~\ref{alg:smfvb} with the current
 parameter values; the outer M-step maximises $\tilde{\mathcal{L}}$ over
 $(\rho,\kappa,\psi)$ via Newton-Raphson on the analytic gradient and
 Hessian derived from Theorem~\ref{thm:elbo}.  These Newton-Raphson updates
@@ -2113,7 +2152,7 @@ The VEM requires \textbf{8 outer iterations} to converge (relative ELBO
 change $<10^{-5}$), each requiring 2--3 inner forward-filtering sweeps (Figure~\ref{fig:vem-convergence}).
 Total wall time is \textbf{2.6 seconds} on a standard laptop (Intel Core i7).
 The surrogate variational objective improves from $-11{,}018$ (fixed-parameter
-run) to $-10{,}847$ at VEM convergence, an ELBO gain of 171 units that
+run) to $-10{,}847$ at VEM convergence, a surrogate objective gain of 171 units that
 directly quantifies the information value of estimating $(\rho,\kappa,\psi)$
 from data rather than fixing them at literature values.
 
@@ -2163,9 +2202,9 @@ $\bar Y^{(C)}_t$ for Great Tit at MHB quadrats, 2004--2013.
 Estimated $\hat\rho=0.862$.}
 \label{tab:mhb-temporal}
 \begin{tabular}{cccc}
-\hline
+\toprule
 Year & $\bar\mu_t$ & $\hat\rho\bar\mu_t$ & $\bar Y^{(C)}_t$ \\
-\hline
+\midrule
 2004 &  8.61 & 7.42 & 7.38 \\
 2005 &  9.31 & 8.02 & 7.96 \\
 2006 &  9.47 & 8.16 & 8.14 \\
@@ -2176,7 +2215,7 @@ Year & $\bar\mu_t$ & $\hat\rho\bar\mu_t$ & $\bar Y^{(C)}_t$ \\
 2011 &  9.55 & 8.23 & 8.25 \\
 2012 & 10.68 & 9.21 & 9.22 \\
 2013 &  8.83 & 7.61 & 7.62 \\
-\hline
+\bottomrule
 \end{tabular}
 \end{table}
 
@@ -2255,7 +2294,7 @@ probabilities---exact Poisson moments, while immigration uses a second-order
 delta-method approximation.  No quadrature, Monte Carlo, stochastic gradients,
 or black-box estimator is required.  The surrogate objective is not the exact
 ELBO and does not constitute a lower bound on the log-evidence; it incorporates
-four explicitly characterised approximation sources.  Second, Algorithm~\ref{alg:cavi}
+four explicitly characterised approximation sources.  Second, Algorithm~\ref{alg:smfvb}
 implements a deterministic forward-filtering update: each step is analytic,
 fixed points satisfy local stationarity of $\tilde{\mathcal{L}}$, and
 monotone convergence holds under exact block coordinate ascent
@@ -2338,6 +2377,15 @@ substantially strengthen the theoretical foundations of SMFVB.  On the applied s
 link $\log\psi_t = w_t^\top\gamma_\psi$ would accommodate seasonally
 time-varying long-distance arrivals within the same SMFVB framework without
 additional approximation, since $\psi_t$ enters the process mean linearly.
+
+\section*{Data and Code Availability}
+
+The Swiss MHB Great Tit dataset analysed in \S\ref{sec:realdata} is publicly
+available via the \texttt{R} package \texttt{AHMbook} \citep{kery2021}.
+The R/C++ implementation of the SMFVB algorithm
+(Algorithm~\ref{alg:smfvb}), all simulation scripts, and code to reproduce
+every figure and table in this paper are available at
+\url{https://github.com/xulinpan/sabm}.
 
 \bibliographystyle{elsarticle-harv}
 \bibliography{novel_model_SC_ABM_NKD}
