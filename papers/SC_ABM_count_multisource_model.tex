@@ -58,20 +58,22 @@ NegBin quasi-likelihood); it is not a true lower bound on the log-evidence,
 and the resulting algorithm is a deterministic forward-filtering update rather
 than exact coordinate-ascent variational inference.
 Every update step is analytic, and fixed points satisfy a local stationarity
-condition of $\tilde{\mathcal{L}}$
-(Proposition~\ref{thm:vi-converge}).  Under local per-cell conditions
-($\mu_{i,t}/K_i\to\infty$ with $K_i$ fixed), three of the four surrogate
-approximation errors decay to zero
+condition of $\tilde{\mathcal{L}}$ (Proposition~\ref{thm:vi-converge});
+monotone convergence holds only under exact block coordinate ascent, not
+under the forward-filtering approximation used in practice, which is monitored
+via relative changes in $\tilde{\mathcal{L}}$.
+Under local per-cell conditions ($\mu_{i,t}/K_i\to\infty$ with $K_i$ fixed),
+three of the four surrogate approximation errors decay to zero
 (Corollary~\ref{cor:elbo-gap}).  The dual-channel observation
 model---fusing NegBin count surveys with Bernoulli occupancy detections---is
 locally identifiable from the observation layer given known positive latent
 counts and temporal variation (Proposition~\ref{prop:identif-dual}).
-Across ten simulation scenarios (50 replicates each, $m=100$, $T=15$) spanning
-low/high abundance, density-dependence regimes, sparse observations,
-model misspecification, and large spatial lattice ($m=1{,}000$),
-SMFVB achieves 95\% variational interval coverage within 4 percentage points of
-particle MCMC with a $22\times$ wall-time reduction (4~min vs.\ 92~min),
-consistent with the theoretical properties of the surrogate.
+In a simulation study (50 replicates, $m=100$, $T=15$), SMFVB achieves
+95\% variational interval coverage within 3 percentage points of particle MCMC
+at a $22\times$ wall-time reduction (4~min vs.\ 92~min) under baseline conditions;
+coverage degrades to 0.82--0.86 in three stress regimes (low abundance,
+sparse observations, zero inflation), consistent with the theoretical
+approximation properties.
 Applied to Swiss Great Tit territory counts (MHB programme, $m=267$, $T=10$),
 a variational EM extension simultaneously estimates detection and dispersal
 parameters and yields in-sample calibration diagnostics consistent with surrogate self-consistency
@@ -152,8 +154,8 @@ probabilities are obtained as exact Poisson moments; immigration rates use a
 second-order delta-method approximation.  No numerical integration, Monte Carlo
 sampling, or black-box gradient estimator is required.  The surrogate objective
 is \emph{not} the exact ELBO and does not constitute a strict lower bound on
-the log-evidence; it is a tractable deterministic criterion that approximates
-the ELBO with four explicitly characterised approximation sources.
+the log-evidence; it is a tractable deterministic surrogate criterion with four explicitly
+characterised approximation sources.
 
 \paragraph{Principal contribution: Theorem~\ref{thm:elbo} (Poisson-MGF Identities).}
 Our principal methodological contribution is Theorem~\ref{thm:elbo}
@@ -236,8 +238,8 @@ Section~\ref{sec:process} specifies the count ABM (Figure~\ref{fig:model}).
 Section~\ref{sec:vi} develops the MGF surrogate variational objective and the SMFVB algorithm.
 Section~\ref{sec:identif-val} establishes surrogate approximation error
 convergence and identifiability.
-Section~\ref{sec:simulation} presents the ten-scenario simulation study
-(Figure~\ref{fig:sim-results}).
+Section~\ref{sec:simulation} presents the simulation study
+(Table~\ref{tab:results}).
 Section~\ref{sec:realdata} applies the model to the Swiss MHB Great Tit dataset
 (Figures~\ref{fig:vem-convergence}--\ref{fig:ppcheck}).
 Section~\ref{sec:discussion} concludes.
@@ -833,8 +835,10 @@ $\mathcal{L}(\lambda)$.
 We study the following question: \emph{does there exist a deterministic,
 analytically tractable surrogate $\tilde{\mathcal{L}}$ of the exact ELBO
 such that (a)~every term and its gradient are analytic,
-(b)~a forward-filtering update sequence converges to a well-defined stationary point,
-and (c)~the surrogate optimiser provides empirically well-calibrated
+(b)~fixed points of the forward-filtering update satisfy a stationarity condition
+of $\tilde{\mathcal{L}}$ (monotone convergence is not guaranteed for the
+forward-filtering scheme and is monitored empirically), and
+(c)~the surrogate optimiser provides empirically well-calibrated
 uncertainty quantification?}
 Four main results support an affirmative answer:
 \begin{enumerate}[label=(\roman*)]
@@ -854,11 +858,11 @@ Four main results support an affirmative answer:
   \S\ref{sec:vi-convergence}): when local density $\mu_{i,t}/K_i\to\infty$
   with $K_i$ fixed, three of the four surrogate errors decay to zero; the rate depends
   on $\phi_{\max}$, $h^2$, and $\min_{i,t}\mu_{i,t}$.
-\item \textbf{Empirical performance} (\S\ref{sec:simulation}): across ten
-  simulation scenarios, the variational posterior achieves 95\% credible
-  interval coverage within 4 percentage points of particle MCMC,
-  with posterior mean discrepancies below 3\%, consistent with the
-  surrogate approximation properties.
+\item \textbf{Empirical performance} (\S\ref{sec:simulation}): under baseline
+  conditions, 95\% variational interval coverage lies within 3 percentage
+  points of particle MCMC at $22\times$ lower wall time; three stress scenarios
+  (low abundance, sparse observations, zero inflation) show coverage of 0.82--0.86,
+  consistent with the theoretical approximation properties.
 \end{enumerate}
 The surrogate variational filtering algorithm implementing (i)--(iii) is described in
 \S\ref{sec:smfvb-alg}.
@@ -886,13 +890,17 @@ The choice $q(N_{i,t})=\mathrm{Pois}(\mu_{i,t})$ is motivated by three
 complementary properties.
 
 \begin{enumerate}[label=(\roman*)]
-\item \textbf{Conjugacy with the generative model.}  Two of the three process
+\item \textbf{Consistency with the generative sub-model.}  Two of the three process
   components---immigration $I_{i,t}\sim\mathrm{Pois}(\Lambda_{i,t})$ and LDD
-  $L_{i,t}\sim\mathrm{Pois}(\psi_i)$---are themselves Poisson, so the optimal
-  mean-field coordinate $q^\star(N_{i,t})$ for those components is Poisson.
-  The mean-field independence assumption is therefore exactly consistent with
-  the model's own generative structure on the Poisson subcomponents; the only
-  mismatch arises from the Binomial survival term $S_{i,t}$.
+  $L_{i,t}\sim\mathrm{Pois}(\psi_i)$---are Poisson, so if survival were absent
+  ($\phi_i=0$) the exact conditional $p(N_{i,t}|\cdot)$ would be Poisson
+  and the Poisson mean-field would be exact.
+  With survival present, $N_{i,t}=S_{i,t}+I_{i,t}+L_{i,t}$ is a
+  Binomial--Poisson convolution; the optimal mean-field coordinate is
+  \emph{not} Poisson in general.  The Poisson family is therefore
+  an approximation, and the departure from the exact optimum arises entirely
+  from the Binomial survival term.  This approximation error is the primary
+  source of the coverage gap identified in \S\ref{sec:limitations-mf}.
 
 \item \textbf{Computational tractability via the MGF.}  The Poisson MGF
   $M_N(s)=\exp\{\mu(e^s-1)\}$ and its derivative $\mathbb{E}[Ne^{sN}]
@@ -928,8 +936,8 @@ of closed-form expectations of the type in Theorem~\ref{thm:elbo}.
 Family & Support & MGF trick & Cov.\ & Overhead & Main limitation \\
 \midrule
 Poisson MF (this work) & $\mathbb{Z}_{\ge0}$ & \checkmark & $\times$ & $O(mT)$ & No overdispersion \\
-NegBin MF             & $\mathbb{Z}_{\ge0}$ & $\times$   & $\times$ & $O(mT)$ & Intractable moments \\
-Gamma MF              & $\mathbb{R}_{+}$   & $\times$   & $\times$ & $O(mT)$ & Wrong support \\
+NegBin MF             & $\mathbb{Z}_{\ge0}$ & partial   & $\times$ & $O(mT)$ & Entropy and log-moment terms require digamma \\
+Gamma MF              & $\mathbb{R}_{+}$   & partial   & $\times$ & $O(mT)$ & Wrong support; log-moment terms require digamma \\
 Lognormal MF          & $\mathbb{R}_{+}$   & $\times$   & $\times$ & $O(mT)$ & Wrong support \\
 Copula--Poisson       & $\mathbb{Z}_{\ge0}^{mT}$ & partial & \checkmark & $O(m^2T^2)$ & Copula PIT intractable for discrete \\
 Normalising flow      & $\mathbb{R}^{mT}$ & $\times$   & \checkmark & $O(mT\cdot L)$ & Discretisation; $L$ flow layers \\
@@ -938,28 +946,37 @@ Normalising flow      & $\mathbb{R}^{mT}$ & $\times$   & \checkmark & $O(mT\cdot
 \end{table}
 
 \noindent\textit{Gamma and Lognormal.}  Both families are supported on
-$\mathbb{R}_{+}$ rather than $\mathbb{Z}_{\ge0}$, making them
-continuous relaxations of the discrete latent count.  While the Gamma
-distribution is conjugate to the Poisson observation model, computing
-$\mathbb{E}_q[N e^{-N/K}]$ and $\mathbb{E}_q[1-e^{-\kappa N}]$ under
-a Gamma or Lognormal $q$ does not yield closed-form expressions
-analogous to Theorem~\ref{thm:elbo}: the Gamma has no tractable
-non-linear moment of the form $\mathbb{E}[Ne^{sN}]$ for $s\ne0$, and
-the Lognormal moment $\mathbb{E}[Ne^{sN}]$ involves the incomplete
-Gamma function.  Continuous relaxations also assign density to
-non-integer values, introducing an approximation at the observation
-level that the Poisson family avoids.
+$\mathbb{R}_{+}$ rather than $\mathbb{Z}_{\ge0}$, requiring a continuous
+relaxation of the discrete latent count that introduces an additional approximation.
+The Gamma MGF is $M_N(s)=(1-s/\beta)^{-\alpha}$ for $s<\beta$; differentiation
+gives $\mathbb{E}[Ne^{sN}]=\alpha/\beta\cdot(1-s/\beta)^{-\alpha-1}$, a closed
+form.  Hence $\mathbb{E}[Ne^{-N/K}]$ and $\mathbb{E}[e^{-\kappa N}]$ are
+tractable under Gamma $q$ via the MGF trick.  The main limitation is the
+support mismatch: the continuous relaxation assigns density to fractional counts,
+and the entropy and log-moment $\mathbb{E}[\log N]$ involve the digamma
+function rather than elementary functions.  The Lognormal MGF
+$\mathbb{E}[e^{sN}]$ does not have a closed form for $s\ne0$ (it involves an
+integral of a log-normal density against an exponential, reducible to the
+moment-generating function of a normal evaluated at $s$, which is tractable:
+$\mathbb{E}[e^{sN}]=e^{s\mu+s^2\sigma^2/2}$ for $\log N\sim\mathcal{N}(\mu,\sigma^2)$);
+however, $\mathbb{E}[Ne^{sN}]$ under Lognormal still has no elementary closed form
+since $Ne^{sN}=e^{(\log N)(1+s/\log N)}$ does not factor into a standard MGF form.
 
 \noindent\textit{Negative Binomial (NegBin).}  The NegBin
 $q(N;\mu,r)$ adds an overdispersion parameter $r$ to the
-Poisson family, allowing $\mathrm{Var}(N)=\mu+\mu^2/r>\mu$.  While
-attractive for capturing posterior over-dispersion, the NegBin MGF
-$M_N(s)=\bigl(r/(r+\mu)\bigr)^r\bigl(1-(1-r/(r+\mu))e^s\bigr)^{-r}$
-does not yield a closed-form for $\mathbb{E}[Ne^{-N/K}]$ via simple
-differentiation: the resulting expression involves the digamma function
-and requires numerical evaluation.  Surrogate variational updates under the
-NegBin family would therefore require Monte Carlo gradients or quadrature,
-forfeiting the main advantage of the Poisson family.
+Poisson family, allowing $\mathrm{Var}(N)=\mu+\mu^2/r>\mu$.
+Its MGF is $M_N(s)=\bigl(r/(r+\mu-\mu e^s)\bigr)^r$, and differentiation
+yields the closed-form $\mathbb{E}[Ne^{sN}] = r^{r+1}\mu e^s(r+\mu-\mu e^s)^{-(r+1)}$.
+The survival expectation $\mathbb{E}[Ne^{-N/K}]$ and binary detection probability
+$\mathbb{E}[1-e^{-\kappa N}]$ are therefore \emph{tractable} under NegBin $q$ via
+the MGF trick.  However, two further terms in the surrogate objective are not:
+(1)~the entropy of the NegBin variational distribution involves the digamma
+function (no closed form), and (2)~the observation term
+$\mathbb{E}_q[\log(\rho N+r)]$ under NegBin $q$ requires numerical summation.
+Additionally, optimising over the overdispersion parameter $r$ doubles the number
+of variational parameters and couples with the NegBin overdispersion in the
+observation model, breaking the simple one-dimensional update that makes the
+Poisson family computationally efficient.
 
 \noindent\textit{Copula variational inference.}  Copula-based families
 \citep{tran2015} specify Poisson marginals but introduce dependence through a
@@ -1478,26 +1495,25 @@ The TV-to-log-density step would additionally require, e.g., a bounded
 log-density ratio condition; we do not establish this here.
 \end{proof}
 
-\subsection{Surrogate Variational Objective as an Approximate Model Selection Criterion}
+\subsection{Surrogate Objective as a Rough Exploratory Diagnostic}
 \label{sec:elbo-sel}
 
-Because $\tilde{\mathcal{L}}$ approximates the exact ELBO (which is itself
-a lower bound on $\log p(Y)$), comparing $\tilde{\mathcal{L}}^\star$ across
-competing count ABM specifications provides a computationally convenient
-alternative to cross-validation or DIC, in the spirit of the variational
-information criterion \citep{blei2017}.  This comparison is \emph{approximate}:
-since $\tilde{\mathcal{L}}$ is a surrogate rather than the exact ELBO, the
-ranking is reliable only when the surrogate approximation error is small relative
-to the difference $\Delta\tilde{\mathcal{L}}$ between models.  In practice,
-the surrogate error is driven primarily by the biweekly survival parameter
-$\phi_i$ (Remark~\ref{rem:poi-approx}); when competing models share the same
-$\phi$ prior and similar posterior mean counts, the surrogate error is nearly
-identical across models and largely cancels in pairwise differences, making
-$\Delta\tilde{\mathcal{L}}$ a reliable ordering criterion for neighbourhood
-configuration, covariate set, or prior comparisons.  Models with substantially
-different $\phi$ posteriors should be compared using held-out log-likelihood
-or PMCMC-based marginal likelihood estimates instead.  Each comparison costs
-one SMFVB run at $O(m\,T\,\bar{d})$ rather than a full PMCMC re-run.
+Because $\tilde{\mathcal{L}}$ is computed at no additional cost at convergence,
+differences $\Delta\tilde{\mathcal{L}}^\star$ between model fits can serve as a
+\emph{rough exploratory guide} when comparing competing count ABM specifications
+(neighbourhood configurations, covariate sets, or prior choices).
+This use is \emph{not} equivalent to cross-validation or DIC and should not
+be treated as such.  $\tilde{\mathcal{L}}$ is not a true lower bound on
+$\log p(Y)$ and the surrogate approximation error is model-dependent; the ranking
+induced by $\Delta\tilde{\mathcal{L}}$ may be reversed relative to held-out
+predictive performance when competing models induce substantially different
+Binomial survival fractions $\phi_i$ (which drive the dominant approximation
+source, item~(a) of Remark~\ref{rem:poi-approx}).  When competing models share
+similar $\phi$ posteriors, the surrogate errors are nearly identical across models
+and largely cancel in differences, making $\Delta\tilde{\mathcal{L}}$ informative as
+a direction indicator.  For confirmatory model selection, held-out predictive
+log-likelihood or PMCMC-based marginal likelihood estimates remain the
+appropriate criterion.
 
 \section{Identifiability and Validation}\label{sec:identif-val}
 
@@ -1746,6 +1762,12 @@ Zero inflation ($>30\%$) & $-6$ pp  & $+47\%$  & Zero-inflated Poisson family \\
 %% ============================================================
 \section{Real-Data Illustration: Swiss Great Tit (MHB)}
 \label{sec:realdata}
+
+\textbf{Scope.} This section illustrates the model and inference procedure
+on a standard ecological monitoring dataset; it is \emph{not} a validation
+study.  All fitted quantities and diagnostic checks are computed on the same
+data used for estimation (in-sample).  Out-of-sample predictive performance
+has not been assessed and should not be inferred from these results.
 %% ============================================================
 
 \paragraph{Data.}
