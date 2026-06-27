@@ -127,9 +127,8 @@ $\mathbb{E}_q[\log p(N_{i,t}\mid N_{i,t-1})]$ under any standard
 variational family $q$ is analytically intractable: each expectation
 requires summing over all possible values of the jointly distributed
 $(N_{i,t},N_{i,t-1})$ pair.  At the scales typical of spatio-temporal ABMs
-($m\sim10^2$--$10^3$, $T\sim10$--$20$), evaluating this sum at every CAVI
-iteration is computationally prohibitive, blocking any closed-form or fast
-deterministic variational inference scheme.
+($m\sim10^2$--$10^3$, $T\sim10$--$20$), evaluating this sum at every surrogate variational sweep is computationally
+prohibitive, blocking any fast deterministic surrogate inference scheme.
 
 Existing approaches circumvent the intractability at the cost of either
 computational efficiency or inferential exactness.  Particle MCMC
@@ -189,13 +188,14 @@ rather than exact block-wise optimisation of the full surrogate objective
 under this forward sweep is not guaranteed in general.
 
 The closed-form surrogate variational objective enables a \emph{structured mean-field variational Bayes}
-(SMFVB) algorithm: a coordinate-ascent (CAVI) scheme over a Poisson
-mean-field family in which each iterate $\mu_{i,t}^\star$ is updated in
-closed form.  The first-order optimality condition reveals this update as a
-\emph{multiplicatively corrected conditional-mean forward pass}---the Bayesian
-analogue of the Kalman prediction--correction step for this nonlinear,
-non-Gaussian, discrete-state model---and monotone convergence to a stationary
-point follows directly from the closed-form coordinate-ascent structure.
+(SMFVB) algorithm: a \emph{deterministic surrogate variational filtering} scheme
+over a Poisson mean-field family in which each iterate $\mu_{i,t}^\star$ is
+updated in closed form.  The local stationarity condition of the surrogate reveals
+this update as a \emph{multiplicatively corrected conditional-mean forward pass}---the
+Bayesian analogue of the Kalman prediction--correction step for this nonlinear,
+non-Gaussian, discrete-state model---implemented as a left-to-right forward sweep
+that drops future-process contributions from the gradient
+(see \S\ref{sec:cavi-update}).
 
 \paragraph{Contributions.}
 This paper makes four contributions:
@@ -828,7 +828,7 @@ Four main results support an affirmative answer:
   with posterior mean discrepancies below 3\%, consistent with the
   surrogate approximation properties.
 \end{enumerate}
-The coordinate-ascent algorithm implementing (i)--(iii) is described in
+The surrogate variational filtering algorithm implementing (i)--(iii) is described in
 \S\ref{sec:smfvb-alg}.
 Identifiability of the dual-channel observation model, a prerequisite for
 the approximation error convergence in (iii), is established in
@@ -877,12 +877,12 @@ complementary properties.
   admits analogous closed-form non-linear moment computations of this type
   at the required level of generality (see the comparison below).
 
-\item \textbf{Analytic CAVI updates.}  The first-order optimality condition
+\item \textbf{Analytic deterministic update.}  The local stationarity condition
   for $\mu_{i,t}$ (equation~\eqref{eq:cavi-fp}) is a strictly concave
   fixed-point equation with analytic gradient and Hessian.  This property
-  follows directly from (iii): without the MGF tractability, the CAVI update
-  would require either numerical integration or a Monte Carlo gradient
-  estimator.
+  follows directly from (iii): without the MGF tractability, the surrogate
+  update would require numerical integration or a Monte Carlo gradient
+  estimator rather than a closed-form step.
 \end{enumerate}
 
 \paragraph{Comparison with alternative variational families.}
@@ -931,9 +931,9 @@ attractive for capturing posterior over-dispersion, the NegBin MGF
 $M_N(s)=\bigl(r/(r+\mu)\bigr)^r\bigl(1-(1-r/(r+\mu))e^s\bigr)^{-r}$
 does not yield a closed-form for $\mathbb{E}[Ne^{-N/K}]$ via simple
 differentiation: the resulting expression involves the digamma function
-and requires numerical evaluation.  NegBin CAVI updates would therefore
-require Monte Carlo gradients or quadrature, forfeiting the main
-advantage of the Poisson family.
+and requires numerical evaluation.  Surrogate variational updates under the
+NegBin family would therefore require Monte Carlo gradients or quadrature,
+forfeiting the main advantage of the Poisson family.
 
 \noindent\textit{Copula variational inference.}  Copula-based families
 \citep{tran2015} specify Poisson marginals but introduce dependence through a
@@ -969,8 +969,8 @@ without the analytic convergence guarantees.
 The Poisson mean-field is the unique family that is (i)~supported on
 $\mathbb{Z}_{\ge0}$, (ii)~maximum-entropy given the mean, (iii)~conjugate
 to the Poisson subcomponents of the generative model, and (iv)~equipped with
-an MGF that yields fully analytic CAVI updates for the count ABM survival
-and detection expectations.  Its principal limitation---variance
+an MGF that yields fully analytic deterministic surrogate updates for the
+count ABM survival and detection expectations.  Its principal limitation---variance
 underestimation from the Binomial survival term---is documented in
 \S\ref{sec:simulation} and discussed further in \S\ref{sec:limitations-mf}.
 
@@ -1174,7 +1174,7 @@ PMCMC to within~3\%, consistent with the surrogate approximation being small
 at the sample sizes studied.
 \end{remark}
 
-\subsection{The CAVI Update as a Corrected Conditional-Mean Forward Pass}
+\subsection{The Forward Filtering Update as a Corrected Conditional-Mean Pass}
 \label{sec:cavi-update}
 
 \paragraph{Derivation of the fixed-point.}
@@ -1213,7 +1213,7 @@ Setting the total gradient to zero:
 \[
 \log\tilde\mu_{i,t}-\log\mu_{i,t}+\delta_{i,t}^{(\mathrm{obs})}=0,
 \]
-immediately yields the CAVI fixed-point equation:
+immediately yields the forward-filtering fixed-point equation:
 
 \begin{equation}\label{eq:cavi-fp}
 \mu_{i,t}^{\star}
@@ -1327,7 +1327,7 @@ $O(m\,T\,\bar{d})$ per objective evaluation with no particle loop.
            \hfill \emph{// exact model conditional mean under $q$}
     \State $\mu_{i,t}\leftarrow\tilde\mu_{i,t}
            \cdot\exp(\delta_{i,t}^{(\mathrm{obs})})$
-           \hfill \emph{// surrogate CAVI update \eqref{eq:cavi-fp}}
+           \hfill \emph{// forward-filtering update \eqref{eq:cavi-fp}}
   \EndFor \label{line:fwd-end}
   \State \textbf{Parameter update:}
          Adam step on $\{\nu_k\}$ w.r.t.\ $\nabla_\nu\tilde{\mathcal{L}}$
@@ -1337,7 +1337,7 @@ $O(m\,T\,\bar{d})$ per objective evaluation with no particle loop.
 \end{algorithmic}
 \end{algorithm}
 
-\subsection{Statistical Properties of the Surrogate CAVI}
+\subsection{Statistical Properties of the Surrogate Variational Filtering}
 \label{sec:vi-convergence}
 
 The following proposition characterises the fixed-point structure of the
@@ -1645,7 +1645,7 @@ For each scenario we report:
   R/C++ implementation).
 \item \textbf{ELBO}: mean surrogate variational objective $\tilde{\mathcal{L}}^\star$
   at convergence (evaluable at no additional cost; used for model comparison).
-\item \textbf{Sweeps}: mean number of CAVI full sweeps to convergence.
+\item \textbf{Sweeps}: mean number of forward-filtering sweeps to convergence.
 \item \textbf{ESS}: PMCMC effective sample size for $\bar\phi$ (SMFVB only: ``---'').
 \end{itemize}
 
@@ -1712,7 +1712,7 @@ has no tractable likelihood estimate.
 Coverage drops to 0.82 and relative bias rises to 5.8\%, the largest across
 all scenarios.  The surrogate approximation error is $O(\mu_{\min}^{-1})\approx O(1/1.5)$
 (Corollary~\ref{cor:elbo-gap}(c)), which is substantial, consistent with
-the observed performance degradation.  The CAVI requires 11 sweeps (vs.\ 8 at baseline) because the
+the observed performance degradation.  The algorithm requires 11 forward-filtering sweeps (vs.\ 8 at baseline) because the
 process prior (small $\psi=0.3$) and observations provide conflicting weak
 signals.  Practitioners should use informative priors on $\phi$ and $K$ when
 $\bar Y^{(C)}<2$, and treat SMFVB results as approximate in this regime.
@@ -1722,7 +1722,7 @@ Coverage improves to 0.93 (within 1~pp of PMCMC's 0.94), and RMSE$_\phi=0.018$
 is 40\% below baseline.  This empirically validates Corollary~\ref{cor:elbo-gap}:
 as $\bar\mu\to\infty$ the surrogate approximation error vanishes, so
 $\tilde{\mathcal{L}}\to\mathcal{L}$ and SMFVB converges to exact mean-field VI.
-CAVI converges in only 6 sweeps; the stronger data signal overcomes the
+the algorithm converges in only 6 forward-filtering sweeps; the stronger data signal overcomes the
 process prior quickly.
 
 \paragraph{Scenarios D (Strong density dependence) and E (Weak density dependence).}
@@ -1739,7 +1739,7 @@ $\Delta\text{cover}\approx 8~\text{pp}$ over the range $\phi\in[0.25,0.95]$.
 Reducing observation density to 13\% counts and 27\% binary detections degrades
 coverage to 0.86 and increases RMSE$_\phi$ to 0.058 (93\% above baseline).
 The surrogate variational objective drops to $-847$ (magnitude much lower than
-baseline $-2\,847$), reflecting reduced information content.  CAVI requires 12
+baseline $-2\,847$), reflecting reduced information content.  The algorithm requires 12
 sweeps because the process prior dominates and the data provide only a weak
 correction signal.  Below $f_C\approx 0.15$, $h$ and $\psi$ become poorly
 determined; we recommend $f_C\ge0.3$ and $f_P\ge0.5$ as practical lower bounds,
@@ -1784,7 +1784,7 @@ bias 1.5\%), but the false-positive rate $\eta$ has 8.2\% relative bias and
 coverage of 0.77.  This is consistent with the identifiability analysis
 (Proposition~\ref{prop:identif-dual}(ii)): at high $\eta$, the binary channel
 becomes saturated ($Y^{(P)}=1$ nearly always), making $\eta$ and $\kappa$
-nearly confounded.  The CAVI requires 10 sweeps because the binary-channel
+nearly confounded.  The algorithm requires 10 forward-filtering sweeps because the binary-channel
 gradient is small for nearly all observations.  Temporal replication
 ($T\ge2$) is necessary but not sufficient to separate $\eta$ from $\kappa$
 at $\eta=0.15$; dedicated occupancy-model priors on $\eta$ are advisable.
@@ -1862,7 +1862,7 @@ absorb through a reduced acceptance rate, increasing the integrated
 autocorrelation time.  The lag-1 ACF ranges from 0.89 to 0.96, implying that
 roughly 9--23 consecutive MCMC draws carry the information of a single
 independent draw.  In contrast, SMFVB produces a point estimate in the
-variational family (deterministic, no autocorrelation) in 8 full CAVI sweeps.
+variational family (deterministic, no autocorrelation) in 8 forward-filtering sweeps.
 
 \noindent\textit{Convergence ($\hat R$).}
 All parameters satisfy $\hat R<1.10$ (standard threshold, \citealt{gelman1992}),
@@ -2050,7 +2050,7 @@ and elevation, respectively, following \citet{glutz1993}.
 We estimate $\rho$ (NegBin count-detection fraction), $\kappa$ (Bernoulli
 detection rate), and $\psi$ (LDD immigration mean) jointly with the latent
 count field $\{N_{i,t}\}$ via \emph{variational EM} (VEM): the inner
-E-step runs the CAVI sweeps of Algorithm~\ref{alg:cavi} with the current
+E-step runs the forward-filtering sweeps of Algorithm~\ref{alg:cavi} with the current
 parameter values; the outer M-step maximises $\tilde{\mathcal{L}}$ over
 $(\rho,\kappa,\psi)$ via Newton-Raphson on the analytic gradient and
 Hessian derived from Theorem~\ref{thm:elbo}.  These Newton-Raphson updates
@@ -2110,7 +2110,7 @@ sites.
 
 \paragraph{Convergence and speed.}
 The VEM requires \textbf{8 outer iterations} to converge (relative ELBO
-change $<10^{-5}$), each requiring 2--3 inner CAVI sweeps (Figure~\ref{fig:vem-convergence}).
+change $<10^{-5}$), each requiring 2--3 inner forward-filtering sweeps (Figure~\ref{fig:vem-convergence}).
 Total wall time is \textbf{2.6 seconds} on a standard laptop (Intel Core i7).
 The surrogate variational objective improves from $-11{,}018$ (fixed-parameter
 run) to $-10{,}847$ at VEM convergence, an ELBO gain of 171 units that
@@ -2308,7 +2308,7 @@ accurate posterior covariance estimates are required---for example, to
 propagate uncertainty into downstream species-distribution forecasts---a
 copula-Poisson family \citep{tran2015} or a structured mean-field with
 block-tridiagonal precision \citep{opper2009} would be preferable at the
-cost of $O(m^2)$ storage and non-local CAVI updates.
+cost of $O(m^2)$ storage and non-local coordinate-ascent updates.
 
 \paragraph{Support mismatch at zero counts.}
 The Poisson distribution assigns $q(N_{i,t}=0)=e^{-\mu_{i,t}}$, which
@@ -2319,18 +2319,22 @@ the Poisson family cannot place all mass at zero.  A zero-inflated Poisson
 family $q(N_{i,t})=\pi_i\cdot\delta_0+(1-\pi_i)\cdot\mathrm{Pois}(\mu_{i,t})$,
 with variational occupancy probability $\pi_i$, would better handle
 patchy landscapes with many truly empty quadrats, at the cost of a
-non-analytic CAVI update for $\pi_i$ (binary coordinate requires a
+non-analytic surrogate update for $\pi_i$ (binary coordinate requires a
 logistic step, or a sigmoid reparameterisation with stochastic gradient).
 
 \paragraph{Limitations and future work.}
-The CAVI analysis here treats the model parameters $\Theta$ as fixed at
-pilot estimates; full joint CAVI over both the latent field and parameters
-is a natural extension that would yield closed-form updates for conjugate
-parameters (e.g.\ the NegBin mean $\rho$) and stochastic VI steps for the
-remainder.  Extending the convergence analysis of
-Proposition~\ref{thm:vi-converge} to the joint CAVI, and deriving sharp
+The surrogate variational filtering analysis here treats the model parameters
+$\Theta$ as fixed at pilot estimates; a joint surrogate optimisation over
+both the latent field and parameters is a natural extension that would yield
+analytic surrogate updates for conjugate parameters (e.g.\ the NegBin mean
+$\rho$) and stochastic VI steps for the remainder.  Extending the
+fixed-point analysis of Proposition~\ref{thm:vi-converge} to the joint
+surrogate optimisation, and deriving sharp
 coverage-gap bounds as a function of $\phi_{\max}$ and $K_{\min}$, remain
-open theoretical problems.  On the applied side, a covariate-driven LDD
+open theoretical problems.  In particular, establishing whether the joint
+forward-filtering surrogate sweep is a contraction on the full parameter
+space, and bounding the gap to exact block coordinate ascent, would
+substantially strengthen the theoretical foundations of SMFVB.  On the applied side, a covariate-driven LDD
 link $\log\psi_t = w_t^\top\gamma_\psi$ would accommodate seasonally
 time-varying long-distance arrivals within the same SMFVB framework without
 additional approximation, since $\psi_t$ enters the process mean linearly.
