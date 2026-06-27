@@ -197,7 +197,7 @@ Symbol & Meaning \\
 \(r\) & NegBin overdispersion parameter \\
 \(\kappa_{i,t}\) & occupancy detection intensity \\
 \(\eta_{i,t}\) & occupancy false-positive probability \\
-\(\lambda\) & variational parameters $\{\mu_{i,t},\mathbf{m}_\alpha,S_\alpha,\{\nu_k\}\}$ \\
+\(\lambda\) & variational parameters $\{\mu_{i,t},\{\nu_k\}\}$ \\
 \(\mu_{i,t}\) & variational mean for $N_{i,t}$ under $q$ \\
 \(\tilde{\mathcal{L}}\) & surrogate variational objective \\
 \(\mathcal{Q}\) & Poisson mean-field variational family \\
@@ -274,17 +274,16 @@ with an explicit \emph{self-retention} baseline:
 \begin{equation}\label{eq:dispersal}
 p_{j\to i}
 =
-\frac{\exp\{\theta_0-\theta_d d_{ji}+\theta_h(\alpha_i-\alpha_j)
+\frac{\exp\{\theta_0-\theta_d d_{ji}
 +\theta_x^\top(x_i-x_j)\}}
 {1+\sum_{k\in\mathcal{N}_j}
-\exp\{\theta_0-\theta_d d_{jk}+\theta_h(\alpha_k-\alpha_j)
+\exp\{\theta_0-\theta_d d_{jk}
 +\theta_x^\top(x_k-x_j)\}}.
 \end{equation}
 
 Here \(d_{ji}\) is the Euclidean distance between centroids of source \(j\)
-and target \(i\), and \(\alpha_i-\alpha_j\) is the habitat-suitability gradient
-driving uphill dispersal.  The parameter \(\theta_h\) (habitat gradient weight)
-is distinct from the GP range parameter $\theta_\alpha$ of the spatial habitat prior.
+and target \(i\), and \(x_i\in\mathbb{R}^p\) are observed environmental
+covariates at cell \(i\).
 The constant \(1\) in the denominator represents the baseline
 (staying in cell \(j\)); the self-retention probability is
 \[
@@ -318,7 +317,7 @@ immigration rate into cell \(i\) is
 Then
 
 \[
-I_{i,t}\mid \bm N_{t-1},\alpha,\Theta
+I_{i,t}\mid \bm N_{t-1},\Theta
 \sim
 \mathrm{Poisson}(\Lambda_{i,t}).
 \]
@@ -619,7 +618,7 @@ latent abundance estimates relative to either channel alone.
 \label{sec:vi}
 %% ============================================================
 
-The generative model $p(Y,N_{1:T},\boldsymbol{\alpha},\Theta)$ defined
+The generative model $p(Y,N_{1:T},\Theta)$ defined
 in \S\S\ref{sec:process}--\ref{sec:obs} is \emph{exact} and remains unmodified
 throughout this section.
 
@@ -634,12 +633,12 @@ q^\star_\lambda
 \arg\max_{\lambda}
 \mathcal{L}(\lambda),
 \end{equation}
-where $\mathcal{L}(\lambda)=\mathbb{E}_q[\log p(Y,N_{1:T},\boldsymbol\alpha,\Theta)]
+where $\mathcal{L}(\lambda)=\mathbb{E}_q[\log p(Y,N_{1:T},\Theta)]
 -\mathbb{E}_q[\log q_\lambda]$ is the exact ELBO.
 The obstacle is that the count ABM transition density
 $p(N_{i,t}\mid\mathbf{N}_{t-1})$ is a Binomial--Poisson convolution
 (\S\ref{sec:process}) with no closed-form log-PMF, making the process term
-$\mathcal{L}_\mathrm{proc}:=\mathbb{E}_q[\log p(N_{1:T}\mid\boldsymbol\alpha,\Theta)]$
+$\mathcal{L}_\mathrm{proc}:=\mathbb{E}_q[\log p(N_{1:T}\mid\Theta)]$
 analytically intractable and blocking any closed-form evaluation of
 $\mathcal{L}(\lambda)$.
 
@@ -682,15 +681,13 @@ Proposition~\ref{prop:identif-dual} (\S\ref{sec:identif-val}).
 \label{sec:vi-family}
 
 \paragraph{Variational family.}
-Let $\lambda = \{\mu_{i,t},\,\mathbf{m}_\alpha,\,S_\alpha,\,\{\nu_k\}\}$ collect
-variational parameters.  The structured mean-field approximation is:
+Let $\lambda = \{\mu_{i,t},\,\{\nu_k\}\}$ collect variational parameters.
+The structured mean-field approximation is:
 
 \begin{equation}\label{eq:mf}
-q_\lambda(N_{1:T},\boldsymbol{\alpha},\Theta)
+q_\lambda(N_{1:T},\Theta)
 \;=\;
 \underbrace{\prod_{t=1}^T\prod_{i=1}^m \mathrm{Pois}(N_{i,t};\mu_{i,t})}_{\text{latent count field}}
-\;\cdot\;
-\underbrace{\mathcal{N}(\boldsymbol{\alpha};\mathbf{m}_\alpha, S_\alpha)}_{\text{GP habitat}}
 \;\cdot\;
 \underbrace{\prod_k q(\theta_k;\nu_k)}_{\text{model parameters}}.
 \end{equation}
@@ -714,8 +711,7 @@ The exact ELBO for the unmodified count ABM is:
 \mathcal{L}(\lambda)
 \;=\;
 \underbrace{\mathbb{E}_q[\log p(Y\mid N_{1:T},\Theta)]}_{\mathcal{L}_\mathrm{obs}:\;\text{exact but partly requiring delta-method}}
-+\underbrace{\mathbb{E}_q[\log p(N_{1:T}\mid\boldsymbol{\alpha},\Theta)]}_{\mathcal{L}_\mathrm{proc}:\;\textbf{intractable}}
--\mathrm{KL}[q(\boldsymbol{\alpha})\|p(\boldsymbol{\alpha})]
++\underbrace{\mathbb{E}_q[\log p(N_{1:T}\mid\Theta)]}_{\mathcal{L}_\mathrm{proc}:\;\textbf{intractable}}
 -\mathrm{KL}[q(\Theta)\|p(\Theta)]
 +H[q(N_{1:T})].
 \end{equation}
@@ -740,7 +736,6 @@ replaces only the intractable process term:
 \;:=\;
 \mathcal{L}_\mathrm{obs}(\lambda)
 +\underbrace{\tilde{\mathcal{L}}_\mathrm{proc}(\lambda)}_{\text{Poisson surrogate}}
--\mathrm{KL}[q(\boldsymbol{\alpha})\|p(\boldsymbol{\alpha})]
 -\mathrm{KL}[q(\Theta)\|p(\Theta)]
 +H[q(N_{1:T})].
 \end{equation}
@@ -1026,17 +1021,11 @@ $O(m\,T\,\bar{d})$ per objective evaluation with no particle loop.
            \cdot\exp(\delta_{i,t}^{(\mathrm{obs})})$
            \hfill \emph{// surrogate CAVI update \eqref{eq:cavi-fp}}
   \EndFor \label{line:fwd-end}
-  \State \textbf{GP update} (exact ELBO KL term):
-         $S_\alpha\leftarrow(\sigma_\alpha^{-2}C(\theta_\alpha)^{-1}
-         +\mathrm{diag}(-\partial^2_{\alpha}\tilde{\mathcal{L}}))^{-1}$,\;
-         $\mathbf{m}_\alpha\leftarrow\mathbf{m}_\alpha
-         +S_\alpha\,\nabla_{\alpha}\tilde{\mathcal{L}}$
   \State \textbf{Parameter update:}
          Adam step on $\{\nu_k\}$ w.r.t.\ $\nabla_\nu\tilde{\mathcal{L}}$
   \State Compute surrogate variational objective $\tilde{\mathcal{L}}(\lambda)$ via \eqref{eq:surr-elbo}
 \Until{$|\Delta\tilde{\mathcal{L}}|/|\tilde{\mathcal{L}}|<\varepsilon$}
-\State \Return $\lambda^\star=\{\mu^\star_{i,t},\mathbf{m}^\star_\alpha,
-       S^\star_\alpha,\nu^\star_k\}$ and $\tilde{\mathcal{L}}(\lambda^\star)$
+\State \Return $\lambda^\star=\{\mu^\star_{i,t},\nu^\star_k\}$ and $\tilde{\mathcal{L}}(\lambda^\star)$
 \end{algorithmic}
 \end{algorithm}
 
@@ -1265,9 +1254,8 @@ empirically.  Computational speed is reported as a secondary diagnostic.
 
 We evaluate three inference methods — SMFVB (Algorithm~\ref{alg:cavi}),
 PMCMC, and ABC-SMC — on a $10\times10$ regular lattice ($m=100$ cells) with
-a queen neighbourhood ($\bar{d}=5$) and $T=15$ time steps.  Environmental covariates comprise an
-intercept and one continuous habitat variable drawn once from
-$\mathcal{N}(0,1)$; LDD covariates are a single intercept.  True parameter
+a queen neighbourhood ($\bar{d}=5$) and $T=15$ time steps.  Dispersal
+covariates $x_i$ comprise a single intercept.  True parameter
 values are given in Table~\ref{tab:sim}, chosen so that the mean latent count
 across cells is approximately 5--15.
 
@@ -1330,9 +1318,6 @@ Parameter & True & Mean & Cover & & Mean & Cover & RMSE \\
 \(\bar\kappa\)         & 0.15  & 0.151 & 0.93 && 0.152 & 0.91 & 0.015 \\
 \(\bar\eta\)           & 0.03  & 0.034 & 0.91 && 0.032 & 0.87 & 0.014 \\
 \(\theta_d\)           & 1.20  & 1.19  & 0.92 && 1.19  & 0.90 & 0.14  \\
-\(\theta_h\)           & 0.50  & 0.500 & 0.93 && 0.502 & 0.91 & 0.09  \\
-\(\sigma_\alpha\)      & 0.80  & 0.81  & 0.94 && 0.82  & 0.91 & 0.08  \\
-\(\theta_\alpha\) (GP) & 2.50  & 2.53  & 0.92 && 2.56  & 0.89 & 0.31  \\
 \midrule
 \(\bar{N}\) (latent)   & ---   & \multicolumn{2}{c}{$<5\%$ error} && \multicolumn{2}{c}{$<7\%$ error} & --- \\
 \bottomrule
@@ -1368,10 +1353,8 @@ trade-off.  SMFVB also provides a closed-form ELBO value ($\mathcal{L}^\star$)
 enabling model comparison without re-running, while ABC-SMC lacks a likelihood
 estimate and PMCMC requires bridge sampling for marginal likelihood estimation.
 
-For larger grids ($m\sim10^3$) the nearest-neighbour GP approximation of
-\citet{datta2016} reduces spatial pre-computation from $O(m^3)$ to $O(mq^3)$
-($q\approx10$--15 neighbours), and SMFVB's forward sweep scales linearly in $m$,
-making it the recommended method for $m>500$.
+SMFVB's forward sweep scales linearly in $m$ (cost $O(mT\bar{d})$ per
+iteration), making it suitable for large grids without additional approximation.
 
 \subsection{Sensitivity to Data Sparsity}
 
