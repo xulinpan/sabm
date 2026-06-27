@@ -253,6 +253,217 @@ smfvb <- function(Y_C, Y_P, W, phi, K, psi, rho, r_nb, kappa,
   list(mu = mu, elbo_trace = elbo_trace, n_iter = length(elbo_trace))
 }
 
+# ── Variational EM: M-step parameter updates ─────────────────────────────────
+#
+# Each function maximises L~ w.r.t. one scalar parameter via Newton-Raphson,
+# using the plug-in approximation E_q[N_{i,t}] = mu_{i,t}. The Hessian at the
+# optimum provides a Laplace-approximation standard error (SE).
+#
+# Gradient and Hessian derivations follow directly from the surrogate
+# variational objective (Theorem 4) evaluated at the variational mean.
+
+#' M-step for rho: NegBin count-detection fraction, rho in (0,1).
+#' Prior: Beta(prior_a, prior_b).  Default Beta(2,2) is weakly informative.
+mstep_rho <- function(Y_C, mu, r_nb, rho_init = 0.5,
+                       prior_a = 2.0, prior_b = 2.0,
+                       max_iter = 80L, tol = 1e-9) {
+  obs   <- which(!is.na(Y_C))
+  y_v   <- as.numeric(Y_C)[obs]
+  mu_v  <- as.numeric(mu)[obs]
+  r_v   <- if (length(r_nb) == 1L) rep(r_nb, length(obs)) else {
+              r_mat <- matrix(rep(r_nb, ncol(Y_C)), nrow(Y_C), ncol(Y_C))
+              as.numeric(r_mat)[obs]
+            }
+  rho <- max(0.02, min(0.98, rho_init))
+  h   <- NA_real_
+  for (k in seq_len(max_iter)) {
+    d <- r_v + rho * mu_v
+    g <- sum(y_v / rho - (r_v + y_v) * mu_v / d) +
+         (prior_a - 1) / rho - (prior_b - 1) / (1 - rho)
+    h <- sum(-y_v / rho^2 + (r_v + y_v) * mu_v^2 / d^2) -
+         (prior_a - 1) / rho^2 - (prior_b - 1) / (1 - rho)^2
+    if (abs(g) < tol || h >= 0) break
+    rho <- max(0.02, min(0.98, rho - g / h))
+  }
+  list(est = rho, se = if (!is.na(h) && h < 0) sqrt(-1 / h) else NA_real_)
+}
+
+#' M-step for kappa: Bernoulli detection rate, kappa > 0.
+#' Prior: Gamma(prior_alpha, prior_beta) with mean alpha*beta.
+#' Default Gamma(1.5, 8) centres near 0.12 with moderate spread.
+mstep_kappa <- function(Y_P, mu, kappa_init = 0.1,
+                         prior_alpha = 1.5, prior_beta = 8.0,
+                         max_iter = 80L, tol = 1e-9) {
+  obs1  <- which(!is.na(Y_P) & Y_P == 1L)
+  obs0  <- which(!is.na(Y_P) & Y_P == 0L)
+  mu1   <- as.numeric(mu)[obs1]
+  mu0   <- as.numeric(mu)[obs0]
+  kappa <- max(1e-4, kappa_init)
+  h     <- NA_real_
+  for (k in seq_len(max_iter)) {
+    ek <- exp(-kappa)
+    a  <- 1 - ek                        # alpha = 1 - e^{-kappa}
+    M1 <- exp(-mu1 * a)                 # E_q[e^{-kappa N}] at Y_P=1 sites
+    M0 <- exp(-mu0 * a)                 # same at Y_P=0 sites
+    # gradient d L~/d kappa
+    g  <- sum(mu1 * ek * M1 / pmax(1 - M1, 1e-12)) -
+           sum(mu0 * ek) +
+           (prior_alpha - 1) / kappa - 1 / prior_beta
+    # hessian d^2 L~/d kappa^2
+    # d/dk [mu*ek*M/(1-M)] = mu*ek*M/(1-M) * (-1 - mu*ek/(1-M))  [chain rule]
+    # d/dk [-mu0*ek] = mu0*ek
+    h1 <- sum(mu1 * ek * M1 / pmax(1 - M1, 1e-12) *
+               (-1 - mu1 * ek / pmax(1 - M1, 1e-12)))
+    h0 <- sum(mu0 * ek)
+    h  <- h1 + h0 - (prior_alpha - 1) / kappa^2
+    if (abs(g) < tol || h >= 0) break
+    kappa <- max(1e-4, kappa - g / h)
+  }
+  list(est = kappa, se = if (!is.na(h) && h < 0) sqrt(-1 / h) else NA_real_)
+}
+
+#' M-step for psi: LDD immigration mean, psi > 0.
+#' mu_hat_base: [m, T] matrix of process predictions with psi contribution
+#'   removed (i.e., surv_mean + immigration).  Since mu_hat = base + psi,
+#'   d(-KL)/d psi = sum(mu / (base + psi) - 1).
+#' Prior: Gamma(prior_alpha, prior_beta).
+mstep_psi <- function(mu, mu_hat_base, psi_init = 1.0,
+                       prior_alpha = 2.0, prior_beta = 2.0,
+                       max_iter = 80L, tol = 1e-8) {
+  psi <- max(0.01, psi_init)
+  h   <- NA_real_
+  for (k in seq_len(max_iter)) {
+    mh  <- pmax(mu_hat_base + psi, 1e-8)
+    g   <- sum(mu / mh - 1) + (prior_alpha - 1) / psi - 1 / prior_beta
+    h   <- -sum(mu / mh^2) - (prior_alpha - 1) / psi^2
+    if (abs(g) < tol || h >= 0) break
+    psi <- max(0.01, psi - g / h)
+  }
+  list(est = psi, se = if (!is.na(h) && h < 0) sqrt(-1 / h) else NA_real_)
+}
+
+# ── Variational EM main loop ──────────────────────────────────────────────────
+#
+# Alternates:
+#   E-step: CAVI sweeps over q(N_{1:T}) with fixed (rho, kappa, psi)
+#   M-step: Newton-Raphson updates for the subset named in 'estimate'
+#
+# Parameters NOT in 'estimate' are held fixed at their initial values.
+
+smfvb_vem <- function(Y_C, Y_P, W, phi, K,
+                       psi_init   = 1.0,
+                       rho_init   = 0.5,
+                       r_nb       = 5.0,
+                       kappa_init = 0.1,
+                       estimate   = c("rho", "kappa", "psi"),
+                       prior      = list(rho_a   = 2.0, rho_b   = 2.0,
+                                         kappa_a = 1.5, kappa_b = 8.0,
+                                         psi_a   = 2.0, psi_b   = 2.0),
+                       max_vem_iter = 30L,
+                       estep_max    = 100L,
+                       estep_tol    = 1e-5,
+                       vem_tol      = 1e-5,
+                       verbose      = TRUE) {
+
+  m  <- nrow(Y_C)
+  TT <- ncol(Y_C)
+
+  rho    <- rho_init
+  kappa  <- kappa_init
+  psi    <- psi_init
+  r_nb_v <- if (length(r_nb) == 1L) rep(r_nb, m) else r_nb
+
+  mu_cur    <- NULL
+  elbo_prev <- -Inf
+
+  # Storage for M-step results (for SE extraction after convergence)
+  res_rho   <- list(est = rho,   se = NA_real_)
+  res_kappa <- list(est = kappa, se = NA_real_)
+  res_psi   <- list(est = psi,   se = NA_real_)
+
+  param_rows <- vector("list", max_vem_iter)
+
+  for (vi in seq_len(max_vem_iter)) {
+
+    # ── E-step ──────────────────────────────────────────────────────────────
+    fit_e <- smfvb(
+      Y_C      = Y_C,     Y_P   = Y_P,
+      W        = W,       phi   = phi,   K     = K,
+      psi      = rep(psi,   m),
+      rho      = rep(rho,   m),
+      r_nb     = r_nb_v,
+      kappa    = rep(kappa, m),
+      mu_init  = mu_cur,
+      max_iter = estep_max,
+      tol      = estep_tol,
+      verbose  = FALSE
+    )
+    mu_cur <- fit_e$mu
+    elbo   <- tail(fit_e$elbo_trace, 1L)
+
+    # ── M-step ──────────────────────────────────────────────────────────────
+    if ("rho" %in% estimate) {
+      res_rho <- mstep_rho(Y_C, mu_cur, r_nb_v,
+                            rho_init = rho,
+                            prior_a  = prior$rho_a,
+                            prior_b  = prior$rho_b)
+      rho <- res_rho$est
+    }
+
+    if ("kappa" %in% estimate) {
+      res_kappa <- mstep_kappa(Y_P, mu_cur,
+                               kappa_init  = kappa,
+                               prior_alpha = prior$kappa_a,
+                               prior_beta  = prior$kappa_b)
+      kappa <- res_kappa$est
+    }
+
+    if ("psi" %in% estimate) {
+      # mu_hat_base = process prediction with psi = 0 at each time step
+      # mu_hat(psi) = base + psi  =>  d(-KL)/d psi = sum(mu/(base+psi) - 1)
+      mu0_implied <- rowMeans(pmax(Y_C / matrix(rho, m, TT), 0.5), na.rm = TRUE)
+      mu0_implied[!is.finite(mu0_implied)] <- mean(psi) + 1
+      base <- matrix(0.0, m, TT)
+      base[, 1L] <- predict_process(mu0_implied, W, phi, K, rep(0, m))
+      for (tt in seq(2L, TT))
+        base[, tt] <- predict_process(mu_cur[, tt - 1L], W, phi, K, rep(0, m))
+      res_psi <- mstep_psi(mu_cur, base,
+                           psi_init    = psi,
+                           prior_alpha = prior$psi_a,
+                           prior_beta  = prior$psi_b)
+      psi <- res_psi$est
+    }
+
+    param_rows[[vi]] <- data.frame(iter  = vi,   rho   = rho,
+                                    kappa = kappa, psi   = psi,
+                                    elbo  = elbo)
+
+    if (verbose)
+      cat(sprintf("VEM %2d  rho=%.4f  kappa=%.4f  psi=%.4f  ELBO=%11.3f\n",
+                  vi, rho, kappa, psi, elbo))
+
+    rel <- abs(elbo - elbo_prev) / (1 + abs(elbo_prev))
+    if (vi > 2L && rel < vem_tol) {
+      if (verbose)
+        cat(sprintf("VEM converged at iter %d  (rel dELBO = %.2e)\n", vi, rel))
+      break
+    }
+    elbo_prev <- elbo
+  }
+
+  list(
+    mu          = mu_cur,
+    rho         = rho,     se_rho   = res_rho$se,
+    kappa       = kappa,   se_kappa = res_kappa$se,
+    psi         = psi,     se_psi   = res_psi$se,
+    elbo        = elbo,
+    elbo_trace  = fit_e$elbo_trace,
+    param_trace = do.call(rbind,
+                          param_rows[!vapply(param_rows, is.null, TRUE)]),
+    n_vem_iter  = vi
+  )
+}
+
 # ── Posterior predictive replicates ──────────────────────────────────────────
 smfvb_ppcheck <- function(fit, rho, r_nb, kappa, R = 500L) {
   mu  <- fit$mu
