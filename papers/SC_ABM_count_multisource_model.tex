@@ -1,4 +1,4 @@
-
+﻿
 \documentclass[review,12pt]{elsarticle}
 
 \usepackage{amsmath, amssymb, amsthm, bm}
@@ -20,13 +20,13 @@
 \newcommand{\Var}{\mathbb{V}\mathrm{ar}}
 \newcommand{\Prob}{\mathbb{P}}
 
-\journal{Computational Statistics \& Data Analysis}
+\journal{Journal of the American Statistical Association}
 
 \begin{document}
 
 \begin{frontmatter}
 
-\title{SC-ABM: A Hierarchical Count-Based Spatio-Temporal Agent-Based Model with Multi-Source Observation}
+\title{Variational Inference for Count Statistical Agent-Based Models}
 
 \author{Xulin Pan\corref{cor1}}
 \cortext[cor1]{Corresponding author}
@@ -35,122 +35,128 @@
          University Park, PA 16802, USA}
 
 \begin{abstract}
-We study variational inference for a class of spatio-temporal count
-agent-based models (SC-ABM) in which the latent abundance field evolves
-through a Ricker-type Binomial survival, Poisson neighbourhood immigration,
-and Poisson long-distance arrivals, observed through NegBin count and Bernoulli
-remote-sensing channels.  The exact posterior is intractable because the
-transition density is a Binomial--Poisson convolution with no closed-form
-log-PMF, making the evidence lower bound (ELBO) --- the standard variational
-objective --- analytically inaccessible.
-
-We show that the Poisson moment generating function (MGF) converts the
-KL-minimisation problem into a tractable form: under a Poisson mean-field
-family, the survival expectation, binary detection probability, and immigration
-rate are all obtained analytically (Theorem~\ref{thm:elbo}), defining a
-surrogate ELBO with three disclosed approximation sources each of bounded order.
-We prove that the resulting structured mean-field VB (SMFVB) coordinate-ascent
-sequence is monotonically non-decreasing and converges to a stationary point
-geometrically, at a rate $\rho\le1/2$ determined by the same Foster--Lyapunov
-drift condition that guarantees ergodicity of the latent chain
-(Theorem~\ref{thm:vi-converge}).
-The first-order optimality condition of the surrogate KL problem yields a
-\emph{multiplicatively corrected forward pass} of the model's conditional
-mean recursion --- the Bayesian analogue of the Kalman prediction--correction
-step for this nonlinear, non-Gaussian, discrete-state model.
-
-In simulation (100 replicates, $m=100$, $T=15$), SMFVB achieves 95\%
-credible interval coverage within 4 percentage points of particle MCMC
-and posterior mean discrepancies below 3\%, with a $22\times$ wall-time
-reduction ($4$ min vs.\ $92$ min).  The 2--4~pp coverage shortfall
-is theoretically predicted from the mean-field Binomial-survival
-underestimation and is empirically confirmed.
-Applied to \textit{Coquillettidia perturbans} mosquito surveillance at NEON
-UNDE, a constant-LDD fit tracks summer emergence but fails to reproduce the
-autumn collapse, providing a clean diagnostic demonstration of the PP check.
-A minimal seasonal extension $\psi_t=\psi\exp\{-\frac{1}{2}((t-\mu_s)/\sigma_s)^2\}$,
-fitted with two additional parameters and a peak-timing summary statistic,
-recovers the full bell-curve trajectory and yields ecologically interpretable
-posterior estimates of emergence peak ($\hat\mu_s$) and season width ($\hat\sigma_s$).
+Bayesian inference for count-valued agent-based models (ABMs) is impeded by
+the intractability of the transition likelihood: when latent abundance evolves
+through a Binomial survival plus Poisson immigration convolution, neither the
+log-PMF nor the exact evidence lower bound (ELBO) has a closed form.
+We show that the Poisson moment generating function (MGF) resolves this
+obstacle.  Under a Poisson mean-field variational family, every expectation in
+the ELBO is obtained analytically via the MGF, defining a surrogate
+$\tilde{\mathcal{L}}$ with three bounded approximation sources
+(Theorem~\ref{thm:elbo}).  The resulting \emph{structured mean-field
+variational Bayes} (SMFVB) algorithm is a coordinate-ascent scheme whose
+iterates are monotonically non-decreasing and converge geometrically at rate
+$\rho\le1/2$, inherited from the Foster--Lyapunov drift condition of the
+latent chain (Theorem~\ref{thm:vi-converge}).  We further establish that all
+three approximation errors vanish as mean latent abundance grows, so the
+SMFVB posterior is consistent in the large-population regime
+(Corollary~\ref{cor:elbo-gap}), and that the dual-channel observation
+model---fusing NegBin count surveys with Bernoulli occupancy detections---is
+locally identifiable under mild temporal abundance variation
+(Proposition~\ref{prop:identif-dual}).  In a simulation study (100
+replicates, $m=100$, $T=15$), SMFVB achieves 95\% credible-interval coverage
+within 4 percentage points of particle MCMC with a $22\times$ wall-time
+reduction (4~min vs.\ 92~min).
 \end{abstract}
 
 \begin{keyword}
-hierarchical Bayesian model \sep
-spatio-temporal count data \sep
-agent-based model \sep
 variational Bayes \sep
+moment generating function \sep
 evidence lower bound \sep
+agent-based model \sep
+count data \sep
 negative binomial \sep
-multi-source observation \sep
-approximate Bayesian computation \sep
-Gaussian process \sep
-ecological surveillance
+coordinate-ascent variational inference \sep
+spatio-temporal model \sep
+identifiability
 \end{keyword}
 
 \end{frontmatter}
 
-\section{Motivation}
+\section{Introduction}\label{sec:intro}
 
-Many spreading phenomena are observed neither perfectly nor as simple binary
-presence--absence states. Ecological abundance, invasive species expansion, disease
-incidence, fire occurrence, and animal movement often involve:
+Agent-based models (ABMs) express population dynamics through explicit
+mechanistic rules at the level of individual agents or local groups.  When the
+quantities of interest are non-negative integer counts---species abundances,
+disease case loads, cell populations---the natural latent state is a
+count-valued field $N_{i,t}\in\mathbb{Z}_{\ge0}$ evolving through stochastic
+rules for local survival, neighbourhood dispersal, and long-distance arrival
+\citep{hooten2010,heard2014}.  The resulting class of \emph{count statistical
+ABMs} (count ABMs) accommodates open population dynamics with
+density regulation, spatial connectivity, and multi-source observation, extending
+the N-mixture family of \citet{dail2011} and the integrated data model
+framework of \citet{verhoef2025} to mechanistic, agent-based transition kernels.
+
+\paragraph{The inference challenge.}
+Exact Bayesian inference for count ABMs is intractable.  The latent count at
+each cell and time is the sum of three conditionally independent components:
+\[
+  N_{i,t} = S_{i,t} + I_{i,t} + L_{i,t},
+\]
+where $S_{i,t}\sim\mathrm{Binomial}(N_{i,t-1},p_i)$ captures density-regulated
+survival, $I_{i,t}\sim\mathrm{Poisson}(\Lambda_{i,t})$ captures neighbourhood
+immigration, and $L_{i,t}\sim\mathrm{Poisson}(\psi_i)$ captures long-distance
+arrivals.  The Binomial--Poisson convolution has no closed-form probability
+mass function, so the process log-likelihood
+$\log p(N_{i,t}\mid\mathbf{N}_{t-1})$ cannot be computed exactly.  This makes
+the evidence lower bound (ELBO)---the standard variational objective---analytically
+inaccessible, and renders gradient-based variational methods inapplicable without
+numerical approximation.
+
+Existing approaches circumvent the intractability at the cost of either
+computational efficiency or inferential exactness.  Particle MCMC
+\citep{andrieu2010} targets the exact posterior but requires $O(T\cdot P)$
+model evaluations per MCMC step, where $P$ is the particle count, making it
+prohibitive for moderate $m$ and $T$.  Approximate Bayesian computation (ABC,
+\citealt{beaumont2009}) avoids likelihood evaluation entirely but requires careful
+summary statistic choice and yields only an approximate posterior.  Neither
+provides a closed-form variational objective that can be optimised by
+coordinate-ascent iteration.
+
+\paragraph{Our approach: the Poisson MGF trick.}
+We show that replacing the intractable Binomial--Poisson process density with a
+Poisson surrogate---justified by the Le Cam total-variation bound
+$d_{\mathrm{TV}}(\mathrm{Binom}(n,p),\,\mathrm{Pois}(np))\le p$---converts the
+ELBO into a closed-form expression via the Poisson moment generating function
+(MGF).  Under the Poisson MGF, every expectation over the surrogate process
+density can be computed analytically: survival expectations, binary detection
+probabilities, and immigration rates are all obtained in closed form with no
+quadrature or Monte Carlo.
+
+The resulting \emph{structured mean-field variational Bayes} (SMFVB) algorithm
+is a coordinate-ascent (CAVI) scheme over a Poisson mean-field family.  Each
+iterate updates the variational mean $\mu_{i,t}^\star$ in closed form, and the
+first-order optimality condition reveals the update as a
+\emph{multiplicatively corrected conditional-mean forward pass}---the Bayesian
+analogue of the Kalman prediction--correction step for this nonlinear,
+non-Gaussian model.
+
+\paragraph{Contributions.}
+This paper makes four contributions:
 \begin{enumerate}[label=(\roman*)]
-    \item unobserved latent abundance,
-    \item imperfect detection,
-    \item heterogeneous observation sources,
-    \item spatially structured local dispersal,
-    \item long-distance colonization, and
-    \item density-dependent persistence or growth.
+\item \textbf{MGF surrogate ELBO} (Theorem~\ref{thm:elbo},
+  \S\ref{sec:elbo-terms}): closed-form expressions for every ELBO term under
+  a Poisson mean-field family, with three explicitly bounded approximation
+  sources.
+\item \textbf{SMFVB algorithm} (\S\ref{sec:smfvb-alg}): a coordinate-ascent
+  scheme that converges monotonically and geometrically at rate $\rho\le1/2$
+  (Theorem~\ref{thm:vi-converge}, \S\ref{sec:vi-convergence}).
+\item \textbf{Consistency and identifiability} (Corollary~\ref{cor:elbo-gap},
+  Proposition~\ref{prop:identif-dual}, \S\ref{sec:identif-val}): the surrogate
+  ELBO error vanishes as mean abundance grows; the dual-channel observation
+  model is locally identifiable given $T\ge2$ with temporal abundance variation.
+\item \textbf{Simulation evidence} (\S\ref{sec:simulation}): 100 replicates
+  at $m=100$, $T=15$ show 95\% credible-interval coverage within 4 pp of
+  particle MCMC at $22\times$ lower wall time.
 \end{enumerate}
 
-The purpose of SC-ABM is to provide a count-valued hierarchical agent-based model
-that links these mechanisms in one coherent statistical framework.
-SC-ABM extends the statistical agent-based model (ABM) framework of
-\citet{hooten2010} and the likelihood-free inference developments of
-\citet{heard2014}, replacing binary presence--absence states with continuous
-latent count fields and multi-source observation likelihoods.
-The multi-source fusion of imperfect count surveys and binary remote-sensing
-data follows the integrated data model approach of \citet{verhoef2025}.
-
-The closest existing framework is the N-mixture model of Royle (2004) and its
-dynamic extension \citep[Dail and Madsen 2011]{dail2011}, which model imperfect
-detection of a latent integer-valued abundance.  SC-ABM generalises N-mixture
-models in three directions: (i) the transition kernel is a mechanistic
-agent-based dispersal model rather than a simple binomial removal and Poisson
-recruitment; (ii) two heterogeneous observation channels with different detection
-physics are fused over a shared latent field; and (iii) the spatial structure is
-explicit through neighbourhood dispersal and a Gaussian process habitat prior.
-Unlike closed-population models, SC-ABM accommodates open population dynamics
-with density regulation, neighbourhood connectivity, and long-distance arrivals.
-
-\paragraph{Main contribution.}
-The central contribution of this paper is the SMFVB algorithm
-(\S\ref{sec:vi}): a coordinate-ascent variational inference scheme for SC-ABM
-that exploits the Poisson MGF to derive exact closed-form ELBO terms for an
-otherwise intractable Binomial--Poisson transition density.
-The SC-ABM model (\S\S\ref{sec:process}--\ref{sec:obs}) is the \emph{vehicle}
-on which SMFVB operates; its components (Ricker survival, multinomial-logit
-dispersal with self-retention, Gaussian process habitat prior, dual-channel
-observation) are design choices motivated by ecological realism, not claimed as
-independent novel contributions.
-The convergence theorem, approximation-quality corollary, and
-model-selection criterion (\S\S\ref{sec:vi-convergence}--\ref{sec:elbo-sel})
-are theoretical properties that follow from SMFVB.
-Local identifiability of the dual-channel observation model
-(Proposition~\ref{prop:identif-dual}, \S\ref{sec:identif-val}) is a
-statistical prerequisite for the posterior consistency claim.
-The ABC-SMC comparator (\S\ref{sec:abc}) is a likelihood-free baseline
-used to benchmark SMFVB in the simulation study; it is not a contribution of
-this paper.
-The NEON application (\S\ref{sec:neon}) is an illustrative analysis
-conducted with ABC-SMC and serves to demonstrate the model's ecological
-interpretability, not to validate SMFVB.
-
-As a concrete illustration, we apply SC-ABM in \S\ref{sec:neon} to
-\textit{Coquillettidia perturbans} mosquito surveillance at the NEON site UNDE
-(Underhill Forest, Michigan), where overnight CDC trap counts ($Y^{(C)}$) and
-daytime binary detections ($Y^{(P)}$) from $m=10$ plots over 16 biweekly steps
-are fused under the shared latent abundance model.
+\paragraph{Organisation.}
+Section~\ref{sec:process} specifies the count ABM.
+Section~\ref{sec:vi} develops the MGF surrogate ELBO and the SMFVB algorithm.
+Section~\ref{sec:identif-val} establishes convergence, consistency, and
+identifiability.
+Section~\ref{sec:simulation} presents the simulation study.
+Section~\ref{sec:discussion} concludes.
 
 \section{Notation}
 
@@ -167,36 +173,28 @@ covariates and \(e_{i,t}\in\mathbb{R}^q\) denote survey-effort covariates.
 
 \begin{table}[h!]
 \centering
-\caption{Core notation for SC-ABM.}
+\caption{Core notation.}
 \begin{tabular}{ll}
 \toprule
 Symbol & Meaning \\
 \midrule
-\(N_{i,t}\) & latent true count in cell \(i\) at time \(t\) \\
-\(Y^{(C)}_{i,t}\) & observed count-survey response \\
-\(Y^{(P)}_{i,t}\) & observed binary remote-sensing response \\
-\(S_{i,t}\) & surviving individuals in cell \(i\) at time \(t\) \\
-\(I_{i,t}\) & immigrants arriving from neighbouring cells \\
+\(N_{i,t}\) & latent count in cell \(i\) at time \(t\) \\
+\(Y^{(C)}_{i,t}\) & count-survey observation (NegBin channel) \\
+\(Y^{(P)}_{i,t}\) & binary occupancy observation (Bernoulli channel) \\
+\(S_{i,t}\) & surviving individuals \\
+\(I_{i,t}\) & neighbourhood immigrants \\
 \(L_{i,t}\) & long-distance arrivals \\
 \(\phi_i\) & baseline persistence probability \\
 \(K_i\) & local carrying capacity \\
-\(\omega_j\) & maximum dispersal flux from source cell \(j\) \\
-\(h\) & half-saturation constant for density-dependent dispersal \\
 \(\psi_i\) & long-distance arrival rate \\
-\(\boldsymbol{\gamma}_\psi\) & log-linear coefficient vector for \(\psi_i\) (distinct from \(\eta_{i,t}\)) \\
 \(\rho_{i,t}\) & count-survey detection probability \\
 \(r\) & NegBin overdispersion parameter \\
-\(\kappa_{i,t}\) & remote-sensing detection intensity \\
-\(\eta_{i,t}\) & remote-sensing false-positive probability \\
-\(\alpha_i\) & \(i\)-th element of the GP habitat-suitability vector \(\boldsymbol{\alpha}\) \\
-\(\sigma_\alpha^2,\;\theta_\alpha\) & GP marginal variance and spatial range \\
-\(\psi_t\) & time-varying LDD rate (seasonal model, Eq.~\ref{eq:seasonal-psi}) \\
-\(\mu_s\) & peak-emergence biweekly step \\
-\(\sigma_s\) & season half-width (biweekly steps) \\
-\(s_6\) & peak-timing summary statistic: $\arg\max_t \bar{Y}^{(C)}_t$ \\
-\(\lambda\) & variational parameters $\{\mu_{i,t}\}$ \\
+\(\kappa_{i,t}\) & occupancy detection intensity \\
+\(\eta_{i,t}\) & occupancy false-positive probability \\
+\(\lambda\) & variational parameters $\{\mu_{i,t},\mathbf{m}_\alpha,S_\alpha,\{\nu_k\}\}$ \\
+\(\mu_{i,t}\) & variational mean for $N_{i,t}$ under $q$ \\
 \(\tilde{\mathcal{L}}\) & surrogate ELBO \\
-\(\mathcal{Q}\) & mean-field Poisson variational family \\
+\(\mathcal{Q}\) & Poisson mean-field variational family \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -280,7 +278,7 @@ p_{j\to i}
 Here \(d_{ji}\) is the Euclidean distance between centroids of source \(j\)
 and target \(i\), and \(\alpha_i-\alpha_j\) is the habitat-suitability gradient
 driving uphill dispersal.  The parameter \(\theta_h\) (habitat gradient weight)
-is distinct from the GP range \(\theta_\alpha\) in~\S\ref{sec:spatial}.
+is distinct from the GP range parameter $\theta_\alpha$ of the spatial habitat prior.
 The constant \(1\) in the denominator represents the baseline
 (staying in cell \(j\)); the self-retention probability is
 \[
@@ -432,41 +430,6 @@ For the immigration term, swapping sums over sources and targets
 and using $\sum_{i\in\mathcal{N}_j}p_{j\to i}=1$ gives
 $\sum_i\Lambda_{i,t}=\sum_j\omega_j N_{j,t-1}/(N_{j,t-1}+h)$.
 \end{proof}
-
-\section{Spatial Habitat Model}\label{sec:spatial}
-
-The latent habitat-suitability field is modeled as
-
-\[
-\alpha = X\beta_\alpha+\varepsilon,
-\]
-
-where
-
-\[
-\varepsilon\sim N_m(0,\sigma_\alpha^2 C(\theta_\alpha)).
-\]
-
-A common exponential spatial correlation function is
-
-\[
-C(\theta_\alpha)_{ij}
-=
-\exp\left(-\frac{\|s_i-s_j\|}{\theta_\alpha}\right),
-\]
-
-where \(s_i\) and \(s_j\) are cell centroids and \(\theta_\alpha>0\) is the spatial range.
-
-\begin{remark}[Spatial confounding]
-When the covariate matrix \(X\) contains spatially smooth columns, the regression
-coefficients \(\beta_\alpha\) and the GP realization \(\varepsilon\) may not be
-separately identified from data alone.  \citet{guan2023} propose a spectral
-adjustment approach that restricts the GP to operate in the high-frequency
-subspace orthogonal to the column space of \(X\), resolving this confounding
-while preserving covariate interpretability.  This adjustment is recommended
-when \(p\) is large or when covariates overlap strongly with the dominant
-spatial modes of \(\varepsilon\).
-\end{remark}
 
 \section{Multi-Source Observation Model}\label{sec:obs}
 
@@ -645,171 +608,12 @@ The integrated data model of \citet{verhoef2025} provides empirical evidence
 that fusing count and binary streams substantially reduces uncertainty in
 latent abundance estimates relative to either channel alone.
 
-\section{Full Hierarchical Model}
-
-Let \(\Theta\) collect all process, observation, spatial, and prior parameters. The full
-posterior is
-
-\[
-\begin{aligned}
-p(N_{1:T},\alpha,\Theta\mid Y^{(C)},Y^{(P)})
-&\propto
-p(Y^{(C)},Y^{(P)}\mid N_{1:T},\Theta)
-\\
-&\quad\times
-p(N_{1:T}\mid \alpha,\Theta)
-p(\alpha\mid \Theta)
-p(\Theta).
-\end{aligned}
-\]
-
-The latent process factorizes as
-
-\[
-p(N_{1:T}\mid \alpha,\Theta)
-=
-p(N_1\mid\Theta)
-\prod_{t=2}^T
-\prod_{i=1}^m
-p(N_{i,t}\mid \bm N_{t-1},\alpha,\Theta).
-\]
-
-An initial abundance model may be specified as
-
-\[
-N_{i,1}\sim \mathrm{Poisson}(\lambda_{i,0}),
-\qquad
-\log\lambda_{i,0}=x_i^\top\beta_0+\alpha_i.
-\]
-
-\section{Recommended Priors}
-
-A weakly informative Bayesian specification is:
-
-\begin{align*}
-\beta_\phi,\,\beta_K,\,\beta_0 &\sim N(0,2^2I), \\
-\beta_\alpha                    &\sim N(0,5^2I), \\
-\boldsymbol{\gamma}_\psi        &\sim N(0,2^2I), \\
-\sigma_\alpha                   &\sim \mathrm{HalfNormal}(0,1), \\
-\theta_\alpha                   &\sim \mathrm{HalfNormal}(0,\,d_{\max}/2),
-  \quad d_{\max}=\max_{i,j}\|s_i-s_j\|, \\
-\sigma_K,\sigma_\rho,\sigma_\kappa,\sigma_\eta
-                                &\sim \mathrm{HalfNormal}(0,1), \\
-r                               &\sim \mathrm{Gamma}(2,0.5), \\
-h                               &\sim \mathrm{Gamma}(2,0.2), \\
-\omega_j                        &\sim \mathrm{LogNormal}(0,1), \\
-\theta_d                        &\sim \mathrm{HalfNormal}(0,1), \\
-\theta_h,\,\theta_x             &\sim N(0,1), \\
-\eta_{i,t}                      &\sim \mathrm{Beta}(1,20)
-  \quad\text{(concentrated near zero for clean instruments)}.
-\end{align*}
-
-The prior on the GP range $\theta_\alpha$ is half-normal with scale $d_{\max}/2$,
-so that the prior mass spans plausible spatial correlation lengths without placing
-excessive weight on ranges much larger than the domain.
-These priors should be adjusted to match the spatial extent and ecological
-timescale of the target application.  In particular, the scales of
-$\log K$ and $\log\psi$ must reflect the order of magnitude of expected
-counts: a prior centred at $\log K\approx3$ (capacity $\approx20$) is
-appropriate for sparse laboratory populations but should be shifted to
-$\log K\approx9$ for high-density field sites such as the NEON wetland
-mosquito application (\S\ref{sec:neon}).  A useful calibration heuristic is
-to centre $\log K$ and $\log\psi$ so that the prior predictive mean count
-$\E[\rho N_t]$ lies within a factor of five of the observed season-mean count.
-
-\section{Inference Strategy}
-
-The SC-ABM likelihood is challenging because the latent abundance field is high
-dimensional. However, the model can be fitted using several practical strategies.
-
-\subsection{Particle Filtering and Particle MCMC}
-
-A bootstrap particle filter can approximate
-
-\[
-p(Y_{1:T}\mid\Theta)
-\]
-
-by sequentially propagating particles through the latent process model and weighting
-them by the multi-source observation likelihood. This estimated likelihood can be
-embedded inside particle marginal Metropolis--Hastings.
-
-\subsection{Computational Complexity}
-\label{sec:complexity}
-
-Let $P$ denote the number of particles, $m$ the number of cells, $T$ the number
-of time steps, and $\bar{d}$ the average neighbourhood size.  The dominant cost
-at each PMCMC iteration is the bootstrap particle filter, which at each of the
-$T$ time steps draws $P$ survival binomials ($O(P\,m)$), evaluates the dispersal
-rate $\Lambda_{i,t}$ for each of the $P$ particles ($O(P\,m\,\bar{d})$), and
-weights by the multi-source likelihood ($O(P\,m)$).  The total per-MCMC-iteration
-cost is
-\[
-  O\!\left(P\,m\,T\,\bar{d}\right).
-\]
-For the simulation study setting ($m=100$, $T=15$, $\bar{d}=5$, $P=3\,000$),
-this is $2.25\times10^7$ operations per iteration; with a vectorised R
-implementation, each iteration requires approximately 8--12 seconds on a
-single Intel Core i7 core, yielding $\approx23$~hours for 10\,000 iterations.
-Parallelising across $P$ particles using a multi-core machine (16 cores) reduces
-wall time to $\approx90$~minutes.
-
-For larger grids ($m\sim10^3$) the nearest-neighbour GP approximation of
-\citet{datta2016} should replace the dense GP draw, reducing spatial
-pre-computation from $O(m^3)$ to $O(m\,q^3)$ where $q\approx10$--15.
-The SMFVB algorithm (\S\ref{sec:vi}) eliminates the particle loop entirely:
-its forward sweep costs $O(m\,T\,\bar{d})$ per ELBO evaluation — a factor of
-$P\approx10^3$ reduction — and also yields a closed-form model selection
-criterion.  For exploratory analysis or grids with $m>500$ where even SMFVB
-is slow, ABC-SMC (\S\ref{sec:abc}) replaces the particle filter with
-$N_\mathrm{sim}$ independent ABM forward simulations that are trivially
-parallelisable.  Table~\ref{tab:timing} in \S\ref{sec:simulation} provides a
-direct three-way comparison on the simulation study setting.
-
-\subsection{Sequential Monte Carlo for Online Updating}
-
-For data assimilation settings, particles can be updated as new time points become
-available. This is useful when count surveys and remote-sensing detections arrive
-sequentially.  \citet{adjei2024} demonstrate a sequential Monte Carlo algorithm
-for ecological hierarchical state-space models analogous to SC-ABM, validated on
-Swiss Breeding Bird Survey data, establishing that SMC provides accurate and
-computationally feasible posterior approximation for spatio-temporal count models.
-\citet{huan2026} address a key practical failure mode of standard particle filters
-(filter divergence from model misspecification) by proposing a Sequential
-Hierarchical Bayesian Model with two-step resampling: a bootstrap filter step
-prevents particle degeneracy, and a Reversible Jump MCMC step draws new particles
-from the joint target distribution; their framework is directly applicable when
-the dimension of the latent count field $\mathbf{N}_t$ is large.
-\citet{tang2026} develop a dynamic generalized transfer function model for disease
-dynamics with a hybrid variational approximation, providing a fast and modular
-approximate posterior algorithm that handles seasonality and covariates under the
-same non-linear, non-Gaussian hierarchical structure as SC-ABM.
-
-\subsection{ABC-SMC as a Comparison Baseline}\label{sec:abc}
-
-ABC-SMC \citep{beaumont2009} is used in \S\ref{sec:simulation} as a
-likelihood-free baseline for benchmarking SMFVB, and in \S\ref{sec:neon} as
-the inference method for the illustrative NEON application.
-It is \emph{not} a contribution of this paper.
-For the simulation comparison and the NEON Model~C fit we use five summary
-statistics: mean count $s_1$, temporal trend $s_2$, Moran's $I$ of the
-final spatial pattern $s_3$, binary occupancy rate $s_4$, and lag-1
-temporal autocorrelation $s_5$.  The NEON Model~S (seasonal-$\psi$) fit
-adds a sixth statistic $s_6$ (Eq.~\eqref{eq:s6}, peak-timing anchor for
-$\mu_s$) to the same distance function.  The ABC distance is a
-pilot-variance-normalised weighted Euclidean metric \citep{beaumont2009}
-with Silverman-bandwidth perturbation kernels and an adaptive $\alpha_q=0.40$
-quantile tolerance schedule.
-Posterior predictive checks (\S\ref{sec:limits}) are essential for detecting
-structural model misfit when ABC rather than SMFVB is used, since ABC provides
-no closed-form model-evidence estimate.
-
 %% ============================================================
-\section{Variational Inference for SC-ABM}
+\section{Variational Inference via the Poisson MGF}
 \label{sec:vi}
 %% ============================================================
 
-The SC-ABM generative model $p(Y,N_{1:T},\boldsymbol{\alpha},\Theta)$ defined
+The generative model $p(Y,N_{1:T},\boldsymbol{\alpha},\Theta)$ defined
 in \S\S\ref{sec:process}--\ref{sec:obs} is \emph{exact} and remains unmodified
 throughout this section.
 
@@ -860,12 +664,12 @@ The four main theoretical results answer affirmatively:
   regime.
 \item \textbf{Calibration} (\S\ref{sec:simulation}): in a simulation study
   the variational posterior $q_{\tilde\lambda^\star}$ achieves 95\% credible
-  interval coverage within 4 percentage points of the exact PMCMC posterior,
+  interval coverage within 4 percentage points of particle MCMC,
   with posterior mean discrepancies below 3\%.
 \end{enumerate}
 The coordinate-ascent algorithm implementing (i)--(iii) is described in
-\S\ref{sec:smfvb-alg} as a consequence of these theoretical results.
-Formal identifiability of the dual-channel observation model, required for
+\S\ref{sec:smfvb-alg}.
+Identifiability of the dual-channel observation model, a prerequisite for
 the consistency claim in (iii), is established in
 Proposition~\ref{prop:identif-dual} (\S\ref{sec:identif-val}).
 
@@ -1566,329 +1370,41 @@ identifiability analysis in~\S\ref{sec:identif-val}.  We recommend
 $|O_C|\ge 0.3\,mT$ and $|O_P|\ge 0.5\,mT$ as practical lower bounds; below
 these thresholds, informative priors on $\omega_j$ and $h$ are advisable.
 
-\section{Data Application: NEON Mosquito Surveillance}\label{sec:neon}
+%% ============================================================
+\section{Discussion}\label{sec:discussion}
+%% ============================================================
 
-\subsection{Study System and Data}
+We have developed a variational inference framework for count statistical
+agent-based models, centred on three contributions.  First, the Poisson MGF
+converts an otherwise intractable ELBO into closed-form expressions under a
+Poisson mean-field family, with three approximation sources each of bounded and
+explicitly characterised order.  Second, the resulting SMFVB coordinate-ascent
+algorithm converges monotonically and geometrically at rate $\rho\le1/2$, a
+consequence of the same Foster--Lyapunov drift that guarantees ergodicity of
+the latent chain.  Third, as mean latent abundance grows the surrogate
+approximation errors vanish, establishing posterior consistency in the
+large-population regime; and the dual-channel observation model is locally
+identifiable given mild temporal variation in abundance.  The simulation study
+confirms that these theoretical properties translate into practice: SMFVB
+matches particle MCMC coverage to within 4 percentage points at a
+$22\times$ wall-time reduction.
 
-We demonstrate the SC-ABM on mosquito surveillance data from the National
-Ecological Observatory Network~\citep{neon2024mosquito}, site UNDE (Underhill
-Forest, Michigan, USA, $46.2^\circ$N, $89.5^\circ$W).  The target species is
-\textit{Coquillettidia perturbans} (marsh mosquito), monitored across $m=10$
-permanent plots spanning wooded wetlands, deciduous forest, and mixed forest
-within a ${\sim}7\times7\,\mathrm{km}$ footprint at ${\sim}514\,\mathrm{m}$
-elevation.  Temporal coverage spans the 2024 adult flight season, discretised
-into $T=16$ biweekly steps (April~11 -- October~30, 2024).
-
-NEON's dual-trap-cycle protocol maps directly onto the SC-ABM's two-channel
-observation model.  Overnight CDC CO$_2$ light traps (set at dusk, collected
-at dawn) generate count data $Y^{(C)}$; separate daytime visual assessments
-at the same plots yield binary presence--absence records $Y^{(P)}$.  Because
-the two cycles operate on different days and different trap units, the channels
-are conditionally independent given the shared latent abundance $N_{i,t}$,
-satisfying the conditional independence assumption of
-\S\ref{sec:obs}.  NEON subsamples large catches before expert
-identification; raw counts are inflated by the inverse subsample fraction to
-recover estimated totals ($Y^{(C)}_{i,t}=\text{raw}_{i,t}/\hat\pi_{i,t}$).
-After aggregation, the dataset contains 134 count observations (84\% of $mT$
-cell--time pairs covered; 73 positive, 61 zeros) with a season-wide cell mean
-of $\bar{Y}^{(C)}=762$ mosquitoes per trap night, and 144 binary observations
-(90\% coverage; 77\% occupancy).  Neighbourhood connectivity is defined by a
-2.5\,km threshold; the resulting graph has 18 undirected edges and a mean
-degree of 3.6.
-
-\begin{figure}[ht]
-\centering
-\includegraphics[width=0.55\textwidth]{fig1_study_area.pdf}
-\caption{NEON UNDE monitoring plots ($m=10$) at Underhill Forest, Michigan.
-  Nodes are coloured by NLCD habitat class; dashed edges connect plots within
-  the 2.5\,km neighbourhood threshold (18 undirected edges).
-  Plot labels are the numeric suffix of the NEON plot identifier.}
-\label{fig:study_area}
-\end{figure}
-
-\subsection{Prior Calibration and Inference}
-
-The simulation-study priors (Table~\ref{tab:sim}) target a mean latent
-abundance of order 5--15, roughly 50-fold below the NEON peak
-($\max Y^{(C)}=4{,}800$).  We therefore recalibrate the scale parameters:
-\begin{align*}
-\log K   &\sim \mathcal{N}(9,\;1.5^2), \quad K_0 = e^9 \approx 8{,}100, \\
-\log\psi &\sim \mathcal{N}(6,\;1.5^2), \quad \psi_0 = e^6 \approx 400\text{ per biweek},
-\end{align*}
-consistent with high-productivity wetland emergence and coarse-resolution plot
-counts.  All remaining priors are unchanged from Table~\ref{tab:sim}.
-
-We fit two models.  \textit{Model~C} (constant-$\psi$) uses the seven-parameter
-SC-ABM with the five summary statistics $s_1$--$s_5$ from the simulation study.
-\textit{Model~S} (seasonal-$\psi$) replaces the constant LDD rate with a
-Gaussian emergence pulse:
-\begin{equation}\label{eq:seasonal-psi}
-\psi_t = \psi\exp\!\left\{-\tfrac{1}{2}\!\left(\tfrac{t-\mu_s}{\sigma_s}\right)^{\!2}\right\},
-\end{equation}
-where $\mu_s$ is the peak-emergence biweekly step and $\sigma_s$ the season
-half-width.  This adds two parameters ($\mu_s$, $\log\sigma_s$) and one
-summary statistic:
-\begin{equation}\label{eq:s6}
-s_6 = \arg\max_{t\in\{1,\ldots,T\}} \bar{Y}^{(C)}_t,
-\end{equation}
-the biweekly step of peak mean count, which anchors the posterior on $\mu_s$.
-The observed value is $s_6=8$ (July~11, 2024).  The additional priors are
-\[
-\mu_s \sim \mathrm{Uniform}(3,13), \qquad
-\log\sigma_s \sim \mathcal{N}(\log 3,\; 0.7^2),
-\]
-centring the emergence peak over May--September and the seasonal width at
-six weeks.  Both models use 500 particles and eight sequential ABC-SMC
-populations ($\alpha_q=0.40$).
-
-\subsection{Posterior Parameter Estimates}
-
-Table~\ref{tab:neon_posterior} reports weighted posterior medians and 95\%
-credible intervals for Model~C (constant-$\psi$).  The biweekly adult survival
-$\phi=0.53$ [0.35, 0.75] is consistent with field estimates for temperate
-\textit{Culex} and \textit{Aedes} species under summer temperatures.  The
-NegBin overdispersion $r=0.16$ [0.03, 0.43] indicates high spatial
-overdispersion, consistent with clustered emergence from localised wetland
-pools.  The count detection rate $\rho=0.07$ [0.03, 0.14] reflects low trap
-efficiency relative to plot-level abundance, and the binary detection rate
-$\kappa=1.28$ [0.17, 1.93] implies near-certain detection when local density
-is moderate.  Carrying capacity $K$ has a wide credible interval
-([11{,}000, 127{,}000]), reflecting the known $K$--$\rho$ confounding when
-only season-aggregate counts are available (see the remark following
-Proposition~\ref{prop:identif}).  The effective sample size of the final ABC
-population was 18 of 500 particles (3.7\%), indicating tension between
-$s_4$ (observed: 0.77) and the structural prediction $s_4=1$ of the
-constant-$\psi$ model (\S\ref{sec:limits}).
-
-Table~\ref{tab:neon_seasonal} reports the Model~S posterior.  The shared
-parameters ($\phi$, $K$, $\rho$, $r$, $\kappa$, $h$) are broadly consistent
-with Model~C; the peak LDD rate $\psi$ now represents the peak-season
-emergence intensity rather than a season-average.  The posterior median
-$\hat\mu_s = \textbf{[--]}$ biweekly steps corresponds to a peak emergence date
-of \textbf{[--]}, consistent with the observed $s_6=8$ (July~11).  The
-posterior median $\hat\sigma_s = \textbf{[--]}$ steps implies an effective
-emergence window of ${\approx}2.36\hat\sigma_s$ biweeks
-(\textbf{[--]}~weeks), in accord with the sharp seasonal phenology of
-\textit{Coquillettidia perturbans} in the Great Lakes region.  The ESS improved
-to \textbf{[--]}/500 (\textbf{[--]}\%), confirming that the peak-timing
-statistic $s_6$ resolves the structural mismatch that depressed Model~C's ESS.
-
-\begin{figure}[ht]
-\centering
-\includegraphics[width=0.90\textwidth]{fig3_posteriors.pdf}
-\caption{Weighted posterior distributions for all nine Model~S (seasonal-$\psi$)
-  parameters (NEON UNDE 2024, ABC-SMC, 500 particles).
-  Panels 1--7: shared demographic and observation parameters (identical to
-  Model~C structure).  Panels 8--9: seasonal phenology parameters
-  $\mu_s$ (peak-emergence biweekly step) and $\sigma_s$ (season half-width).
-  Shading: 95\% credible interval; red solid: posterior median;
-  grey dashed: prior median.}
-\label{fig:posteriors}
-\end{figure}
-
-\begin{table}[ht]
-\centering
-\caption{Model~C (constant-$\psi$) ABC-SMC posterior parameter estimates,
-NEON UNDE 2024 ($m=10$, $T=16$, 500 particles, 8 populations, ESS 3.7\%).
-Credible intervals are weighted quantiles of the final particle swarm.}
-\label{tab:neon_posterior}
-\begin{tabular}{llccc}
-\toprule
-Parameter & Description & Median & \multicolumn{2}{c}{95\% CI} \\
-\cmidrule{4-5}
-& & & Lower & Upper \\
-\midrule
-$\phi$   & Biweekly survival probability  & 0.528 & 0.351 & 0.750 \\
-$K$      & Carrying capacity (per plot)   & 17{,}934 & 11{,}439 & 127{,}190 \\
-$\psi$   & LDD emergence rate (per biweek)& 368   & 105   & 779   \\
-$\rho$   & Count trap-detection rate      & 0.068 & 0.027 & 0.142 \\
-$r$      & NegBin overdispersion          & 0.156 & 0.034 & 0.426 \\
-$\kappa$ & Binary detection rate          & 1.282 & 0.173 & 1.927 \\
-$h$      & Immigration half-saturation    & 0.361 & 0.046 & 0.516 \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-\begin{table}[ht]
-\centering
-% TODO: fill from D:/research/inference/particles_neon_v3.csv after running
-%       run_inference_neon_v3.R.  Replace all \textbf{[--]} with wq() medians
-%       and 2.5/97.5 quantiles.
-\caption{Model~S (seasonal-$\psi$) ABC-SMC posterior parameter estimates,
-NEON UNDE 2024 ($m=10$, $T=16$, 500 particles, 8 populations).
-ESS: \textbf{[--]}/500 (\textbf{[--]}\%).}
-\label{tab:neon_seasonal}
-\begin{tabular}{llccc}
-\toprule
-Parameter & Description & Median & \multicolumn{2}{c}{95\% CI} \\
-\cmidrule{4-5}
-& & & Lower & Upper \\
-\midrule
-$\phi$      & Biweekly survival probability    & \textbf{[--]} & \textbf{[--]} & \textbf{[--]} \\
-$K$         & Carrying capacity (per plot)     & \textbf{[--]} & \textbf{[--]} & \textbf{[--]} \\
-$\psi$      & Peak LDD rate (per biweek)       & \textbf{[--]} & \textbf{[--]} & \textbf{[--]} \\
-$\rho$      & Count trap-detection rate        & \textbf{[--]} & \textbf{[--]} & \textbf{[--]} \\
-$r$         & NegBin overdispersion            & \textbf{[--]} & \textbf{[--]} & \textbf{[--]} \\
-$\kappa$    & Binary detection rate            & \textbf{[--]} & \textbf{[--]} & \textbf{[--]} \\
-$h$         & Immigration half-saturation      & \textbf{[--]} & \textbf{[--]} & \textbf{[--]} \\
-$\mu_s$     & Peak-emergence step (biweeks)    & \textbf{[--]} & \textbf{[--]} & \textbf{[--]} \\
-$\sigma_s$  & Season width (biweeks)           & \textbf{[--]} & \textbf{[--]} & \textbf{[--]} \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-\subsection{Model Diagnosis and Seasonal Extension}\label{sec:limits}
-
-Figure~\ref{fig:pp_trajectory}(a) and the left columns of
-Table~\ref{tab:neon_pp} show the Model~C posterior predictive check.
-The constant-$\psi$ model tracks the order of magnitude at peak emergence
-($t=8$, PP$_{50}=754$ vs.\ observed 2{,}838) and the early build-up at
-$t=6$ within a factor of three, but diverges completely from the post-peak
-decline: from $t=10$ onward the model predicts continued growth while the
-observed mean drops from 2{,}838 to nearly zero in ten weeks.  This failure
-is structural rather than inferential: the constant-$\psi$ SC-ABM has a
-unique quasi-stationary distribution; once LDD supplies individuals at rate
-$\psi>0$, latent abundance grows monotonically until regulated by the
-carrying-capacity term.  The PP check thus successfully diagnoses the
-mechanism absence.
-
-The seasonal-$\psi$ extension (Eq.~\eqref{eq:seasonal-psi}) with
-$\mu_s \sim \mathrm{Uniform}(3,13)$ and $\log\sigma_s\sim\mathcal{N}(\log 3, 0.7^2)$
-is fitted as Model~S using the expanded six-statistic summary vector
-including $s_6$ (Eq.~\eqref{eq:s6}).  Figure~\ref{fig:pp_trajectory}(b)
-and the right columns of Table~\ref{tab:neon_pp} show that Model~S
-recovers the bell-curve trajectory: the posterior predictive now tracks both
-the rising limb and the autumn collapse, with all observed values falling
-within the 95\% PP band.
-
-The Gaussian pulse (Eq.~\eqref{eq:seasonal-psi}) leaves the ABC-SMC and
-SMFVB inference frameworks structurally unchanged: $\psi_t$ enters the
-process mean (Eq.~\ref{eq:proc-mean}) linearly, so the Poisson MGF
-computations of Theorem~\ref{thm:elbo} and the CAVI update of
-\S\ref{sec:cavi-update} are unaffected.
-
-\begin{table}[ht]
-\centering
-% TODO: fill Model~S columns from pp_trajectory_v3.csv after running
-%       run_inference_neon_v3.R.  Replace all \textbf{[--]} entries.
-\caption{Posterior predictive check for NEON UNDE 2024.
-``Observed'' is the mean $Y^{(C)}$ across cells surveyed at step $t$.
-PP$_{50}$ and PP$_{95}$ are the posterior predictive median and 95\%
-interval of $\hat\rho\,\bar{N}_t$ from each model.}
-\label{tab:neon_pp}
-\begin{tabular}{clcrrcc}
-\toprule
-$t$ & Date & Observed
-    & \multicolumn{2}{c}{Model~C (constant-$\psi$)}
-    & \multicolumn{2}{c}{Model~S (seasonal-$\psi$)} \\
-\cmidrule(lr){4-5}\cmidrule(lr){6-7}
-& & & PP$_{50}$ & PP$_{95}$ & PP$_{50}$ & PP$_{95}$ \\
-\midrule
- 1 & 2024-04-11 &      0.0 &    25 & [\phantom{0}7,\;53]      & \textbf{[--]} & \textbf{[--]} \\
- 6 & 2024-06-13 &    176.8 &   390 & [106,\;1{,}044]          & \textbf{[--]} & \textbf{[--]} \\
- 8 & 2024-07-11 & 2{,}838  &   754 & [148,\;2{,}148]          & \textbf{[--]} & \textbf{[--]} \\
-10 & 2024-08-08 &    117.6 & 1{,}099 & [229,\;3{,}182]        & \textbf{[--]} & \textbf{[--]} \\
-13 & 2024-09-19 &      0.7 & 1{,}689 & [258,\;6{,}524]        & \textbf{[--]} & \textbf{[--]} \\
-16 & 2024-10-30 &      0.0 & 2{,}123 & [313,\;11{,}426]       & \textbf{[--]} & \textbf{[--]} \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-\begin{figure}[ht]
-\centering
-\includegraphics[width=\textwidth]{fig2_pp_trajectory.pdf}
-\caption{Posterior predictive checks for NEON UNDE 2024.
-  Points and connecting line: observed season-mean count $\bar{Y}^{(C)}_t$
-  averaged over cells surveyed at step~$t$.
-  Blue line: posterior predictive median $\hat\rho\,\hat{\bar{N}}_t$;
-  blue shading: 95\% posterior predictive interval.
-  \textit{(a) Model~C (constant-$\psi$)}: the model tracks the summer
-  build-up but predicts continued growth through autumn while observed counts
-  collapse to zero, a structural failure that the PP check diagnoses precisely.
-  \textit{(b) Model~S (seasonal-$\psi$, Eq.~\eqref{eq:seasonal-psi})}: the
-  Gaussian emergence pulse recovers both the rising limb and the autumn
-  collapse; all six representative observations fall within the 95\% PP band.}
-\label{fig:pp_trajectory}
-\end{figure}
-
-\section{Model Summary}
-
-The final SC-ABM can be summarized as:
-
-\[
-\boxed{
-N_{i,t}=S_{i,t}+I_{i,t}+L_{i,t}
-}
-\]
-
-with
-
-\[
-S_{i,t}\sim
-\mathrm{Binomial}
-\left(
-N_{i,t-1},
-\phi_i e^{-N_{i,t-1}/K_i}
-\right),
-\]
-
-\[
-I_{i,t}\sim
-\mathrm{Poisson}
-\left(
-\sum_{j:\,i\in\mathcal{N}_j}
-\omega_j\, p_{j\to i}\,
-\frac{N_{j,t-1}}{N_{j,t-1}+h}
-\right),
-\quad p_{j\to i}\;\text{from~\eqref{eq:dispersal} with self-retention},
-\]
-
-\[
-L_{i,t}\sim \mathrm{Poisson}(\psi_{i,t}),
-\qquad
-\psi_{i,t}=
-\begin{cases}
-\psi_i & \text{(constant model)},\\[4pt]
-\psi_i\exp\!\bigl\{-\tfrac{1}{2}(\tfrac{t-\mu_s}{\sigma_s})^2\bigr\}
-  & \text{(seasonal model, Eq.~\eqref{eq:seasonal-psi})},
-\end{cases}
-\]
-
-\[
-Y^{(C)}_{i,t}\sim
-\mathrm{NegBin}(\rho_{i,t}N_{i,t},r),
-\]
-
-and
-
-\[
-Y^{(P)}_{i,t}\sim
-\mathrm{Bernoulli}
-\left[
-\eta_{i,t}
-+
-(1-\eta_{i,t})
-\left\{
-1-e^{-\kappa_{i,t}N_{i,t}}
-\right\}
-\right].
-\]
-
-The dispersal probability $p_{j\to i}$ in the immigration rate uses the
-multinomial logit with self-retention baseline (Equation~\eqref{eq:dispersal}),
-so that $\sum_{i\in\mathcal{N}_j}p_{j\to i}<1$ and residual probability
-$p_{j\to j}=1-\sum_{i\in\mathcal{N}_j}p_{j\to i}$ accounts for individuals
-remaining in the source cell.  The LDD log-rate uses the notation
-$\log\psi_i=w_i^\top\boldsymbol{\gamma}_\psi$ (Equation~\eqref{eq:ldd}) to
-avoid conflict with the remote-sensing false-positive parameter $\eta_{i,t}$.
-The natural algorithmic next step is to apply SMFVB (rather than ABC-SMC) to
-the NEON data with the seasonal-$\psi$ extension
-(Equation~\eqref{eq:seasonal-psi}), and to extend the convergence analysis of
-Theorem~\ref{thm:vi-converge} to the joint CAVI over both the latent field
-and the model parameters.  A second direction is a covariate-driven LDD link
-$\log\psi_t=w_t^\top\gamma_\psi$ using NEON's co-located meteorological
-records, which would require no additional scalar parameters and would
-generalise across years and sites without re-fitting the phenological shape.
+\paragraph{Limitations and future work.}
+The CAVI analysis here treats the model parameters $\Theta$ as fixed at
+pilot estimates; full joint CAVI over both the latent field and parameters
+is a natural extension that would yield closed-form updates for conjugate
+parameters (e.g.\ the NegBin mean $\rho$) and stochastic VI steps for
+the remainder.  The mean-field Poisson family underestimates posterior
+variance for the Binomial survival component $S_{i,t}$, producing the
+observed 2--4~pp coverage shortfall; a structured approximation with
+correlated Poisson factors, or a Gamma mean-field over counts, may
+partially recover this variance.  Extending the convergence analysis
+of Theorem~\ref{thm:vi-converge} to the joint CAVI, and deriving sharp
+coverage-gap bounds as a function of $\phi_{\max}$ and $K_{\min}$, remain
+open theoretical problems.  On the applied side, a covariate-driven LDD
+link $\log\psi_t = w_t^\top\gamma_\psi$ would accommodate seasonally
+time-varying long-distance arrivals within the same SMFVB framework without
+additional approximation, since $\psi_t$ enters the process mean linearly.
 
 \bibliographystyle{elsarticle-harv}
 \bibliography{novel_model_SC_ABM_NKD}
