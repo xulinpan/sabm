@@ -39,13 +39,14 @@ Bayesian inference for count-valued agent-based models (ABMs) is impeded by
 the intractability of the transition likelihood: when latent abundance evolves
 through a Binomial survival plus Poisson immigration convolution, neither the
 log-PMF nor the exact evidence lower bound (ELBO) has a closed form.
-We show that the Poisson moment generating function (MGF) resolves this
-obstacle by delivering a \emph{fully closed-form} surrogate variational objective.  Under a
-Poisson mean-field variational family, every expectation---survival
-probabilities, immigration rates, and binary detection probabilities---is
-computed analytically via the MGF with no quadrature or Monte Carlo, defining
-a surrogate $\tilde{\mathcal{L}}$ with three explicitly bounded approximation
-sources (Theorem~\ref{thm:elbo}).  Each coordinate-ascent update of the
+Our principal methodological contribution (Theorem~\ref{thm:elbo}) shows that
+the Poisson moment generating function (MGF) resolves this obstacle: under a
+Poisson mean-field variational family, every expectation in the surrogate
+variational objective---survival probabilities, immigration rates, binary
+detection probabilities---is analytic, with no quadrature, no Monte Carlo,
+no stochastic gradients, and no black-box variational estimator.  The result
+defines a fully closed-form surrogate $\tilde{\mathcal{L}}$ with three
+explicitly bounded approximation sources.  Each coordinate-ascent update of the
 resulting \emph{structured mean-field variational Bayes} (SMFVB) algorithm is
 likewise closed-form, and the iterates are monotonically non-decreasing and
 converge to a stationary point of the surrogate variational objective under
@@ -125,6 +126,43 @@ rates are all obtained analytically; no numerical integration, Monte Carlo
 sampling, or black-box gradient estimator is required at any stage of the
 optimisation.
 
+\paragraph{Principal contribution: Theorem~\ref{thm:elbo} (Poisson-MGF Identities).}
+Our principal methodological contribution is Theorem~\ref{thm:elbo}
+(\S\ref{sec:elbo-terms}), which establishes that all expectations
+in the surrogate variational objective $\tilde{\mathcal{L}}$ are evaluable in
+exact closed form under a Poisson mean-field family.  The key identity is
+the Poisson MGF derivative:
+\begin{equation}\label{eq:mgf-key}
+\mathbb{E}_{N\sim\mathrm{Pois}(\mu)}\!\left[N\,e^{sN}\right]
+\;=\;
+\mu\,e^s\exp\!\bigl\{\mu(e^s-1)\bigr\},
+\end{equation}
+which yields exact closed-form survival expectations and binary detection
+probabilities by setting $s=-1/K_i$ and $s=-\kappa_{i,t}$, respectively.
+This result has five consequences that distinguish SMFVB from black-box
+variational methods:
+\begin{enumerate}[nosep,label=(\alph*)]
+\item \textbf{No quadrature.}  Every integral over the latent count
+  distribution is evaluated in closed form; no quadrature nodes or cubature
+  weights appear anywhere in the algorithm.
+\item \textbf{No Monte Carlo.}  No random samples from $q$ or $p$ are
+  drawn during optimisation; the gradient and Hessian of $\tilde{\mathcal{L}}$
+  with respect to each $\mu_{i,t}$ are analytic functions.
+\item \textbf{No stochastic gradients.}  The CAVI coordinate update is a
+  deterministic closed-form fixed-point equation
+  (equation~\eqref{eq:cavi-fp}); reparameterisation tricks and
+  variance-reduction techniques \citep{kingma2013} are not needed.
+\item \textbf{No black-box variational inference.}  Unlike BBVI
+  \citep{ranganath2014}, which estimates ELBO gradients by Monte Carlo,
+  every coordinate ascent step here is exact within the Poisson mean-field
+  family---the only approximation is the Poisson process surrogate and the
+  second-order delta method for the immigration rate, both of bounded and
+  explicit order (Remark~\ref{rem:poi-approx}).
+\item \textbf{No numerical differentiation.}  Gradients and Hessians of
+  $\tilde{\mathcal{L}}$ are derived analytically and evaluated in $O(1)$
+  per coordinate; automatic differentiation is not required.
+\end{enumerate}
+
 The closed-form surrogate variational objective enables a \emph{structured mean-field variational Bayes}
 (SMFVB) algorithm: a coordinate-ascent (CAVI) scheme over a Poisson
 mean-field family in which each iterate $\mu_{i,t}^\star$ is updated in
@@ -137,11 +175,13 @@ point follows directly from the closed-form coordinate-ascent structure.
 \paragraph{Contributions.}
 This paper makes four contributions:
 \begin{enumerate}[label=(\roman*)]
-\item \textbf{Closed-form surrogate variational objective} (Theorem~\ref{thm:elbo},
-  \S\ref{sec:elbo-terms}): the Poisson MGF yields exact closed-form
-  expressions for every expectation in the surrogate variational objective under a Poisson mean-field
-  family, with three explicitly bounded approximation sources and no
-  numerical integration.
+\item \textbf{Poisson-MGF Identities} (Theorem~\ref{thm:elbo},
+  \S\ref{sec:elbo-terms} --- \emph{principal contribution}): the Poisson
+  MGF converts every expectation in the surrogate variational objective
+  into an analytic closed form under a Poisson mean-field family, with no
+  quadrature, no Monte Carlo, no stochastic gradients, and no black-box
+  variational estimator; three explicitly bounded approximation sources are
+  the only departure from exactness.
 \item \textbf{Closed-form CAVI algorithm} (\S\ref{sec:smfvb-alg}): each
   coordinate-ascent update is analytic; the iterates are monotonically
   non-decreasing and converge to a stationary point of $\tilde{\mathcal{L}}$
@@ -651,10 +691,12 @@ and (c)~the surrogate optimiser $\tilde\lambda^\star$ provides calibrated
 uncertainty quantification?}
 The four main theoretical results answer affirmatively:
 \begin{enumerate}[label=(\roman*)]
-\item \textbf{Closed-form tractability} (Theorem~\ref{thm:elbo},
-  \S\ref{sec:elbo-terms}): the Poisson MGF yields exact closed-form
-  expressions for every expectation in the surrogate variational objective with no
-  numerical integration, under three approximations each of bounded order
+\item \textbf{Poisson-MGF Identities} (Theorem~\ref{thm:elbo},
+  \S\ref{sec:elbo-terms} --- \emph{principal contribution}): the Poisson
+  MGF yields exact closed-form expressions for every expectation in the
+  surrogate variational objective, with no quadrature, no Monte Carlo, no
+  stochastic gradients, and no black-box estimator; three approximations
+  each of explicitly bounded order are the only departure from exactness
   (Remark~\ref{rem:poi-approx}).
 \item \textbf{Optimisation guarantees} (Proposition~\ref{thm:vi-converge},
   \S\ref{sec:vi-convergence}): the surrogate CAVI sequence is monotonically
@@ -771,12 +813,16 @@ The surrogate variational objective $\tilde{\mathcal{L}}$ in \eqref{eq:surr-elbo
 computing expectations under $q_\lambda(N_{i,t})=\mathrm{Pois}(\mu_{i,t})$ of
 nonlinear functions of $N_{i,t}$ that appear in both the observation term
 $\mathcal{L}_\mathrm{obs}$ and in the surrogate rate $\mu^\dagger_{i,t}$
-of~\eqref{eq:surr-proc}.  The following theorem shows that the Poisson MGF
+of~\eqref{eq:surr-proc}.  The following theorem---the principal methodological contribution of this
+paper---shows that the Poisson MGF
 $M_N(s):=\mathbb{E}[e^{sN}]=\exp\{\mu(e^s-1)\}$ makes the dominant terms
-analytically exact, reducing the remaining approximation to a second-order
-delta method for the concave immigration function.
+analytically exact via the identity $\mathbb{E}[Ne^{sN}]=\mu e^s M_N(s)$,
+reducing the remaining approximation to a second-order delta method for
+the concave immigration function and yielding a fully closed-form
+$\tilde{\mathcal{L}}$ that requires no quadrature, no Monte Carlo,
+no stochastic gradients, and no black-box estimator.
 
-\begin{theorem}[Poisson-MGF Identities for $\tilde{\mathcal{L}}$]\label{thm:elbo}
+\begin{theorem}[Poisson-MGF Identities — Principal Methodological Result]\label{thm:elbo}
 Let $N_{i,t}\sim\mathrm{Pois}(\mu_{i,t})$ under $q_\lambda$.
 Define $c_i:=e^{-1/K_i}\in(0,1)$.
 \begin{enumerate}[label=(\roman*)]
@@ -1502,12 +1548,14 @@ sub-second computational cost.
 \section{Discussion}\label{sec:discussion}
 %% ============================================================
 
-We have developed a \emph{closed-form} variational inference framework for
-count statistical agent-based models with four interlocking contributions.
-First, the Poisson MGF converts an otherwise intractable variational objective into a
-fully closed-form surrogate whose every term---survival expectations,
-immigration rates, binary detection probabilities---is analytic, with three
-approximation sources each of explicitly bounded order.  Second, the closed-form
+We have developed a structured variational inference framework for count
+statistical agent-based models.  The principal methodological contribution
+is Theorem~\ref{thm:elbo} (Poisson-MGF Identities): the Poisson MGF
+converts an otherwise intractable variational objective into a fully
+closed-form surrogate, making survival expectations, immigration rates, and
+binary detection probabilities all analytic---with no quadrature, no Monte
+Carlo, no stochastic gradients, and no black-box variational estimator---at
+the cost of three explicitly bounded approximation sources.  Second, the closed-form
 structure enables a coordinate-ascent algorithm (SMFVB) in which each update
 is analytic and the iterates converge monotonically to a stationary point of
 the surrogate variational objective under local contractivity assumptions.  Third, as mean latent abundance grows all
