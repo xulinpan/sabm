@@ -58,10 +58,15 @@ three surrogate approximation errors vanish as mean latent abundance grows
 converges to the exact ELBO; and that the dual-channel observation
 model---fusing NegBin count surveys with Bernoulli occupancy detections---is
 locally identifiable under mild temporal abundance variation
-(Proposition~\ref{prop:identif-dual}).  In a simulation study (100
-replicates, $m=100$, $T=15$), SMFVB achieves 95\% credible-interval coverage
-within 4 percentage points of particle MCMC with a $22\times$ wall-time
-reduction (4~min vs.\ 92~min).
+(Proposition~\ref{prop:identif-dual}).  Across ten simulation scenarios (50 replicates each, $m=100$, $T=15$) spanning
+low/high abundance, density-dependence regimes, sparse observations,
+model misspecification, and large spatial lattice ($m=1{,}000$),
+SMFVB achieves 95\% credible-interval coverage within 4 percentage points of
+particle MCMC with a $22\times$ wall-time reduction (4~min vs.\ 92~min).
+Applied to Swiss Great Tit territory counts (MHB programme, $m=267$, $T=10$),
+a variational EM extension simultaneously estimates detection and dispersal
+parameters and yields well-calibrated posterior predictive checks
+($p\in(0.1,\,0.9)$ for three test statistics).
 \end{abstract}
 
 \begin{keyword}
@@ -193,17 +198,23 @@ This paper makes four contributions:
   Proposition~\ref{prop:identif-dual}, \S\ref{sec:identif-val}): the surrogate
   approximation error vanishes as mean abundance grows; the dual-channel observation
   model is locally identifiable given $T\ge2$ with temporal abundance variation.
-\item \textbf{Simulation evidence} (\S\ref{sec:simulation}): 100 replicates
-  at $m=100$, $T=15$ show 95\% credible-interval coverage within 4 pp of
-  particle MCMC at $22\times$ lower wall time.
+\item \textbf{Simulation evidence and real-data application}
+  (\S\ref{sec:simulation}, \S\ref{sec:realdata}): ten scenarios
+  (50 replicates each, $m=100$, $T=15$) show 95\% CI coverage within
+  4~pp of particle MCMC at $22\times$ lower wall time; a VEM extension
+  applied to Swiss MHB Great Tit data ($m=267$, $T=10$) estimates
+  detection and dispersal parameters with well-calibrated PP checks.
 \end{enumerate}
 
 \paragraph{Organisation.}
-Section~\ref{sec:process} specifies the count ABM.
+Section~\ref{sec:process} specifies the count ABM (Figure~\ref{fig:model}).
 Section~\ref{sec:vi} develops the MGF surrogate variational objective and the SMFVB algorithm.
 Section~\ref{sec:identif-val} establishes surrogate approximation error
 convergence and identifiability.
-Section~\ref{sec:simulation} presents the simulation study.
+Section~\ref{sec:simulation} presents the ten-scenario simulation study
+(Figure~\ref{fig:sim-results}).
+Section~\ref{sec:realdata} applies the model to the Swiss MHB Great Tit dataset
+(Figures~\ref{fig:vem-convergence}--\ref{fig:ppcheck}).
 Section~\ref{sec:discussion} concludes.
 
 \section{Notation}
@@ -249,7 +260,8 @@ Symbol & Meaning \\
 
 \section{Latent Process Model}\label{sec:process}
 
-The latent count evolves through three additive components:
+The latent count evolves through three additive components
+(Figure~\ref{fig:model}):
 
 \[
 N_{i,t}=S_{i,t}+I_{i,t}+L_{i,t},\qquad t=2,\ldots,T.
@@ -1592,6 +1604,8 @@ J & 0.039 & 0.88 & 8.2\%$^\ddagger$ & 4 min & $-2\,983$ & 10 & --- \\
 \end{figure}
 
 \paragraph{Scenarios A (Baseline) and method comparison.}
+Figure~\ref{fig:sim-results} displays RMSE and coverage across all ten
+scenarios; numerical results appear in Table~\ref{tab:results}.
 On the baseline setting SMFVB achieves RMSE$_\phi=0.030$, 95\% CI coverage
 of 0.90, and runtime of 4 minutes — compared to PMCMC (coverage 0.93, runtime
 92 minutes) and ABC-SMC (coverage 0.88, RMSE$_\phi=0.045$, runtime 38 minutes).
@@ -2004,9 +2018,9 @@ sites.
 
 \paragraph{Convergence and speed.}
 The VEM requires \textbf{8 outer iterations} to converge (relative ELBO
-change $<10^{-5}$), each requiring 2--3 inner CAVI sweeps.  Total wall
-time is \textbf{2.6 seconds} on a standard laptop (Intel Core i7).  The
-surrogate variational objective improves from $-11{,}018$ (fixed-parameter
+change $<10^{-5}$), each requiring 2--3 inner CAVI sweeps (Figure~\ref{fig:vem-convergence}).
+Total wall time is \textbf{2.6 seconds} on a standard laptop (Intel Core i7).
+The surrogate variational objective improves from $-11{,}018$ (fixed-parameter
 run) to $-10{,}847$ at VEM convergence, an ELBO gain of 171 units that
 directly quantifies the information value of estimating $(\rho,\kappa,\psi)$
 from data rather than fixing them at literature values.
@@ -2038,9 +2052,9 @@ above 2{,}000 m, consistent with Great Tit ecology \citep{glutz1993}.
 Forest cover retains a weak positive association ($r=0.154$).
 
 \paragraph{Temporal dynamics.}
-Table~\ref{tab:mhb-temporal} compares the annual posterior mean
-$\hat\rho\bar\mu_t$ (model-implied expected count) with the observed
-annual mean $\bar Y^{(C)}_t$ over 2004--2013.  With estimated $\hat\rho$,
+Table~\ref{tab:mhb-temporal} and Figure~\ref{fig:temporal} compare the annual
+posterior mean $\hat\rho\bar\mu_t$ (model-implied expected count) with the
+observed annual mean $\bar Y^{(C)}_t$ over 2004--2013.  With estimated $\hat\rho$,
 the predicted and observed series are in close agreement: the
 root-mean-squared annual deviation is $0.054$ yr$^{-1}$, a 10-fold
 reduction from $0.60$ yr$^{-1}$ under the fixed-parameter run.
@@ -2088,6 +2102,8 @@ Year & $\bar\mu_t$ & $\hat\rho\bar\mu_t$ & $\bar Y^{(C)}_t$ \\
 \end{figure}
 
 \paragraph{Posterior predictive checks.}
+Figure~\ref{fig:ppcheck} shows the posterior predictive distributions
+for all three test statistics under both fixed and VEM-estimated parameters.
 We draw $R=1{,}000$ posterior predictive replicates from
 $N_{i,t}\sim\mathrm{Poisson}(\mu_{i,t})$, then
 $Y^{(C)\,\mathrm{rep}}\sim\mathrm{NegBin}(\hat\rho N, r)$ and
