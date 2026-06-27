@@ -8,7 +8,9 @@
 \usepackage{algorithm}
 \usepackage{algpseudocode}
 \usepackage{graphicx}
-\graphicspath{{../figures/}}
+\graphicspath{{figures/}}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta, positioning, shapes.geometric, backgrounds, fit}
 
 \newtheorem{theorem}{Theorem}
 \newtheorem{corollary}[theorem]{Corollary}
@@ -411,6 +413,84 @@ N_{i,t-1}p^S_{i,t-1}(1-p^S_{i,t-1})
 Thus the process model naturally generates extra-Poisson variation because the
 latent count is a convolution of a binomial survival term and two Poisson arrival
 terms.
+
+\begin{figure}[t]
+\centering
+\begin{tikzpicture}[
+  latent/.style  = {circle, draw=black, thick, minimum size=1.1cm, inner sep=1pt, font=\small},
+  observed/.style= {circle, draw=black, thick, fill=gray!25, minimum size=1.1cm, inner sep=1pt, font=\small},
+  param/.style   = {rectangle, draw=black!60, thick, rounded corners=3pt,
+                    minimum width=1.1cm, minimum height=0.65cm, inner sep=3pt,
+                    fill=white, font=\footnotesize},
+  arr/.style     = {-{Stealth[length=5pt]}, thick},
+  darr/.style    = {-{Stealth[length=4pt]}, thick, dashed, gray!70},
+  node distance  = 1.4cm
+]
+
+%% ── Column 1: previous time step ─────────────────────────────────────────────
+\node[observed] (Nprev) at (0,0)   {$N_{i,t-1}$};
+\node[observed] (Nj)    at (0,-3.0){$N_{j,t-1}$};
+
+%% ── Column 2: process components ─────────────────────────────────────────────
+\node[latent] (S) at (3.2, 1.4)  {$S_{i,t}$};
+\node[latent] (I) at (3.2, 0)    {$I_{i,t}$};
+\node[latent] (L) at (3.2,-1.4)  {$L_{i,t}$};
+
+%% ── Column 3: latent count ───────────────────────────────────────────────────
+\node[latent] (N) at (6.0, 0)    {$N_{i,t}$};
+
+%% ── Column 4: observations ───────────────────────────────────────────────────
+\node[observed] (YC) at (9.0, 0.9)  {$Y^{(C)}_{i,t}$};
+\node[observed] (YP) at (9.0,-0.9)  {$Y^{(P)}_{i,t}$};
+
+%% ── Parameter nodes ──────────────────────────────────────────────────────────
+\node[param] (phiK)  at (1.4, 3.0)  {$\phi_i,K_i$};
+\node[param] (Wij)   at (1.4,-4.5)  {$W_{ij}$};
+\node[param] (psipar)at (1.4,-2.6)  {$\psi_i$};
+\node[param] (rhor)  at (7.5, 2.5)  {$\rho_i,r$};
+\node[param] (kappar)at (7.5,-2.5)  {$\kappa_i$};
+
+%% ── Process arrows ───────────────────────────────────────────────────────────
+\draw[arr] (Nprev)  -- node[above,sloped,font=\scriptsize]{Binom} (S);
+\draw[arr] (Nj)     -- node[above,sloped,font=\scriptsize]{Pois}  (I);
+\draw[arr] (psipar) -- (L);
+\draw[arr] (S)      -- (N);
+\draw[arr] (I)      -- (N);
+\draw[arr] (L)      -- (N);
+
+%% ── Temporal self-arrow (N_{i,t} feeds next step) ───────────────────────────
+\draw[arr, gray!60] (N.east) to[out=30,in=330,looseness=3.5]
+      node[right, font=\scriptsize, gray]{next $t$} (N.east);
+
+%% ── Parameter dashed arrows ──────────────────────────────────────────────────
+\draw[darr] (phiK)  -- (S);
+\draw[darr] (Wij)   -- (I);
+\draw[darr] (rhor)  -- (YC);
+\draw[darr] (kappar)-- (YP);
+
+%% ── Observation arrows ───────────────────────────────────────────────────────
+\draw[arr] (N) -- node[above,sloped,font=\scriptsize]{NegBin} (YC);
+\draw[arr] (N) -- node[below,sloped,font=\scriptsize]{Bernoulli} (YP);
+
+%% ── Labels ───────────────────────────────────────────────────────────────────
+\node[font=\scriptsize, gray, above] at (Nprev.north) {latent};
+\node[font=\scriptsize, gray, above] at (Nj.north)    {neighbour};
+\node[font=\scriptsize, gray, above] at (N.north)     {latent};
+\node[font=\scriptsize, gray, above] at (YC.north)    {observed};
+\node[font=\scriptsize, gray, above] at (YP.north)    {observed};
+
+\end{tikzpicture}
+\caption{Generative process of the count ABM for cell $i$ at time $t$.
+  Shaded circles are observed; white circles are latent.
+  Solid arrows indicate stochastic dependence; dashed arrows indicate fixed
+  parameters.  The latent count $N_{i,t}=S_{i,t}+I_{i,t}+L_{i,t}$ decomposes
+  into density-regulated survival ($S$, Binomial from $N_{i,t-1}$), short-range
+  immigration ($I$, Poisson from neighbour $N_{j,t-1}$ via weight $W_{ij}$),
+  and long-distance dispersal ($L$, Poisson with mean $\psi_i$).
+  Observations use two channels: count $Y^{(C)}_{i,t}\sim\mathrm{NegBin}(\rho_i N_{i,t},r)$
+  and binary detection $Y^{(P)}_{i,t}\sim\mathrm{Bernoulli}(1-e^{-\kappa_i N_{i,t}})$.}
+\label{fig:model}
+\end{figure}
 The spatiotemporal count structure of the count ABM parallels the penalized Poisson
 framework of \citet{zhang2025csda}, who develop a doubly-fused penalization
 scheme for simultaneously detecting temporal change points and spatial clusters
@@ -1497,6 +1577,20 @@ J & 0.039 & 0.88 & 8.2\%$^\ddagger$ & 4 min & $-2\,983$ & 10 & --- \\
 \end{tabular}
 \end{table}
 
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{fig_sim_results.pdf}
+\caption{SMFVB performance across ten simulation scenarios (Table~\ref{tab:scenarios}).
+  \emph{Left}: RMSE of the posterior variational mean for $\bar\phi$.
+  Dashed vertical line marks the baseline Scenario~A value (RMSE$=0.030$).
+  \emph{Right}: empirical 95\% credible-interval coverage for $\bar\phi$.
+  Dashed line at the nominal level (0.95); dotted line at the baseline coverage (0.90).
+  Colour indicates scenario type: abundance regime (blue), density dependence (green),
+  observation sparsity (orange), misspecification (purple), scale (brown),
+  structural mismatch (pink), and parameter boundary (grey).}
+\label{fig:sim-results}
+\end{figure}
+
 \paragraph{Scenarios A (Baseline) and method comparison.}
 On the baseline setting SMFVB achieves RMSE$_\phi=0.030$, 95\% CI coverage
 of 0.90, and runtime of 4 minutes — compared to PMCMC (coverage 0.93, runtime
@@ -1917,6 +2011,19 @@ run) to $-10{,}847$ at VEM convergence, an ELBO gain of 171 units that
 directly quantifies the information value of estimating $(\rho,\kappa,\psi)$
 from data rather than fixing them at literature values.
 
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{fig_vem_convergence.pdf}
+\caption{VEM convergence for the MHB Great Tit application.
+  \emph{Left}: estimated values of $\hat\rho$, $\hat\kappa$, $\hat\psi$ at each
+  outer VEM iteration (dashed lines indicate final values).
+  \emph{Right}: surrogate variational objective $\tilde{\mathcal{L}}$ over VEM
+  iterations (dashed line at convergence value $-10{,}847$; ELBO gain of 171
+  units over the fixed-parameter run at $-11{,}018$).
+  Convergence is reached at iteration~8 (relative $|\Delta\tilde{\mathcal{L}}|<10^{-5}$).}
+\label{fig:vem-convergence}
+\end{figure}
+
 \paragraph{Spatial recovery.}
 The Pearson correlation between $\mu_{i,t}$ and $Y^{(C)}_{i,t}$ at all
 surveyed cell-year pairs is $r=0.876$ ($R^2=0.767$, $n=2{,}071$), a
@@ -1967,6 +2074,19 @@ Year & $\bar\mu_t$ & $\hat\rho\bar\mu_t$ & $\bar Y^{(C)}_t$ \\
 \end{tabular}
 \end{table}
 
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.78\linewidth]{fig_temporal.pdf}
+\caption{Annual abundance dynamics for Great Tit at 267 MHB quadrats (2004--2013).
+  Solid line with circles: model-implied expected count $\hat\rho\bar\mu_t$
+  ($\hat\rho=0.862$).
+  Dashed line with triangles: observed annual mean $\bar Y^{(C)}_t$.
+  Shaded band: 95\% posterior predictive interval for the mean count
+  (from 1{,}000 PP replicates).
+  Root-mean-squared annual deviation: 0.054 territory quadrat$^{-1}$ yr$^{-1}$.}
+\label{fig:temporal}
+\end{figure}
+
 \paragraph{Posterior predictive checks.}
 We draw $R=1{,}000$ posterior predictive replicates from
 $N_{i,t}\sim\mathrm{Poisson}(\mu_{i,t})$, then
@@ -1996,6 +2116,23 @@ well-captured and that the VEM estimates did not overfit the temporal signal.
 The residual $T_3$ misfit ($p<0.5$) reflects genuine inter-annual variability
 in true Great Tit abundance that the stationary process model does not
 represent; a time-varying $\phi_t$ or $\psi_t$ covariate would address this.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{fig_ppcheck.pdf}
+\caption{Posterior predictive check distributions for the MHB Great Tit application.
+  Each panel shows the density of 2{,}000 replicated test statistics
+  (top row: fixed parameters $\rho=0.72$, $\kappa=0.10$;
+   bottom row: VEM estimates $\hat\rho=0.862$, $\hat\kappa=0.121$).
+  Vertical black line marks the observed value.
+  \emph{Left}: $T_1$ (mean count $\bar Y^{(C)}$, observed $=8.15$).
+  \emph{Centre}: $T_2$ (detection rate $\bar Y^{(P)}$, observed $=0.681$).
+  \emph{Right}: $T_3$ (linear trend slope, observed $=+0.065$ yr$^{-1}$).
+  Fixed parameters produce Bayesian $p=0.000$ for $T_1$ and $T_2$ (replicates
+  systematically below observed); VEM estimates yield $p=0.472$, $0.488$, $0.139$
+  (all well-calibrated).}
+\label{fig:ppcheck}
+\end{figure}
 
 %% ============================================================
 \section{Discussion}\label{sec:discussion}
