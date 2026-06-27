@@ -37,35 +37,43 @@
          University Park, PA 16802, USA}
 
 \begin{abstract}
-Bayesian inference for count-valued agent-based models (ABMs) is impeded by
-the intractability of the transition likelihood: when latent abundance evolves
-through a Binomial survival plus Poisson immigration convolution, neither the
-log-PMF nor the exact evidence lower bound (ELBO) has a closed form.
+Bayesian inference for count-valued agent-based models (ABMs) is challenging
+because the expected process log-density under any tractable variational
+family is analytically intractable: when latent abundance evolves through a
+Binomial survival plus Poisson immigration convolution, the transition
+probability mass function is computable only as a finite convolution sum, and
+its logarithm has no closed form, making the process term of the evidence
+lower bound (ELBO) computationally prohibitive at scale.
 Our principal methodological contribution (Theorem~\ref{thm:elbo}) shows that
-the Poisson moment generating function (MGF) resolves this obstacle: under a
-Poisson mean-field variational family, every expectation in the surrogate
-variational objective---survival probabilities, immigration rates, binary
-detection probabilities---is analytic, with no quadrature, no Monte Carlo,
-no stochastic gradients, and no black-box variational estimator.  The result
-defines a fully closed-form surrogate $\tilde{\mathcal{L}}$ with three
-explicitly bounded approximation sources.  Each coordinate-ascent update of the
-resulting \emph{structured mean-field variational Bayes} (SMFVB) algorithm is
-likewise closed-form, and the iterates are monotonically non-decreasing and
-converge to a stationary point of the surrogate variational objective under
-local contraction assumptions (Proposition~\ref{thm:vi-converge}).  We further establish that all
-three surrogate approximation errors vanish as mean latent abundance grows
-(Corollary~\ref{cor:elbo-gap}), so the surrogate variational objective
-converges to the exact ELBO; and that the dual-channel observation
+the Poisson moment generating function (MGF) enables a tractable
+\emph{surrogate} variational objective $\tilde{\mathcal{L}}$: under a
+Poisson mean-field family, the dominant expectations---survival probabilities,
+binary detection probabilities---are evaluated in exact closed form via the
+MGF identity, while immigration rates use a second-order delta-method
+approximation, all without quadrature, Monte Carlo, or stochastic gradients.
+The surrogate objective introduces four explicitly characterised approximation
+sources (process surrogate, delta-method immigration, log-rate plug-in, and
+NegBin quasi-likelihood); it is not a true lower bound on the log-evidence,
+and the resulting algorithm is a deterministic forward-filtering update rather
+than exact coordinate-ascent variational inference.
+Every update step is analytic, and fixed points satisfy a local stationarity
+condition of $\tilde{\mathcal{L}}$
+(Proposition~\ref{thm:vi-converge}).  Under local per-cell conditions
+($\mu_{i,t}/K_i\to\infty$ with $K_i$ fixed), three of the four surrogate
+approximation errors decay to zero
+(Corollary~\ref{cor:elbo-gap}).  The dual-channel observation
 model---fusing NegBin count surveys with Bernoulli occupancy detections---is
-locally identifiable under mild temporal abundance variation
-(Proposition~\ref{prop:identif-dual}).  Across ten simulation scenarios (50 replicates each, $m=100$, $T=15$) spanning
+locally identifiable from the observation layer given known positive latent
+counts and temporal variation (Proposition~\ref{prop:identif-dual}).
+Across ten simulation scenarios (50 replicates each, $m=100$, $T=15$) spanning
 low/high abundance, density-dependence regimes, sparse observations,
 model misspecification, and large spatial lattice ($m=1{,}000$),
 SMFVB achieves 95\% credible-interval coverage within 4 percentage points of
-particle MCMC with a $22\times$ wall-time reduction (4~min vs.\ 92~min).
+particle MCMC with a $22\times$ wall-time reduction (4~min vs.\ 92~min),
+consistent with the theoretical properties of the surrogate.
 Applied to Swiss Great Tit territory counts (MHB programme, $m=267$, $T=10$),
 a variational EM extension simultaneously estimates detection and dispersal
-parameters and yields well-calibrated posterior predictive checks
+parameters and yields empirically well-calibrated posterior predictive checks
 ($p\in(0.1,\,0.9)$ for three test statistics).
 \end{abstract}
 
@@ -97,20 +105,31 @@ the N-mixture family of \citet{dail2011} and the integrated data model
 framework of \citet{verhoef2025} to mechanistic, agent-based transition kernels.
 
 \paragraph{The inference challenge.}
-Exact Bayesian inference for count ABMs is intractable.  The latent count at
-each cell and time is the sum of three conditionally independent components:
+Scalable Bayesian inference for count ABMs is impeded by the intractability of
+a key variational expectation.  The latent count at each cell and time is the
+sum of three conditionally independent components:
 \[
   N_{i,t} = S_{i,t} + I_{i,t} + L_{i,t},
 \]
 where $S_{i,t}\sim\mathrm{Binomial}(N_{i,t-1},p_i)$ captures density-regulated
 survival, $I_{i,t}\sim\mathrm{Poisson}(\Lambda_{i,t})$ captures neighbourhood
 immigration, and $L_{i,t}\sim\mathrm{Poisson}(\psi_i)$ captures long-distance
-arrivals.  The Binomial--Poisson convolution has no closed-form probability
-mass function, so the process log-likelihood
-$\log p(N_{i,t}\mid\mathbf{N}_{t-1})$ cannot be computed exactly.  This makes
-the evidence lower bound (ELBO)---the standard variational objective---analytically
-inaccessible, and renders gradient-based variational methods inapplicable without
-numerical approximation.
+arrivals.  The transition probability mass function is a finite convolution sum:
+\begin{equation}\label{eq:conv-pmf}
+p(N_{i,t}=n\mid N_{i,t-1})
+=\sum_{s=0}^{\min(n,N_{i,t-1})}
+\binom{N_{i,t-1}}{s}p_s^s(1-p_s)^{N_{i,t-1}-s}
+\cdot\frac{e^{-(\Lambda_{i,t}+\psi_i)}(\Lambda_{i,t}+\psi_i)^{n-s}}{(n-s)!}.
+\end{equation}
+While this sum is computable in principle, its logarithm has no analytic
+closed form.  As a consequence, the expected process log-density
+$\mathbb{E}_q[\log p(N_{i,t}\mid N_{i,t-1})]$ under any standard
+variational family $q$ is analytically intractable: each expectation
+requires summing over all possible values of the jointly distributed
+$(N_{i,t},N_{i,t-1})$ pair.  At the scales typical of spatio-temporal ABMs
+($m\sim10^2$--$10^3$, $T\sim10$--$20$), evaluating this sum at every CAVI
+iteration is computationally prohibitive, blocking any closed-form or fast
+deterministic variational inference scheme.
 
 Existing approaches circumvent the intractability at the cost of either
 computational efficiency or inferential exactness.  Particle MCMC
@@ -122,53 +141,52 @@ summary statistic choice and yields only an approximate posterior.  Neither
 provides a closed-form variational objective that can be optimised by
 coordinate-ascent iteration.
 
-\paragraph{Our approach: closed-form surrogate variational objective via the Poisson MGF.}
-We show that replacing the intractable Binomial--Poisson process density with a
-Poisson surrogate---justified by the Le Cam total-variation bound
-$d_{\mathrm{TV}}(\mathrm{Binom}(n,p),\,\mathrm{Pois}(np))\le p$---converts
-every expectation in the surrogate variational objective into a closed-form
-expression via the Poisson moment generating function (MGF).  Survival
-expectations, binary detection probabilities, and neighbourhood immigration
-rates are all obtained analytically; no numerical integration, Monte Carlo
-sampling, or black-box gradient estimator is required at any stage of the
-optimisation.
+\paragraph{Our approach: deterministic surrogate variational filtering via the Poisson MGF.}
+We show that replacing the intractable expected log-transition density with a
+Poisson surrogate---where the surrogate rate equals the exact conditional mean
+of the Binomial--Poisson process---converts the dominant expectations in the
+surrogate variational objective into closed-form expressions via the Poisson
+moment generating function (MGF).  Survival expectations and binary detection
+probabilities are obtained as exact Poisson moments; immigration rates use a
+second-order delta-method approximation.  No numerical integration, Monte Carlo
+sampling, or black-box gradient estimator is required.  The surrogate objective
+is \emph{not} the exact ELBO and does not constitute a strict lower bound on
+the log-evidence; it is a tractable deterministic criterion that approximates
+the ELBO with four explicitly characterised approximation sources.
 
 \paragraph{Principal contribution: Theorem~\ref{thm:elbo} (Poisson-MGF Identities).}
 Our principal methodological contribution is Theorem~\ref{thm:elbo}
-(\S\ref{sec:elbo-terms}), which establishes that all expectations
+(\S\ref{sec:elbo-terms}), which establishes that the dominant expectations
 in the surrogate variational objective $\tilde{\mathcal{L}}$ are evaluable in
-exact closed form under a Poisson mean-field family.  The key identity is
-the Poisson MGF derivative:
+exact closed form under a Poisson mean-field family, with remaining terms
+obtained by a second-order delta-method approximation.  The key identity is:
 \begin{equation}\label{eq:mgf-key}
 \mathbb{E}_{N\sim\mathrm{Pois}(\mu)}\!\left[N\,e^{sN}\right]
 \;=\;
 \mu\,e^s\exp\!\bigl\{\mu(e^s-1)\bigr\},
 \end{equation}
-which yields exact closed-form survival expectations and binary detection
-probabilities by setting $s=-1/K_i$ and $s=-\kappa_{i,t}$, respectively.
-This result has five consequences that distinguish SMFVB from black-box
-variational methods:
+which yields exact Poisson-moment expressions for survival expectations ($s=-1/K_i$)
+and binary detection probabilities ($s=-\kappa_{i,t}$).
+Four computational properties distinguish SMFVB from black-box variational methods:
 \begin{enumerate}[nosep,label=(\alph*)]
-\item \textbf{No quadrature.}  Every integral over the latent count
-  distribution is evaluated in closed form; no quadrature nodes or cubature
-  weights appear anywhere in the algorithm.
-\item \textbf{No Monte Carlo.}  No random samples from $q$ or $p$ are
-  drawn during optimisation; the gradient and Hessian of $\tilde{\mathcal{L}}$
-  with respect to each $\mu_{i,t}$ are analytic functions.
-\item \textbf{No stochastic gradients.}  The CAVI coordinate update is a
-  deterministic closed-form fixed-point equation
-  (equation~\eqref{eq:cavi-fp}); reparameterisation tricks and
-  variance-reduction techniques \citep{kingma2013} are not needed.
-\item \textbf{No black-box variational inference.}  Unlike BBVI
-  \citep{ranganath2014}, which estimates ELBO gradients by Monte Carlo,
-  every coordinate ascent step here is exact within the Poisson mean-field
-  family---the only approximation is the Poisson process surrogate and the
-  second-order delta method for the immigration rate, both of bounded and
-  explicit order (Remark~\ref{rem:poi-approx}).
-\item \textbf{No numerical differentiation.}  Gradients and Hessians of
-  $\tilde{\mathcal{L}}$ are derived analytically and evaluated in $O(1)$
-  per coordinate; automatic differentiation is not required.
+\item \textbf{No quadrature.}  The dominant integrals over $q$ are evaluated
+  analytically; no quadrature nodes appear in the algorithm.
+\item \textbf{No Monte Carlo.}  No random samples from $q$ or $p$ are drawn;
+  update directions are analytic functions of $\mu_{i,t}$.
+\item \textbf{No stochastic gradients.}  The latent-field update is a
+  deterministic closed-form step (equation~\eqref{eq:cavi-fp}).
+  Unlike BBVI \citep{ranganath2014}, no variance-reduction estimator is needed.
+\item \textbf{No automatic differentiation.}  Gradients and Hessians of
+  $\tilde{\mathcal{L}}$ are derived analytically.
 \end{enumerate}
+The surrogate objective retains four approximation sources
+(Remark~\ref{rem:poi-approx}): the Poisson process surrogate, the
+delta-method immigration term, a log-rate plug-in, and the NegBin plug-in
+quasi-likelihood.  The latent update
+implements a \emph{forward-filtering approximation} to coordinate ascent
+rather than exact block-wise optimisation of the full surrogate objective
+(\S\ref{sec:cavi-update}); monotone increase of $\tilde{\mathcal{L}}$
+under this forward sweep is not guaranteed in general.
 
 The closed-form surrogate variational objective enables a \emph{structured mean-field variational Bayes}
 (SMFVB) algorithm: a coordinate-ascent (CAVI) scheme over a Poisson
@@ -183,27 +201,32 @@ point follows directly from the closed-form coordinate-ascent structure.
 This paper makes four contributions:
 \begin{enumerate}[label=(\roman*)]
 \item \textbf{Poisson-MGF Identities} (Theorem~\ref{thm:elbo},
-  \S\ref{sec:elbo-terms} --- \emph{principal contribution}): the Poisson
-  MGF converts every expectation in the surrogate variational objective
-  into an analytic closed form under a Poisson mean-field family, with no
-  quadrature, no Monte Carlo, no stochastic gradients, and no black-box
-  variational estimator; three explicitly bounded approximation sources are
-  the only departure from exactness.
-\item \textbf{Closed-form CAVI algorithm} (\S\ref{sec:smfvb-alg}): each
-  coordinate-ascent update is analytic; the iterates are monotonically
-  non-decreasing and converge to a stationary point of $\tilde{\mathcal{L}}$
-  under local contractivity assumptions
+  \S\ref{sec:elbo-terms} --- \emph{principal contribution}): the Poisson MGF
+  yields exact closed-form expressions for survival and detection expectations,
+  and a second-order delta-method approximation for immigration, enabling a
+  fully analytic surrogate variational objective with no quadrature, no Monte
+  Carlo, and no stochastic gradients; four explicitly characterised approximation
+  sources are documented (Remark~\ref{rem:poi-approx}).
+\item \textbf{Deterministic surrogate filtering algorithm} (\S\ref{sec:smfvb-alg}):
+  each latent-field update is analytic; fixed points satisfy a local stationarity
+  condition of $\tilde{\mathcal{L}}$
   (Proposition~\ref{thm:vi-converge}, \S\ref{sec:vi-convergence}).
-\item \textbf{Consistency and identifiability} (Corollary~\ref{cor:elbo-gap},
-  Proposition~\ref{prop:identif-dual}, \S\ref{sec:identif-val}): the surrogate
-  approximation error vanishes as mean abundance grows; the dual-channel observation
-  model is locally identifiable given $T\ge2$ with temporal abundance variation.
+  The algorithm is a forward-filtering approximation to coordinate ascent;
+  monotone increase is not guaranteed but convergence to a local stationary
+  point is supported by the fixed-point analysis.
+\item \textbf{Approximation quality and observation-layer identifiability}
+  (Corollary~\ref{cor:elbo-gap}, Proposition~\ref{prop:identif-dual},
+  \S\ref{sec:identif-val}): surrogate approximation errors vanish when
+  local density $\mu_{i,t}/K_i\to\infty$ with $K_i$ fixed;
+  the dual-channel observation model is locally identifiable given
+  $T\ge2$ with temporal abundance variation and known positive latent counts.
 \item \textbf{Simulation evidence and real-data application}
   (\S\ref{sec:simulation}, \S\ref{sec:realdata}): ten scenarios
   (50 replicates each, $m=100$, $T=15$) show 95\% CI coverage within
-  4~pp of particle MCMC at $22\times$ lower wall time; a VEM extension
-  applied to Swiss MHB Great Tit data ($m=267$, $T=10$) estimates
-  detection and dispersal parameters with well-calibrated PP checks.
+  4~pp of particle MCMC at $22\times$ lower wall time, consistent with
+  the surrogate approximation properties; a VEM extension applied to Swiss
+  MHB Great Tit data ($m=267$, $T=10$) yields empirically well-calibrated
+  PP checks.
 \end{enumerate}
 
 \paragraph{Organisation.}
@@ -775,35 +798,35 @@ analytically intractable and blocking any closed-form evaluation of
 $\mathcal{L}(\lambda)$.
 
 \paragraph{Approach and theoretical results.}
-We study the following question: \emph{does there exist a closed-form
-surrogate $\tilde{\mathcal{L}}$ of the exact ELBO such that
-(a)~every term of $\tilde{\mathcal{L}}$ and its CAVI gradient is analytic,
-(b)~the surrogate CAVI sequence converges to a well-defined stationary point,
-and (c)~the surrogate optimiser $\tilde\lambda^\star$ provides calibrated
+We study the following question: \emph{does there exist a deterministic,
+analytically tractable surrogate $\tilde{\mathcal{L}}$ of the exact ELBO
+such that (a)~every term and its gradient are analytic,
+(b)~a forward-filtering update sequence converges to a well-defined stationary point,
+and (c)~the surrogate optimiser provides empirically well-calibrated
 uncertainty quantification?}
-The four main theoretical results answer affirmatively:
+Four main results support an affirmative answer:
 \begin{enumerate}[label=(\roman*)]
 \item \textbf{Poisson-MGF Identities} (Theorem~\ref{thm:elbo},
-  \S\ref{sec:elbo-terms} --- \emph{principal contribution}): the Poisson
-  MGF yields exact closed-form expressions for every expectation in the
-  surrogate variational objective, with no quadrature, no Monte Carlo, no
-  stochastic gradients, and no black-box estimator; three approximations
-  each of explicitly bounded order are the only departure from exactness
+  \S\ref{sec:elbo-terms} --- \emph{principal contribution}): the Poisson MGF
+  yields exact closed-form survival and detection expectations, and a
+  second-order delta-method immigration approximation; three explicitly
+  bounded approximation sources are the only departure from the exact ELBO
   (Remark~\ref{rem:poi-approx}).
-\item \textbf{Optimisation guarantees} (Proposition~\ref{thm:vi-converge},
-  \S\ref{sec:vi-convergence}): the surrogate CAVI sequence is monotonically
-  non-decreasing and every limit point is a stationary point of
-  $\tilde{\mathcal{L}}$; convergence to a unique stationary point holds under
-  local contractivity assumptions.
-\item \textbf{Approximation quality} (Corollary~\ref{cor:elbo-gap},
-  \S\ref{sec:vi-convergence}): as mean latent count grows, all three
-  surrogate approximation errors vanish, so $|\tilde{\mathcal{L}} - \mathcal{L}| \to 0$
-  uniformly and the surrogate optimiser $\tilde\lambda^\star$ converges to
-  the exact variational optimiser $\lambda^\star$ (Corollary~\ref{cor:elbo-gap}).
-\item \textbf{Calibration} (\S\ref{sec:simulation}): in a simulation study
-  the variational posterior $q_{\tilde\lambda^\star}$ achieves 95\% credible
+\item \textbf{Fixed-point and stationarity} (Proposition~\ref{thm:vi-converge},
+  \S\ref{sec:vi-convergence}): every update step is analytic; fixed points
+  satisfy the local stationarity condition of $\tilde{\mathcal{L}}$.
+  The forward-filtering nature of Algorithm~\ref{alg:cavi} means monotone
+  increase of the full surrogate is not guaranteed; empirical convergence is
+  monitored via relative changes in $\tilde{\mathcal{L}}$.
+\item \textbf{Approximation error convergence} (Corollary~\ref{cor:elbo-gap},
+  \S\ref{sec:vi-convergence}): when local density $\mu_{i,t}/K_i\to\infty$
+  with $K_i$ fixed, three of the four surrogate errors decay to zero; the rate depends
+  on $\phi_{\max}$, $h^2$, and $\min_{i,t}\mu_{i,t}$.
+\item \textbf{Empirical performance} (\S\ref{sec:simulation}): across ten
+  simulation scenarios, the variational posterior achieves 95\% credible
   interval coverage within 4 percentage points of particle MCMC,
-  with posterior mean discrepancies below 3\%.
+  with posterior mean discrepancies below 3\%, consistent with the
+  surrogate approximation properties.
 \end{enumerate}
 The coordinate-ascent algorithm implementing (i)--(iii) is described in
 \S\ref{sec:smfvb-alg}.
@@ -974,7 +997,7 @@ p(N_{i,t}=n\mid\mathbf{N}_{t-1})
 whose logarithm has no closed form, making
 $\mathbb{E}_q[\log p(N_{i,t}\mid\mathbf{N}_{t-1})]$ analytically intractable.
 
-\paragraph{surrogate variational objective.}
+\paragraph{Surrogate variational objective.}
 The SMFVB algorithm optimises a \emph{surrogate} $\tilde{\mathcal{L}}$ that
 replaces only the intractable process term:
 
@@ -1001,9 +1024,13 @@ Crucially, $\mu^\dagger_{i,t}$ is the \emph{exact} conditional mean of the
 original count ABM process; only the log-PMF evaluation is replaced.  The Le Cam
 Poisson--Binomial total-variation bound \citep{lecam1960} gives
 $\|\mathrm{Pois}(\mu^\dagger)\,-\,p(N_{i,t}|\mathbf{N}_{t-1})\|_\mathrm{TV}
-\le \phi_i\,e^{-N_{i,t-1}/K_i}$,
-which is below $0.08$ for $\phi_i\le0.8$, $N_{i,t-1}\ge2$, indicating the
-Poisson surrogate density is close to the true Binomial--Poisson convolution.
+\le \phi_i\,e^{-N_{i,t-1}/K_i}$.
+This bound decreases as the local density ratio $N_{i,t-1}/K_i$ increases.
+For example, with $\phi_i\le0.8$ the TV bound falls below $0.08$ only when
+$e^{-N_{i,t-1}/K_i}\le0.1$, equivalently $N_{i,t-1}/K_i\ge\log(10)\approx2.30$.
+In the baseline scenario ($K_i\approx50$, $\bar N\approx10$) the density ratio
+is only $0.2$, so the TV bound can be close to $\phi_i$; the Poisson surrogate
+is a better approximation at high density relative to carrying capacity.
 This TV proximity qualitatively controls the surrogate process term, but because
 the TV distance bounds the density difference rather than the log-density
 difference, a uniform bound on $|\tilde{\mathcal{L}}-\mathcal{L}|$ is not
@@ -1114,17 +1141,17 @@ and is documented as the third source of surrogate error alongside the Poisson
 process surrogate and the delta-method immigration approximation.
 \end{proof}
 
-\begin{remark}[Three sources of surrogate approximation error]\label{rem:poi-approx}
+\begin{remark}[Four sources of surrogate approximation]\label{rem:poi-approx}
 Parts~(i) and~(ii) of Theorem~\ref{thm:elbo} involve \emph{no approximation}:
-they are exact Poisson moments of exact model functions.  There are three
+they are exact Poisson moments of exact model functions.  There are four
 approximation steps in $\tilde{\mathcal{L}}$:
 \begin{enumerate}[label=(\alph*)]
 \item \textbf{Poisson process surrogate}: the intractable Binomial--Poisson
   convolution $p(N_{i,t}|\mathbf{N}_{t-1})$ is replaced by
-  $\mathrm{Pois}(N_{i,t};\mu^\dagger_{i,t})$.  The two distributions are
-  separated by Le Cam TV distance
-  $\le\phi_i e^{-\mu_{i,t-1}/K_i}\le0.08$ for $\phi_i\le0.8$,
-  $\mu_{i,t-1}\ge2$.
+  $\mathrm{Pois}(N_{i,t};\mu^\dagger_{i,t})$.  The TV distance is
+  $\le\phi_i e^{-\mu_{i,t-1}/K_i}$, which is small when the local
+  density ratio $\mu_{i,t-1}/K_i$ is large; specifically, with $\phi_i\le0.8$
+  the bound falls below $0.08$ when $\mu_{i,t-1}/K_i\ge\log(10)\approx2.30$.
 \item \textbf{Delta-method immigration approximation}: the concave
   immigration rate $g(N)=\omega N/(N+h)$ is linearised to second order
   in~\eqref{eq:immig-id}; error $O(h^2\mu^{-2})$, negligible for $\mu\ge4$.
@@ -1132,24 +1159,44 @@ approximation steps in $\tilde{\mathcal{L}}$:
   $\mathbb{E}_q[\log\mu^\dagger_{i,t}(\mathbf{N}_{t-1})]$ is replaced by
   $\log\tilde\mu_{i,t}(\boldsymbol\mu_{t-1})$ via the delta method;
   error $O(\mu_{t-1}^{-1})$, negligible for large populations.
+\item \textbf{Plug-in NegBin quasi-likelihood}: the count observation term
+  $\mathbb{E}_q[\log\mathrm{NegBin}(y^{(C)};\rho N,r)]$ is replaced by the
+  plug-in $\log\mathrm{NegBin}(y^{(C)};\rho\mu,r)$ evaluated at
+  $N=\mu_{i,t}$, because the exact expectation is $-\infty$ when $y^{(C)}>0$
+  and $q(N=0)>0$ (\S\ref{sec:cavi-update}).  As a result, $\tilde{\mathcal{L}}$
+  is a surrogate criterion rather than an ELBO or lower bound on $\log p(Y)$.
 \end{enumerate}
 Because TV distance bounds density differences but not log-density differences,
 no closed-form bound on the total approximation gap $|\tilde{\mathcal{L}}-\mathcal{L}|$
 is derived; approximation quality is assessed empirically.  Simulation
-experiments in \S\ref{sec:simulation} confirm SMFVB posterior means match
-PMCMC to within~3\%.
+experiments in \S\ref{sec:simulation} show SMFVB posterior means agree with
+PMCMC to within~3\%, consistent with the surrogate approximation being small
+at the sample sizes studied.
 \end{remark}
 
 \subsection{The CAVI Update as a Corrected Conditional-Mean Forward Pass}
 \label{sec:cavi-update}
 
 \paragraph{Derivation of the fixed-point.}
-The surrogate variational objective $\tilde{\mathcal{L}}$ depends on $\mu_{i,t}$ through three
-components: (1) the surrogate process term~\eqref{eq:proc-elbo}, (2) the
-Poisson entropy $H[q(N_{i,t})]=\mu_{i,t}(1-\log\mu_{i,t})+\mathbb{E}_q[\log N_{i,t}!]$,
-and (3) the observation term $\mathcal{L}_\mathrm{obs}$.
+The surrogate variational objective $\tilde{\mathcal{L}}$ depends on $\mu_{i,t}$ through
+four components: (1) the surrogate process term~\eqref{eq:proc-elbo} at time $t$,
+(2) the Poisson entropy $H[q(N_{i,t})]=\mu_{i,t}(1-\log\mu_{i,t})+\mathbb{E}_q[\log N_{i,t}!]$,
+(3) the observation term $\mathcal{L}_\mathrm{obs}$, and
+(4) the \emph{future} process term at time $t+1$, since the surrogate rate
+$\tilde\mu_{i,t+1}$ depends on $\mu_{i,t}$ through the survival term
+$\bar{s}_{i,t+1}=\phi_i\,\mu_{i,t}\,c_i\exp(\mu_{i,t}(c_i-1))$.
 
-Because $\tilde\mu_{i,t}=\tilde\mu_{i,t}(\boldsymbol{\mu}_{t-1})$ does not
+The forward-filtering update in Algorithm~\ref{alg:cavi} drops the
+future-process contribution (component 4) from the gradient and solves only
+the local stationarity condition at time $t$ with $\tilde\mu_{i,t+1}$
+treated as fixed.  This is a \emph{forward-filtering approximation} to exact
+block coordinate ascent: it is computationally efficient and naturally produces
+a causal left-to-right sweep, but it does not in general maximise the full
+$\tilde{\mathcal{L}}$ over $\mu_{i,t}$ and does not guarantee monotone
+increase of the objective.
+
+Under the local approximation (components 1--3 only), and using the fact
+that $\tilde\mu_{i,t}=\tilde\mu_{i,t}(\boldsymbol{\mu}_{t-1})$ does not
 depend on $\mu_{i,t}$, the combined process-plus-entropy gradient is:
 \begin{align}
 \frac{\partial}{\partial\mu_{i,t}}
@@ -1177,21 +1224,27 @@ immediately yields the CAVI fixed-point equation:
 \end{equation}
 
 \paragraph{Observation correction $\delta_{i,t}^{(\mathrm{obs})}$.}
-The observation term $\mathcal{L}_\mathrm{obs}$ is approximated by evaluating
-the expected log-likelihood at the variational mean (plug-in of
-$\mathbb{E}[N_{i,t}]=\mu_{i,t}$) for the NegBin component, and by using
-$\mathbb{E}_q[\pi_{i,t}]=\hat\pi_{i,t}$ (exact via Theorem~\ref{thm:elbo}(ii))
-for the Bernoulli component.  Differentiating with respect to $\mu_{i,t}$:
+The NegBin count observation term uses a \emph{plug-in quasi-likelihood}
+approximation: rather than integrating $\mathbb{E}_q[\log\mathrm{NegBin}(y^{(C)};
+\hat\rho_{i,t}N_{i,t},r)]$ over $q(N_{i,t})$, the log-likelihood is evaluated
+at the variational mean $\mu_{i,t}$.  This fourth approximation is introduced
+because the exact expected NegBin log-likelihood under $q(N_{i,t})=\mathrm{Pois}(\mu_{i,t})$
+is analytically intractable and because $q(N_{i,t}=0)=e^{-\mu_{i,t}}>0$
+while $\log\mathrm{NegBin}(y^{(C)}>0;\rho\cdot0,r)=-\infty$, so the exact
+expectation is $-\infty$ whenever $y^{(C)}_{i,t}>0$.
+We therefore treat $\mathcal{L}_\mathrm{obs}$ as a plug-in quasi-likelihood
+contribution throughout; $\tilde{\mathcal{L}}$ is a surrogate criterion, not an
+ELBO or lower bound.  The Bernoulli component uses
+$\mathbb{E}_q[\pi_{i,t}]=\hat\pi_{i,t}$ (exact via Theorem~\ref{thm:elbo}(ii)).
+Differentiating with respect to $\mu_{i,t}$:
 
-\textbf{NegBin count:} The plug-in log-likelihood
-$\log\mathrm{NegBin}(y^{(C)};\hat\rho\mu,r)$ has gradient w.r.t.\ $\mu$:
+\textbf{NegBin count (plug-in):}
 \[
 \frac{\partial}{\partial\mu}\log\mathrm{NegBin}(y^{(C)};\hat\rho_{i,t}\mu_{i,t},r)
 =\frac{r}{r+\hat\rho_{i,t}\mu_{i,t}}\cdot
- \frac{y^{(C)}_{i,t}-\hat\rho_{i,t}\mu_{i,t}}{\mu_{i,t}},
+ \frac{y^{(C)}_{i,t}-\hat\rho_{i,t}\mu_{i,t}}{\mu_{i,t}};
 \]
-exact for the NegBin at the plug-in point; reduces to $(y^{(C)}-\hat\rho\mu)/\mu$
-as $r\to\infty$ (Poisson limit).
+reduces to $(y^{(C)}-\hat\rho\mu)/\mu$ as $r\to\infty$ (Poisson limit).
 
 \textbf{Bernoulli presence:} With $\hat\pi=\eta+(1-\eta)(1-e^{\mu(e^{-\kappa}-1)})$,
 the exact derivative of $\hat\pi$ with respect to $\mu$ (via the Poisson MGF,
@@ -1219,23 +1272,22 @@ Combining both components, the full observation correction is:
 \end{equation}
 with $\hat\pi_{i,t}=\hat\eta_{i,t}+(1-\hat\eta_{i,t})\bar{d}_{i,t}$.
 
-Equation~\eqref{eq:cavi-fp} is the first-order optimality condition of the
-surrogate KL problem~\eqref{eq:kl-problem}: it characterises the unique
-mean-field Poisson distribution $q^\star(N_{i,t})$ that minimises $\mathrm{KL}$
-jointly with all other blocks held fixed.  The solution has a statistically
+Equation~\eqref{eq:cavi-fp} is the local stationarity condition of the
+surrogate KL problem~\eqref{eq:kl-problem} under the forward-filtering
+approximation: it characterises the Poisson distribution $q(N_{i,t})=\mathrm{Pois}(\mu_{i,t}^\star)$
+that is locally stationary with respect to components (1)--(3).
+The solution has a statistically
 interpretable structure: the prior factor $\tilde\mu_{i,t}$ is the
 variational predictive mean under the process model, and the likelihood factor
 $\exp(\delta_{i,t}^{(\mathrm{obs})})$ is an observation-driven multiplicative
 correction, sign-consistent with the residual between predicted and observed
 data.  When $(i,t)\notin O_C\cup O_P$ (unobserved cell--time), $\delta=0$
-and the optimality condition reduces to $q^\star(N_{i,t})=\mathrm{Pois}(\tilde\mu_{i,t})$,
-i.e.\ the variational posterior collapses to the process-model predictive
-distribution, as a Bayesian optimality condition requires.
-The structure mirrors the Kalman filter update for linear Gaussian models
---- predict from the process, correct by the likelihood residual --- but is
-derived here directly from the KL optimality condition for a nonlinear,
-non-Gaussian, discrete-state model without any Gaussian or linearisation
-approximation to the process.
+and the condition reduces to $q(N_{i,t})=\mathrm{Pois}(\tilde\mu_{i,t})$:
+the variational distribution collapses to the process-model predictive, as
+expected.  The structure mirrors the Kalman filter predict--correct cycle
+for nonlinear, non-Gaussian, discrete-state dynamics, here derived from
+the surrogate KL stationarity condition without any Gaussian or linearisation
+approximation to the process model.
 
 \subsection{SMFVB Algorithm}
 \label{sec:smfvb-alg}
@@ -1246,7 +1298,12 @@ time step for the immigration sum~\eqref{eq:immig-id}, giving
 $O(m\,T\,\bar{d})$ per objective evaluation with no particle loop.
 
 \begin{algorithm}[ht]
-\caption{SMFVB: closed-form CAVI for count ABMs (exact model; surrogate variational objective $\tilde{\mathcal{L}}$)}\label{alg:cavi}
+\caption{SMFVB: deterministic surrogate variational filtering for count ABMs.
+  The latent-field update is a forward-filtering approximation to coordinate ascent
+  (drops future-process contributions; see \S\ref{sec:cavi-update}).
+  Parameter updates use Adam \citep{kingma2013}; Adam does \emph{not} guarantee
+  monotone increase of $\tilde{\mathcal{L}}$.
+  Surrogate objective $\tilde{\mathcal{L}}$ is not a lower bound on $\log p(Y)$.}\label{alg:cavi}
 \begin{algorithmic}[1]
 \Require Count ABM parameters $(\phi_i,K_i,\omega_j,h,\psi_i,\rho_{i,t},\kappa_{i,t},\eta_{i,t})$
          and observations $(Y^{(C)},Y^{(P)})$.
@@ -1283,109 +1340,110 @@ $O(m\,T\,\bar{d})$ per objective evaluation with no particle loop.
 \subsection{Statistical Properties of the Surrogate CAVI}
 \label{sec:vi-convergence}
 
-The following proposition establishes that maximising the surrogate variational
-objective $\tilde{\mathcal{L}}$ is a well-posed optimisation problem: the
-sequence of CAVI iterates is monotonically non-decreasing and every limit point
-is a stationary point of $\tilde{\mathcal{L}}$.  Convergence to a unique
-maximiser holds under local contraction assumptions that are stated explicitly
-in part~(iii) but are not verified in full generality here.
+The following proposition characterises the fixed-point structure of the
+surrogate objective and the stationarity condition satisfied by the forward-filtering
+update.  Algorithm~\ref{alg:cavi} implements a \emph{forward-filtering
+approximation} to coordinate ascent (dropping future-process contributions
+from the gradient; see \S\ref{sec:cavi-update}) rather than exact block-wise
+maximisation; the monotonicity claim below applies only to exact block
+coordinate ascent, not to the forward-filtering sweep.
 
-\begin{proposition}[Statistical properties of SMFVB]\label{thm:vi-converge}
+\begin{proposition}[Properties of the SMFVB surrogate objective]\label{thm:vi-converge}
 Let $\tilde{\mathcal{L}}$ be the surrogate variational objective
 \eqref{eq:surr-elbo} with process term \eqref{eq:proc-elbo}.  Suppose
 $\phi_i<1$ and $\psi_i>0$ for all $i$, and restrict $\lambda$ to the
 compact set $\mathcal{M}=\{\lambda:\mu_{i,t}\in[\varepsilon_0,\mu_{\max}]\}$.
 \begin{enumerate}[label=(\roman*)]
-\item \textbf{Monotonicity:}
+\item \textbf{Monotonicity under exact block coordinate ascent:}
+If each block update of $\mu_{i,t}$ maximises $\tilde{\mathcal{L}}$ over
+that block with all future-process contributions included and all
+other blocks held fixed, then
 $\tilde{\mathcal{L}}(\lambda^{(k+1)})\ge\tilde{\mathcal{L}}(\lambda^{(k)})$
 for all $k\ge0$.
+\emph{Algorithm~\ref{alg:cavi} uses a forward-filtering update that drops
+future-process contributions; monotone increase under this scheme is not
+guaranteed in general.  Empirical convergence is monitored via relative
+changes in $\tilde{\mathcal{L}}$.}
 \item \textbf{Relation to model evidence:}
 The exact ELBO satisfies $\mathcal{L}(\lambda)\le\log p(Y)$ for all
-$\lambda$ (standard variational inequality).  The surrogate is not a guaranteed
-lower bound on $\log p(Y)$: the surrogate process density can over- or
-under-estimate the true transition log-density, so
-$\tilde{\mathcal{L}}$ may lie above or below $\mathcal{L}$.  The Le Cam
-TV proximity (Remark~\ref{rem:poi-approx}) qualitatively implies that
-$|\tilde{\mathcal{L}}-\mathcal{L}|$ is small when $\phi_i$ is moderate,
-but a rigorous closed-form gap bound is not available from the TV distance alone.
-\item \textbf{Stationary-point convergence:} Every limit point of
-$\{\lambda^{(k)}\}_{k\ge0}$ is a stationary point of $\tilde{\mathcal{L}}$.
-Under the additional assumption of local contractivity of the CAVI map on
-$\mathcal{M}$---that is, if the block-coordinate updates define a locally
-contractive map in a neighbourhood of a stationary point---the iterates
-converge to that stationary point.  Verification of this contractivity
-assumption for the full joint CAVI remains an open problem.
+$\lambda$.  The surrogate $\tilde{\mathcal{L}}$ is not a guaranteed
+lower bound: the plug-in NegBin quasi-likelihood and the Poisson process
+surrogate can each cause $\tilde{\mathcal{L}}$ to lie above or below
+$\mathcal{L}$.
+\item \textbf{Fixed-point stationarity:} Every fixed point $\lambda^\star$
+of the forward-filtering update satisfies the local stationarity
+condition $\partial\tilde{\mathcal{L}}/\partial\mu_{i,t}=0$ with
+respect to components (1)--(3) of the gradient (\S\ref{sec:cavi-update}).
+Under local contractivity of the forward-filtering map on $\mathcal{M}$,
+the iterates converge to such a fixed point; verification of this
+assumption is left to future work.
 \end{enumerate}
 \end{proposition}
 
 \begin{proof}[Proof sketch]
-\textit{(i):} Each block update of $\mu_{i,t}$ maximises $\tilde{\mathcal{L}}$
-over that block with all others fixed---standard coordinate ascent monotonicity
-\citep{blei2017}.  Since $\tilde{\mathcal{L}}$ is bounded above on $\mathcal{M}$
-(finite compact domain, continuous objective), the sequence
-$\{\tilde{\mathcal{L}}(\lambda^{(k)})\}$ converges.
+\textit{(i):} Under exact block coordinate ascent, each update maximises
+$\tilde{\mathcal{L}}$ over the current block with all others fixed---standard
+coordinate ascent monotonicity \citep{blei2017}.  Since $\tilde{\mathcal{L}}$
+is bounded above on $\mathcal{M}$, the sequence $\{\tilde{\mathcal{L}}(\lambda^{(k)})\}$
+converges.  The forward-filtering update of Algorithm~\ref{alg:cavi} does not
+satisfy this condition because it omits the future-process contribution to the
+gradient of the current coordinate; monotonicity therefore need not hold.
 \textit{(ii):} The exact bound $\mathcal{L}\le\log p(Y)$ follows from
-$\mathrm{KL}[q\|p(\cdot|Y)]\ge0$.  The surrogate deviates from the exact ELBO
-by replacing the intractable process log-density with its Poisson surrogate;
-the Le Cam TV proximity (Remark~\ref{rem:poi-approx}) qualitatively supports
-small deviation but a closed-form gap bound requires stronger conditions than TV
-distance alone.
-\textit{(iii):} The stationary-point claim follows from \textit{(i)} and
-continuity of $\tilde{\mathcal{L}}$: if a limit point were not stationary,
-a block update would strictly increase the objective, contradicting convergence.
-Convergence under local contractivity follows from the standard analysis of
-contractive fixed-point iterations; the contractivity assumption itself is not
-verified here and is left to future work.
+$\mathrm{KL}[q\|p(\cdot|Y)]\ge0$.  The surrogate introduces
+a plug-in NegBin approximation (which is not a true expectation) and replaces
+the intractable log-transition density; neither operation preserves the
+lower-bound property.
+\textit{(iii):} The fixed-point satisfies the local stationarity condition by
+construction.  Convergence under local contractivity follows from the standard
+analysis of contractive fixed-point iterations; the contractivity condition is
+not verified here.
 \end{proof}
 
-\begin{corollary}[Surrogate approximation error convergence under large populations]\label{cor:elbo-gap}
-Let $\bar\mu = m^{-1}T^{-1}\sum_{i,t}\mu_{i,t}$ be the mean variational count.
-Under the conditions of Proposition~\ref{thm:vi-converge}, all three surrogate
-approximation errors (Remark~\ref{rem:poi-approx}) vanish as
-$\bar\mu\to\infty$ with $\phi_{\max}<1$ fixed:
+\begin{corollary}[Individual surrogate error decay under local large-density conditions]\label{cor:elbo-gap}
+Suppose $K_i$ is fixed for each $i$ and $\min_{i,t}\mu_{i,t}\to\infty$
+with $\phi_{\max}<1$ fixed.
+Under these conditions, three of the four surrogate approximation
+errors (Remark~\ref{rem:poi-approx}, items a--c) each decay to zero;
+the plug-in NegBin quasi-likelihood contribution (item d) does not vanish
+under large-density conditions:
 \begin{enumerate}[label=(\alph*)]
 \item \textbf{Process surrogate error:}
-$\phi_i\,e^{-\mu_{i,t-1}/K_i}\to 0$, so the Le Cam TV distance between
-$\mathrm{Pois}(\mu^\dagger_{i,t})$ and the true Binomial--Poisson convolution
-vanishes, and the process term $\tilde{\mathcal{L}}_\mathrm{proc}$
-converges to its exact counterpart $\mathcal{L}_\mathrm{proc}$.
+$\phi_i\,e^{-\mu_{i,t-1}/K_i}\to 0$ for each $(i,t)$, so the Le Cam TV
+distance between $\mathrm{Pois}(\mu^\dagger_{i,t})$ and the true
+Binomial--Poisson convolution vanishes pointwise in $(i,t)$.
+The convergence requires $\mu_{i,t-1}/K_i\to\infty$; with $K_i$ fixed this
+holds when $\min_{i,t}\mu_{i,t}\to\infty$, but not merely under growth of the
+spatial or temporal average.
 \item \textbf{Delta-method immigration error:}
-$O(h^2\bar\mu^{-2})\to 0$, so the linearised immigration rate~\eqref{eq:immig-id}
+$O(h^2\mu_{\min}^{-2})\to 0$, so the linearised immigration rate~\eqref{eq:immig-id}
 becomes exact in the limit.
-\item \textbf{Jensen log-rate error:}
-$O(\bar\mu^{-1})\to 0$, so the approximation
+\item \textbf{Log-rate approximation error:}
+$O(\mu_{\min}^{-1})\to 0$, so the plug-in
 $\mathbb{E}_q[\log\mu^\dagger_{i,t}]\approx\log\tilde\mu_{i,t}$ becomes exact.
 \end{enumerate}
-Consequently, the surrogate approximation error vanishes uniformly:
-\[
-\sup_{\lambda\in\mathcal{M}}|\tilde{\mathcal{L}}(\lambda)-\mathcal{L}(\lambda)|\;\to\;0
-\qquad\text{as }\bar\mu\to\infty,
-\]
-and the surrogate variational optimiser $\tilde\lambda^\star$ converges to the
-exact variational optimiser $\lambda^\star$ at the rate
-\[
-\|\tilde\lambda^\star - \lambda^\star\| \;=\; O\!\left(\phi_{\max}e^{-\bar\mu/K_{\min}}
-+h^2\bar\mu^{-2}+\bar\mu^{-1}\right)\;\to\;0.
-\]
-This is a statement about surrogate approximation error convergence: as mean
-abundance grows, SMFVB and exact mean-field VI optimise objectives that are
-uniformly close, so their optimisers coincide in the limit.  No claim is
-made about convergence of the variational posterior to the true posterior
-$p(\mathbf{N}_{1:T}\mid\mathbf{Y})$, which would require a separate
-Bayesian consistency argument.
+\emph{Remarks on what is and is not established.}
+Parts (a)--(c) support, but do not by themselves prove, pointwise or uniform
+convergence of the surrogate objective to the exact ELBO.
+Converting TV distance bounds to log-density difference bounds requires
+additional integrability or bounded-density conditions not assumed here.
+Additionally, the plug-in NegBin quasi-likelihood contribution to
+$\tilde{\mathcal{L}}$ is not part of the ELBO and its contribution to the gap
+$|\tilde{\mathcal{L}}-\mathcal{L}|$ does not vanish under these conditions.
+No claim is made about convergence of the surrogate optimiser to the exact
+variational optimiser, nor about convergence of the variational posterior to
+the true posterior $p(\mathbf{N}_{1:T}\mid\mathbf{Y})$.  The practical value
+of the surrogate is assessed empirically in \S\ref{sec:simulation}.
 \end{corollary}
 
 \begin{proof}[Proof sketch]
-Parts (a)--(c) follow directly from the error orders stated in
-Remark~\ref{rem:poi-approx}.  Uniform convergence on $\mathcal{M}$ follows
-because all three error terms are bounded by functions of $\bar\mu$ and
-$\phi_{\max}$ that converge to zero uniformly in $\lambda\in\mathcal{M}$.
-The convergence of $\tilde\lambda^\star$ to $\lambda^\star$ follows from the
-stability of the argmax under uniform convergence of the objective
-\citep{newey1994}.
+Parts (a)--(c): each error bound is $O(\phi_{\max}e^{-\mu_{\min}/K_i})$,
+$O(h^2\mu_{\min}^{-2})$, or $O(\mu_{\min}^{-1})$; all vanish as
+$\mu_{\min}:=\min_{i,t}\mu_{i,t}\to\infty$ with $K_i$ and $h$ fixed.
+The TV-to-log-density step would additionally require, e.g., a bounded
+log-density ratio condition; we do not establish this here.
 \end{proof}
 
-\subsection{surrogate variational objective as an Approximate Model Selection Criterion}
+\subsection{Surrogate Variational Objective as an Approximate Model Selection Criterion}
 \label{sec:elbo-sel}
 
 Because $\tilde{\mathcal{L}}$ approximates the exact ELBO (which is itself
@@ -1454,14 +1512,25 @@ Under the count ABM process model, $n_{i,t}$ varies as long as
 $\psi_i>0$ or the dispersal network is non-trivial; hence $(\kappa,\eta)$
 are locally identifiable from the binary channel with $T\ge 2$.
 
-\item \textbf{Dual-channel joint identifiability.}
+\item \textbf{Dual-channel observation-layer identifiability.}
 The two channels are conditionally independent given $N$, so the joint
 Fisher information is block-diagonal in $({\rho,r})$ and $(\kappa,\eta)$.
 Under (i) and (iii), the full observation parameter vector $(\rho,r,\kappa,\eta)$
-is locally identifiable for $T\ge2$, $n_{i,t}>0$, $\kappa>0$, $0<\eta<1$.
-The process parameters $(\phi_i,K_i,\psi_i)$ are then identified through the
-temporal dynamics of the latent field, provided $T\ge3$ and the dispersal
-network is observed.
+is locally identifiable given known positive latent counts $n_{i,t}$,
+for $T\ge2$, $\kappa>0$, $0<\eta<1$.
+\emph{These are conditional observation-layer identifiability results:
+they condition on the latent field $\{n_{i,t}\}$ being known and positive.}
+With $N_{i,t}$ latent, full hierarchical model identifiability of the
+observation parameters $(\rho,r,\kappa,\eta)$ additionally requires that
+the marginal distribution of the observations uniquely determines these
+parameters given the process distribution, which depends on the process
+parameters and the observation design; a complete analysis is not provided here.
+The process parameters $(\phi_i,K_i,\psi_i)$ are partially identified through
+the marginal temporal dynamics of the latent field conditional on the observation
+parameters, but are subject to confounding with $(\rho,\kappa)$ and require
+sufficient temporal replication, covariate variation, and spatial network
+structure for separation; a rigorous latent-process identifiability analysis
+is deferred to future work.
 \end{enumerate}
 \end{proposition}
 
@@ -1475,8 +1544,9 @@ $((1-\eta)n_1,1)$ and $((1-\eta)n_2,1)$ are linearly independent, so
 their outer products span $\mathbb{R}^{2\times2}$.
 The determinant formula follows by direct calculation.
 Part~(iv): block-diagonal structure follows from conditional independence;
-process parameter identifiability from the temporal evolution of the latent
-counts via the count ABM mean recursion.
+the conditional identification of $(\rho,r,\kappa,\eta)$ from known positive
+latent counts follows from (i) and (iii).  The extension to latent $N_{i,t}$
+requires additional assumptions on the process model and is noted as an open problem.
 \end{proof}
 
 \begin{remark}[Practical consequence]\label{rem:identif}
@@ -1494,11 +1564,32 @@ merely convenient but \emph{necessary} for full parameter recovery.
 
 \subsection{Design and Scenarios}
 
-The simulation study validates SMFVB across ten scenarios that collectively
-stress-test the theoretical properties established in \S\S\ref{sec:vi}--\ref{sec:identif-val}.
+The simulation study assesses SMFVB performance across ten scenarios spanning
+conditions relevant to the theoretical properties established in
+\S\S\ref{sec:vi}--\ref{sec:identif-val}.
 Table~\ref{tab:scenarios} defines each scenario; Table~\ref{tab:results} reports
 seven performance metrics.  Scenario~A is the baseline; Scenarios B--J
 stress-test specific aspects of the model and algorithm.
+
+\paragraph{Priors and initialisation.}
+All runs use independent half-normal priors $\phi_i\sim\mathcal{N}^+(0.8,0.1)$,
+$\log K_i\sim\mathcal{N}(\log50,0.5)$, $\psi_i\sim\mathcal{N}^+(1,0.5)$,
+$\rho\sim\mathrm{Beta}(4,2)$, $r\sim\mathrm{Gamma}(2,1)$,
+$\kappa\sim\mathrm{Gamma}(1.5,8)$, $\eta\sim\mathrm{Beta}(1,19)$.
+SMFVB initialises $\mu_{i,t}$ at the prior process mean forward pass.
+PMCMC uses a random-walk Metropolis--Hastings kernel with proposal standard
+deviations pre-tuned by pilot runs to target acceptance rates in $[0.20,0.40]$;
+8 independent chains, 10{,}000 iterations, 5{,}000 burn-in; $P=3{,}000$
+particles for Scenarios A--E.  SMFVB 95\% credible intervals are obtained
+from the Poisson variational distribution: $\hat\mu_{i,t}\pm1.96\sqrt{\hat\mu_{i,t}}$
+for the latent field; for scalar parameters, Laplace-approximation intervals
+from the diagonal Hessian of $\tilde{\mathcal{L}}$.  PMCMC intervals are
+posterior quantiles across post-burn-in draws.  PMCMC targets the exact
+generative model $p(Y,N_{1:T}|\Theta)$ via a bootstrap particle filter with
+systematic resampling; SMFVB targets the surrogate $\tilde{\mathcal{L}}$.
+The two methods are compared on the \emph{same dataset and model}, representing
+two inferential strategies with different theoretical guarantees (see
+\S\ref{sec:pmcmc-diag} for diagnostics).
 
 \begin{table}[ht]
 \centering
@@ -1610,17 +1701,18 @@ On the baseline setting SMFVB achieves RMSE$_\phi=0.030$, 95\% CI coverage
 of 0.90, and runtime of 4 minutes — compared to PMCMC (coverage 0.93, runtime
 92 minutes) and ABC-SMC (coverage 0.88, RMSE$_\phi=0.045$, runtime 38 minutes).
 SMFVB is $22\times$ faster than PMCMC with only a 2--3~pp coverage penalty,
-a favourable accuracy--speed trade-off.  The 3~pp shortfall is theoretically
-predicted by the Binomial survival mean-field underestimation (\S\ref{sec:vi-family}).
+a favourable accuracy--speed trade-off.  The 3~pp shortfall is consistent with
+the Binomial survival mean-field variance underestimation (\S\ref{sec:vi-family}),
+though we do not claim a formal proof of this connection.
 SMFVB provides the surrogate variational objective value ($\tilde{\mathcal{L}}^\star=-2\,847$)
 at no additional cost, enabling model comparison without re-running; ABC-SMC
 has no tractable likelihood estimate.
 
 \paragraph{Scenario B (Small abundance, $\bar N<2$).}
 Coverage drops to 0.82 and relative bias rises to 5.8\%, the largest across
-all scenarios.  This is consistent with Corollary~\ref{cor:elbo-gap}: the
-surrogate approximation error is $O(\bar\mu^{-1})\approx O(1/1.5)$, which is
-substantial.  The CAVI requires 11 sweeps (vs.\ 8 at baseline) because the
+all scenarios.  The surrogate approximation error is $O(\mu_{\min}^{-1})\approx O(1/1.5)$
+(Corollary~\ref{cor:elbo-gap}(c)), which is substantial, consistent with
+the observed performance degradation.  The CAVI requires 11 sweeps (vs.\ 8 at baseline) because the
 process prior (small $\psi=0.3$) and observations provide conflicting weak
 signals.  Practitioners should use informative priors on $\phi$ and $K$ when
 $\bar Y^{(C)}<2$, and treat SMFVB results as approximate in this regime.
@@ -2156,22 +2248,28 @@ represent; a time-varying $\phi_t$ or $\psi_t$ covariate would address this.
 
 We have developed a structured variational inference framework for count
 statistical agent-based models.  The principal methodological contribution
-is Theorem~\ref{thm:elbo} (Poisson-MGF Identities): the Poisson MGF
-converts an otherwise intractable variational objective into a fully
-closed-form surrogate, making survival expectations, immigration rates, and
-binary detection probabilities all analytic---with no quadrature, no Monte
-Carlo, no stochastic gradients, and no black-box variational estimator---at
-the cost of three explicitly bounded approximation sources.  Second, the closed-form
-structure enables a coordinate-ascent algorithm (SMFVB) in which each update
-is analytic and the iterates converge monotonically to a stationary point of
-the surrogate variational objective under local contractivity assumptions.  Third, as mean latent abundance grows all
-surrogate approximation errors vanish, establishing surrogate approximation
-error convergence ($|\tilde{\mathcal{L}}-\mathcal{L}|\to0$) in the
-large-population regime; and the dual-channel observation model is locally
-identifiable under mild temporal abundance variation.  Fourth, the simulation
-study confirms that these theoretical guarantees translate directly to
-practice: SMFVB matches particle MCMC credible-interval coverage to within
-4 percentage points at a $22\times$ wall-time reduction.
+is Theorem~\ref{thm:elbo} (Poisson-MGF Identities): the Poisson MGF enables
+a fully analytic surrogate variational objective $\tilde{\mathcal{L}}$,
+making the dominant expectations---survival probabilities and binary detection
+probabilities---exact Poisson moments, while immigration uses a second-order
+delta-method approximation.  No quadrature, Monte Carlo, stochastic gradients,
+or black-box estimator is required.  The surrogate objective is not the exact
+ELBO and does not constitute a lower bound on the log-evidence; it incorporates
+four explicitly characterised approximation sources.  Second, Algorithm~\ref{alg:cavi}
+implements a deterministic forward-filtering update: each step is analytic,
+fixed points satisfy local stationarity of $\tilde{\mathcal{L}}$, and
+monotone convergence holds under exact block coordinate ascent
+(Proposition~\ref{thm:vi-converge}(i)); the forward-filtering approximation
+itself does not guarantee monotone increase.  Third, individual surrogate
+approximation errors decay when local density $\mu_{i,t}/K_i\to\infty$
+with $K_i$ fixed (Corollary~\ref{cor:elbo-gap}); convergence of the full
+surrogate gap to zero requires additional integrability conditions not
+established here.  The dual-channel observation model is locally identifiable
+from the observation layer given known positive latent counts and temporal
+variation (Proposition~\ref{prop:identif-dual}).  Fourth, the ten-scenario
+simulation study is consistent with these properties: SMFVB matches particle
+MCMC credible-interval coverage to within 4 percentage points at a $22\times$
+wall-time reduction.
 
 \subsection{Limitations of the Poisson Mean-Field Family}
 \label{sec:limitations-mf}
