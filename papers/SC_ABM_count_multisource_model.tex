@@ -40,7 +40,7 @@ the intractability of the transition likelihood: when latent abundance evolves
 through a Binomial survival plus Poisson immigration convolution, neither the
 log-PMF nor the exact evidence lower bound (ELBO) has a closed form.
 We show that the Poisson moment generating function (MGF) resolves this
-obstacle by delivering a \emph{fully closed-form} surrogate ELBO.  Under a
+obstacle by delivering a \emph{fully closed-form} surrogate variational objective.  Under a
 Poisson mean-field variational family, every expectation---survival
 probabilities, immigration rates, and binary detection probabilities---is
 computed analytically via the MGF with no quadrature or Monte Carlo, defining
@@ -114,17 +114,18 @@ summary statistic choice and yields only an approximate posterior.  Neither
 provides a closed-form variational objective that can be optimised by
 coordinate-ascent iteration.
 
-\paragraph{Our approach: closed-form ELBO via the Poisson MGF.}
+\paragraph{Our approach: closed-form surrogate variational objective via the Poisson MGF.}
 We show that replacing the intractable Binomial--Poisson process density with a
 Poisson surrogate---justified by the Le Cam total-variation bound
 $d_{\mathrm{TV}}(\mathrm{Binom}(n,p),\,\mathrm{Pois}(np))\le p$---converts
-every expectation in the ELBO into a closed-form expression via the Poisson
-moment generating function (MGF).  Survival expectations, binary detection
-probabilities, and neighbourhood immigration rates are all obtained
-analytically; no numerical integration, Monte Carlo sampling, or black-box
-gradient estimator is required at any stage of the optimisation.
+every expectation in the surrogate variational objective into a closed-form
+expression via the Poisson moment generating function (MGF).  Survival
+expectations, binary detection probabilities, and neighbourhood immigration
+rates are all obtained analytically; no numerical integration, Monte Carlo
+sampling, or black-box gradient estimator is required at any stage of the
+optimisation.
 
-The closed-form ELBO enables a \emph{structured mean-field variational Bayes}
+The closed-form surrogate variational objective enables a \emph{structured mean-field variational Bayes}
 (SMFVB) algorithm: a coordinate-ascent (CAVI) scheme over a Poisson
 mean-field family in which each iterate $\mu_{i,t}^\star$ is updated in
 closed form.  The first-order optimality condition reveals this update as a
@@ -136,9 +137,9 @@ $\rho\le1/2$ follows directly from the same closed-form structure.
 \paragraph{Contributions.}
 This paper makes four contributions:
 \begin{enumerate}[label=(\roman*)]
-\item \textbf{Closed-form surrogate ELBO} (Theorem~\ref{thm:elbo},
+\item \textbf{Closed-form surrogate variational objective} (Theorem~\ref{thm:elbo},
   \S\ref{sec:elbo-terms}): the Poisson MGF yields exact closed-form
-  expressions for every expectation in the ELBO under a Poisson mean-field
+  expressions for every expectation in the surrogate variational objective under a Poisson mean-field
   family, with three explicitly bounded approximation sources and no
   numerical integration.
 \item \textbf{Closed-form CAVI algorithm} (\S\ref{sec:smfvb-alg}): each
@@ -147,7 +148,7 @@ This paper makes four contributions:
   (Theorem~\ref{thm:vi-converge}, \S\ref{sec:vi-convergence}).
 \item \textbf{Consistency and identifiability} (Corollary~\ref{cor:elbo-gap},
   Proposition~\ref{prop:identif-dual}, \S\ref{sec:identif-val}): the surrogate
-  ELBO error vanishes as mean abundance grows; the dual-channel observation
+  approximation error vanishes as mean abundance grows; the dual-channel observation
   model is locally identifiable given $T\ge2$ with temporal abundance variation.
 \item \textbf{Simulation evidence} (\S\ref{sec:simulation}): 100 replicates
   at $m=100$, $T=15$ show 95\% credible-interval coverage within 4 pp of
@@ -156,7 +157,7 @@ This paper makes four contributions:
 
 \paragraph{Organisation.}
 Section~\ref{sec:process} specifies the count ABM.
-Section~\ref{sec:vi} develops the MGF surrogate ELBO and the SMFVB algorithm.
+Section~\ref{sec:vi} develops the MGF surrogate variational objective and the SMFVB algorithm.
 Section~\ref{sec:identif-val} establishes convergence, consistency, and
 identifiability.
 Section~\ref{sec:simulation} presents the simulation study.
@@ -197,7 +198,7 @@ Symbol & Meaning \\
 \(\eta_{i,t}\) & occupancy false-positive probability \\
 \(\lambda\) & variational parameters $\{\mu_{i,t},\mathbf{m}_\alpha,S_\alpha,\{\nu_k\}\}$ \\
 \(\mu_{i,t}\) & variational mean for $N_{i,t}$ under $q$ \\
-\(\tilde{\mathcal{L}}\) & surrogate ELBO \\
+\(\tilde{\mathcal{L}}\) & surrogate variational objective \\
 \(\mathcal{Q}\) & Poisson mean-field variational family \\
 \bottomrule
 \end{tabular}
@@ -613,7 +614,7 @@ that fusing count and binary streams substantially reduces uncertainty in
 latent abundance estimates relative to either channel alone.
 
 %% ============================================================
-\section{Closed-form ELBO via the Poisson MGF}
+\section{Closed-form Surrogate Variational Objective via the Poisson MGF}
 \label{sec:vi}
 %% ============================================================
 
@@ -652,7 +653,7 @@ The four main theoretical results answer affirmatively:
 \begin{enumerate}[label=(\roman*)]
 \item \textbf{Closed-form tractability} (Theorem~\ref{thm:elbo},
   \S\ref{sec:elbo-terms}): the Poisson MGF yields exact closed-form
-  expressions for every expectation in the surrogate ELBO with no
+  expressions for every expectation in the surrogate variational objective with no
   numerical integration, under three approximations each of bounded order
   (Remark~\ref{rem:poi-approx}).
 \item \textbf{Optimisation guarantees} (Theorem~\ref{thm:vi-converge},
@@ -662,7 +663,7 @@ The four main theoretical results answer affirmatively:
   condition that guarantees ergodicity of the latent chain.
 \item \textbf{Approximation quality} (Corollary~\ref{cor:elbo-gap},
   \S\ref{sec:vi-convergence}): as mean latent count grows, all three
-  surrogate approximation errors vanish and the surrogate ELBO optimiser
+  surrogate approximation errors vanish and the surrogate variational objective optimiser
   $\tilde\lambda^\star$ converges to the exact ELBO optimiser $\lambda^\star$,
   establishing consistency of the SMFVB posterior in the large-population
   regime.
@@ -730,7 +731,7 @@ p(N_{i,t}=n\mid\mathbf{N}_{t-1})
 whose logarithm has no closed form, making
 $\mathbb{E}_q[\log p(N_{i,t}\mid\mathbf{N}_{t-1})]$ analytically intractable.
 
-\paragraph{Surrogate ELBO.}
+\paragraph{surrogate variational objective.}
 The SMFVB algorithm optimises a \emph{surrogate} $\tilde{\mathcal{L}}$ that
 replaces only the intractable process term:
 
@@ -766,12 +767,12 @@ the TV distance bounds the density difference rather than the log-density
 difference, a uniform bound on $|\tilde{\mathcal{L}}-\mathcal{L}|$ is not
 available in general; the approximation quality is validated empirically in
 \S\ref{sec:simulation}.  The exact model $p$ is not modified; only its
-log-PMF is replaced in the ELBO integral.
+log-PMF is replaced in the variational objective integral.
 
 \subsection{Tractable Evaluation of $\tilde{\mathcal{L}}$ via the Poisson MGF}
 \label{sec:elbo-terms}
 
-The surrogate ELBO $\tilde{\mathcal{L}}$ in \eqref{eq:surr-elbo} still requires
+The surrogate variational objective $\tilde{\mathcal{L}}$ in \eqref{eq:surr-elbo} still requires
 computing expectations under $q_\lambda(N_{i,t})=\mathrm{Pois}(\mu_{i,t})$ of
 nonlinear functions of $N_{i,t}$ that appear in both the observation term
 $\mathcal{L}_\mathrm{obs}$ and in the surrogate rate $\mu^\dagger_{i,t}$
@@ -887,7 +888,7 @@ approximation steps in $\tilde{\mathcal{L}}$:
   error $O(\mu_{t-1}^{-1})$, negligible for large populations.
 \end{enumerate}
 Because TV distance bounds density differences but not log-density differences,
-no closed-form bound on the total ELBO gap $|\tilde{\mathcal{L}}-\mathcal{L}|$
+no closed-form bound on the total approximation gap $|\tilde{\mathcal{L}}-\mathcal{L}|$
 is derived; approximation quality is assessed empirically.  Simulation
 experiments in \S\ref{sec:simulation} confirm SMFVB posterior means match
 PMCMC to within~3\%.
@@ -897,7 +898,7 @@ PMCMC to within~3\%.
 \label{sec:cavi-update}
 
 \paragraph{Derivation of the fixed-point.}
-The surrogate ELBO $\tilde{\mathcal{L}}$ depends on $\mu_{i,t}$ through three
+The surrogate variational objective $\tilde{\mathcal{L}}$ depends on $\mu_{i,t}$ through three
 components: (1) the surrogate process term~\eqref{eq:proc-elbo}, (2) the
 Poisson entropy $H[q(N_{i,t})]=\mu_{i,t}(1-\log\mu_{i,t})+\mathbb{E}_q[\log N_{i,t}!]$,
 and (3) the observation term $\mathcal{L}_\mathrm{obs}$.
@@ -996,10 +997,10 @@ approximation to the process.
 Algorithm~\ref{alg:cavi} summarises the complete procedure.  The forward sweep
 (lines \ref{line:fwd-start}--\ref{line:fwd-end}) costs $O(m\,\bar{d})$ per
 time step for the immigration sum~\eqref{eq:immig-id}, giving
-$O(m\,T\,\bar{d})$ per ELBO evaluation with no particle loop.
+$O(m\,T\,\bar{d})$ per objective evaluation with no particle loop.
 
 \begin{algorithm}[ht]
-\caption{SMFVB: closed-form CAVI for count ABMs (exact model; surrogate ELBO $\tilde{\mathcal{L}}$)}\label{alg:cavi}
+\caption{SMFVB: closed-form CAVI for count ABMs (exact model; surrogate variational objective $\tilde{\mathcal{L}}$)}\label{alg:cavi}
 \begin{algorithmic}[1]
 \Require Count ABM parameters $(\phi_i,K_i,\omega_j,h,\psi_i,\rho_{i,t},\kappa_{i,t},\eta_{i,t})$
          and observations $(Y^{(C)},Y^{(P)})$.
@@ -1032,7 +1033,7 @@ $O(m\,T\,\bar{d})$ per ELBO evaluation with no particle loop.
          +S_\alpha\,\nabla_{\alpha}\tilde{\mathcal{L}}$
   \State \textbf{Parameter update:}
          Adam step on $\{\nu_k\}$ w.r.t.\ $\nabla_\nu\tilde{\mathcal{L}}$
-  \State Compute surrogate ELBO $\tilde{\mathcal{L}}(\lambda)$ via \eqref{eq:surr-elbo}
+  \State Compute surrogate variational objective $\tilde{\mathcal{L}}(\lambda)$ via \eqref{eq:surr-elbo}
 \Until{$|\Delta\tilde{\mathcal{L}}|/|\tilde{\mathcal{L}}|<\varepsilon$}
 \State \Return $\lambda^\star=\{\mu^\star_{i,t},\mathbf{m}^\star_\alpha,
        S^\star_\alpha,\nu^\star_k\}$ and $\tilde{\mathcal{L}}(\lambda^\star)$
@@ -1043,14 +1044,14 @@ $O(m\,T\,\bar{d})$ per ELBO evaluation with no particle loop.
 \label{sec:vi-convergence}
 
 The following theorem is the primary theoretical result of this paper.
-It establishes that maximising the surrogate ELBO $\tilde{\mathcal{L}}$ is a
+It establishes that maximising the surrogate variational objective $\tilde{\mathcal{L}}$ is a
 well-posed variational problem: the sequence of iterates is statistically
 consistent in the sense that the objective can only improve, every limit point
 is a proper stationary point of the KL-divergence surrogate, and the iterates
 converge at a rate determined by the model's own stability condition.
 
 \begin{theorem}[Statistical properties of SMFVB]\label{thm:vi-converge}
-Let $\tilde{\mathcal{L}}$ be the surrogate ELBO \eqref{eq:surr-elbo} with
+Let $\tilde{\mathcal{L}}$ be the surrogate variational objective \eqref{eq:surr-elbo} with
 process term \eqref{eq:proc-elbo}.  Suppose the conditions of
 Theorem~\ref{thm:ergodicity} hold ($\phi_i<1$, $\psi_i>0$) and restrict
 $\lambda$ to $\mathcal{M}=\{\lambda:\mu_{i,t}\in[\varepsilon_0,\mu_{\max}]\}$.
@@ -1098,7 +1099,7 @@ $\phi_i c_i\exp(\mu_{i,t-1}(c_i-1))\le 1/2$, bounding the spectral radius
 below $1/2$; the Banach fixed-point theorem yields geometric convergence.
 \end{proof}
 
-\begin{corollary}[ELBO consistency under large populations]\label{cor:elbo-gap}
+\begin{corollary}[Consistency of surrogate variational objective under large populations]\label{cor:elbo-gap}
 Let $\bar\mu = m^{-1}T^{-1}\sum_{i,t}\mu_{i,t}$ be the mean variational count.
 Under the conditions of Theorem~\ref{thm:vi-converge}, all three surrogate
 approximation errors (Remark~\ref{rem:poi-approx}) vanish as
@@ -1107,7 +1108,7 @@ $\bar\mu\to\infty$ with $\phi_{\max}<1$ fixed:
 \item \textbf{Process surrogate error:}
 $\phi_i\,e^{-\mu_{i,t-1}/K_i}\to 0$, so the Le Cam TV distance between
 $\mathrm{Pois}(\mu^\dagger_{i,t})$ and the true Binomial--Poisson convolution
-vanishes, and the process ELBO term $\tilde{\mathcal{L}}_\mathrm{proc}$
+vanishes, and the process term $\tilde{\mathcal{L}}_\mathrm{proc}$
 converges to its exact counterpart $\mathcal{L}_\mathrm{proc}$.
 \item \textbf{Delta-method immigration error:}
 $O(h^2\bar\mu^{-2})\to 0$, so the linearised immigration rate~\eqref{eq:immig-id}
@@ -1117,7 +1118,7 @@ $O(\bar\mu^{-1})\to 0$, so the approximation
 $\mathbb{E}_q[\log\mu^\dagger_{i,t}]\approx\log\tilde\mu_{i,t}$ becomes exact.
 \end{enumerate}
 Consequently, $\tilde{\mathcal{L}}(\lambda)\to\mathcal{L}(\lambda)$ uniformly on
-$\mathcal{M}$, and the surrogate ELBO optimiser $\tilde\lambda^\star$ converges
+$\mathcal{M}$, and the surrogate variational objective optimiser $\tilde\lambda^\star$ converges
 to the exact ELBO optimiser $\lambda^\star$:
 \[
 \|\tilde\lambda^\star - \lambda^\star\| \;=\; O\!\left(\phi_{\max}e^{-\bar\mu/K_{\min}}
@@ -1137,7 +1138,7 @@ stability of the argmax under uniform convergence of the objective
 \citep{newey1994}.
 \end{proof}
 
-\subsection{Surrogate ELBO as an Approximate Model Selection Criterion}
+\subsection{surrogate variational objective as an Approximate Model Selection Criterion}
 \label{sec:elbo-sel}
 
 Because $\tilde{\mathcal{L}}$ approximates the exact ELBO (which is itself
@@ -1247,7 +1248,7 @@ merely convenient but \emph{necessary} for full parameter recovery.
 \subsection{Design}
 
 The simulation study serves three theoretical validation purposes: (1)~verify
-that the surrogate ELBO optimiser $\tilde\lambda^\star$ recovers the true
+that the surrogate variational objective optimiser $\tilde\lambda^\star$ recovers the true
 parameters (testing Theorem~\ref{thm:vi-converge} part~(iii)); (2)~assess
 the calibration of $q_{\tilde\lambda^\star}$ as a posterior approximation by
 comparing empirical 95\% CI coverage to the nominal level and to PMCMC; and
@@ -1269,7 +1270,7 @@ $O_P$ sampled independently and uniformly.  The NegBin overdispersion is fixed
 at $r=5$.  We generate 100 independent replicate datasets.  PMCMC uses
 $P=3\,000$ particles, $10\,000$ iterations, and $5\,000$ burn-in draws across
 8 cores.  SMFVB iterates the closed-form CAVI update (Algorithm~\ref{alg:cavi}) until
-the relative surrogate-ELBO change
+the relative surrogate variational objective change
 $|\tilde{\mathcal{L}}^{(k+1)}-\tilde{\mathcal{L}}^{(k)}|/|\tilde{\mathcal{L}}^{(k)}|$
 falls below $10^{-4}$, with a maximum of 200 full sweeps.  ABC-SMC uses 5 sequential
 populations with $N_\mathrm{sim}=50\,000$ simulations per population and
@@ -1412,7 +1413,7 @@ $\hat\mu_{i,0}=\bar{Y}^{(C)}_i/\rho$.
 \paragraph{Convergence and speed.}
 SMFVB infers all $2{,}670$ variational means $\mu_{i,t}$ in
 \textbf{0.3 seconds} (2 CAVI sweeps on a standard laptop; Intel Core i7).
-The surrogate ELBO reaches $-11{,}018$ after the first complete forward
+The surrogate variational objective reaches $-11{,}018$ after the first complete forward
 sweep and is unchanged at sweep 2 (relative change $< 10^{-10}$),
 confirming that the single-pass CAVI has reached a coordinate-wise fixed
 point.
@@ -1500,7 +1501,7 @@ literature-informed values rather than estimating them from data.
 The spatial ordering of sites (which sites are high vs.\ low abundance)
 is recovered with $r=0.874$; the absolute scale is shifted by the
 fixed-parameter prior.  A joint outer variational EM step---maximising
-the ELBO over $\theta=(\phi,K,\psi,\omega,\rho,r,\kappa)$ while holding
+the surrogate variational objective over $\theta=(\phi,K,\psi,\omega,\rho,r,\kappa)$ while holding
 the CAVI inner loop fixed---would remove this offset.  We defer
 variational EM to future work; the present illustration demonstrates that
 SMFVB correctly handles dual-channel observations, irregular spatial
@@ -1513,7 +1514,7 @@ sub-second computational cost.
 
 We have developed a \emph{closed-form} variational inference framework for
 count statistical agent-based models with four interlocking contributions.
-First, the Poisson MGF converts an otherwise intractable ELBO into a
+First, the Poisson MGF converts an otherwise intractable variational objective into a
 fully closed-form surrogate whose every term---survival expectations,
 immigration rates, binary detection probabilities---is analytic, with three
 approximation sources each of explicitly bounded order.  Second, the closed-form
