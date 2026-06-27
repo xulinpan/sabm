@@ -734,17 +734,130 @@ q_\lambda(N_{1:T},\Theta)
 \underbrace{\prod_k q(\theta_k;\nu_k)}_{\text{model parameters}}.
 \end{equation}
 
-The Poisson family is the maximum-entropy distribution on $\mathbb{Z}_{\ge0}$
-with prescribed mean \citep{grunwald2004}, which makes it the statistically
-natural choice for latent counts: it imposes no more dependence structure than
-the data support, and it is conjugate to the Poisson immigration and LDD
-components $I_{i,t}$ and $L_{i,t}$, so the mean-field independence assumption
-is consistent with the model's own generative structure on those components.
-The main source of mean-field underestimation of posterior variance is the
-Binomial survival component $S_{i,t}$, which introduces negative between-cell
-dependence that the factored family cannot capture; this is reflected in the
-2--4 percentage-point CI coverage shortfall documented in
-\S\ref{sec:simulation}.
+\paragraph{Why the Poisson mean-field family?}
+The choice $q(N_{i,t})=\mathrm{Pois}(\mu_{i,t})$ is motivated by four
+complementary properties.
+
+\begin{enumerate}[label=(\roman*)]
+\item \textbf{Maximum entropy.}  Among all distributions on $\mathbb{Z}_{\ge0}$
+  with prescribed mean $\mu$, the Poisson is the maximum-entropy distribution
+  \citep{grunwald2004}.  It therefore imposes the weakest possible additional
+  assumptions: any other distribution with the same mean encodes extra structure
+  not supported by the data.
+
+\item \textbf{Conjugacy with the generative model.}  Two of the three process
+  components---immigration $I_{i,t}\sim\mathrm{Pois}(\Lambda_{i,t})$ and LDD
+  $L_{i,t}\sim\mathrm{Pois}(\psi_i)$---are themselves Poisson, so the optimal
+  mean-field coordinate $q^\star(N_{i,t})$ for those components is Poisson.
+  The mean-field independence assumption is therefore exactly consistent with
+  the model's own generative structure on the Poisson subcomponents; the only
+  mismatch arises from the Binomial survival term $S_{i,t}$.
+
+\item \textbf{Computational tractability via the MGF.}  The Poisson MGF
+  $M_N(s)=\exp\{\mu(e^s-1)\}$ and its derivative $\mathbb{E}[Ne^{sN}]
+  =\mu e^s M_N(s)$ yield analytic closed-form expressions for every
+  expectation that appears in $\tilde{\mathcal{L}}$ (Theorem~\ref{thm:elbo}).
+  This is the enabling property behind the no-quadrature, no-Monte-Carlo
+  result.  No other standard discrete distribution on $\mathbb{Z}_{\ge0}$
+  admits analogous closed-form non-linear moment computations of this type
+  at the required level of generality (see the comparison below).
+
+\item \textbf{Analytic CAVI updates.}  The first-order optimality condition
+  for $\mu_{i,t}$ (equation~\eqref{eq:cavi-fp}) is a strictly concave
+  fixed-point equation with analytic gradient and Hessian.  This property
+  follows directly from (iii): without the MGF tractability, the CAVI update
+  would require either numerical integration or a Monte Carlo gradient
+  estimator.
+\end{enumerate}
+
+\paragraph{Comparison with alternative variational families.}
+Table~\ref{tab:vb-compare} summarises the trade-offs between the Poisson
+mean-field and five natural alternatives.
+
+\begin{table}[t]
+\centering
+\small
+\caption{Variational family comparison for count-valued latent states
+$N_{i,t}\in\mathbb{Z}_{\ge0}$.  ``MGF trick'' refers to the availability
+of closed-form expectations of the type in Theorem~\ref{thm:elbo}.
+``Cov.'' = can capture posterior covariance between cells/times.}
+\label{tab:vb-compare}
+\begin{tabular}{lccccl}
+\toprule
+Family & Support & MGF trick & Cov.\ & Overhead & Main limitation \\
+\midrule
+Poisson MF (this work) & $\mathbb{Z}_{\ge0}$ & \checkmark & $\times$ & $O(mT)$ & No overdispersion \\
+NegBin MF             & $\mathbb{Z}_{\ge0}$ & $\times$   & $\times$ & $O(mT)$ & Intractable moments \\
+Gamma MF              & $\mathbb{R}_{+}$   & $\times$   & $\times$ & $O(mT)$ & Wrong support \\
+Lognormal MF          & $\mathbb{R}_{+}$   & $\times$   & $\times$ & $O(mT)$ & Wrong support \\
+Copula--Poisson       & $\mathbb{Z}_{\ge0}^{mT}$ & partial & \checkmark & $O(m^2T^2)$ & Copula PIT intractable for discrete \\
+Normalising flow      & $\mathbb{R}^{mT}$ & $\times$   & \checkmark & $O(mT\cdot L)$ & Discretisation; $L$ flow layers \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\noindent\textit{Gamma and Lognormal.}  Both families are supported on
+$\mathbb{R}_{+}$ rather than $\mathbb{Z}_{\ge0}$, making them
+continuous relaxations of the discrete latent count.  While the Gamma
+distribution is conjugate to the Poisson observation model, computing
+$\mathbb{E}_q[N e^{-N/K}]$ and $\mathbb{E}_q[1-e^{-\kappa N}]$ under
+a Gamma or Lognormal $q$ does not yield closed-form expressions
+analogous to Theorem~\ref{thm:elbo}: the Gamma has no tractable
+non-linear moment of the form $\mathbb{E}[Ne^{sN}]$ for $s\ne0$, and
+the Lognormal moment $\mathbb{E}[Ne^{sN}]$ involves the incomplete
+Gamma function.  Continuous relaxations also assign density to
+non-integer values, introducing an approximation at the observation
+level that the Poisson family avoids.
+
+\noindent\textit{Negative Binomial (NegBin).}  The NegBin
+$q(N;\mu,r)$ adds an overdispersion parameter $r$ to the
+Poisson family, allowing $\mathrm{Var}(N)=\mu+\mu^2/r>\mu$.  While
+attractive for capturing posterior over-dispersion, the NegBin MGF
+$M_N(s)=\bigl(r/(r+\mu)\bigr)^r\bigl(1-(1-r/(r+\mu))e^s\bigr)^{-r}$
+does not yield a closed-form for $\mathbb{E}[Ne^{-N/K}]$ via simple
+differentiation: the resulting expression involves the digamma function
+and requires numerical evaluation.  NegBin CAVI updates would therefore
+require Monte Carlo gradients or quadrature, forfeiting the main
+advantage of the Poisson family.
+
+\noindent\textit{Copula variational inference.}  Copula-based families
+\citep{tran2015} specify Poisson marginals but introduce dependence through a
+copula on the uniform transform.  For discrete distributions the
+probability-integral transform is non-injective, so the copula
+density does not factorise cleanly and copula VI updates require
+numerical integration over the discrete mass, costing $O(m^2T^2)$
+per iteration.  Copula VI may be worthwhile when between-cell
+correlations are the primary inferential target, but at a substantial
+computational overhead relative to SMFVB.
+
+\noindent\textit{Structured mean-field VB.}  A temporal structured
+mean-field family---e.g., a block-tridiagonal Gaussian approximation
+to the log-count field---captures between-time correlations within
+each site while retaining independence across sites.  This would
+partially recover the variance underestimated by the diagonal Poisson
+family.  However, Gaussian approximations over log-counts introduce
+a further continuous relaxation and forfeit the MGF trick; each block
+update would require either conjugate Gaussian operations (losing the
+discrete-support property) or numerical integration.
+
+\noindent\textit{Normalising flows.}  Normalising flows
+\citep{rezende2015} can approximate arbitrarily complex posteriors,
+including correlations and multi-modality.  Applied to the joint
+$(N_{1:T})\in\mathbb{Z}^{mT}$, they require dequantisation
+\citep{hoogeboom2021} or a Gumbel-softmax relaxation to handle discrete
+support, and each gradient step costs $O(mT\cdot L)$ forward passes
+through $L$ layers.  For $m=267$, $T=10$, and $L\ge4$ typical layers,
+this is $10\times$--$100\times$ more expensive than SMFVB per iteration,
+without the analytic convergence guarantees.
+
+\paragraph{Summary.}
+The Poisson mean-field is the unique family that is (i)~supported on
+$\mathbb{Z}_{\ge0}$, (ii)~maximum-entropy given the mean, (iii)~conjugate
+to the Poisson subcomponents of the generative model, and (iv)~equipped with
+an MGF that yields fully analytic CAVI updates for the count ABM survival
+and detection expectations.  Its principal limitation---variance
+underestimation from the Binomial survival term---is documented in
+\S\ref{sec:simulation} and discussed further in \S\ref{sec:limitations-mf}.
 
 \paragraph{Exact ELBO and its intractable term.}
 The exact ELBO for the unmodified count ABM is:
@@ -1567,17 +1680,64 @@ study confirms that these theoretical guarantees translate directly to
 practice: SMFVB matches particle MCMC credible-interval coverage to within
 4 percentage points at a $22\times$ wall-time reduction.
 
+\subsection{Limitations of the Poisson Mean-Field Family}
+\label{sec:limitations-mf}
+
+The Poisson mean-field family is chosen for maximum-entropy, conjugacy, and
+MGF tractability (\S\ref{sec:vi-family}), but these advantages come with
+three structural limitations that practitioners should weigh when applying
+SMFVB.
+
+\paragraph{Variance underestimation.}
+The Poisson distribution constrains $\mathrm{Var}_q(N_{i,t})=\mu_{i,t}$,
+whereas the true posterior variance is in general larger.  The dominant
+source of excess posterior variance is the Binomial survival component
+$S_{i,t}\sim\mathrm{Binom}(N_{i,t-1},\phi_i\exp(-N_{i,t-1}/K_i))$: survival
+introduces negative covariance between $N_{i,t}$ and $N_{j,t}$ (offspring
+cells sharing a common parent pool), a structure that a fully factored
+mean-field family cannot represent.  In the simulation study
+(\S\ref{sec:simulation}) this produces a 2--4 percentage-point shortfall in
+95\% credible-interval coverage, larger when $\phi_i$ is high and $K_i$ is
+small (high survival fraction, strong density regulation).  Potential
+remedies---each forfeiting some tractability---include: a NegBin mean-field
+$q(N_{i,t})=\mathrm{NegBin}(\mu_{i,t},r_q)$ with an additional variational
+overdispersion parameter $r_q$; a block-diagonal structured approximation
+preserving temporal correlations within sites; or an importance-weighted
+correction of the Poisson samples at the reporting stage.
+
+\paragraph{Independence assumption across sites and times.}
+The factored family $q=\prod_{i,t}\mathrm{Pois}(\mu_{i,t})$ assumes
+posterior independence between all $(i,t)$ pairs.  This independence is
+exact for the Poisson components of the model ($I_{i,t}$, $L_{i,t}$) but
+is an approximation for the Binomial component.  In practice, the
+shared dispersal structure creates positive posterior correlations between
+neighbouring cells (high $N_{j,t-1}$ implies high immigration into cell $i$,
+hence high $N_{i,t}$), which the mean-field family underestimates.  When
+accurate posterior covariance estimates are required---for example, to
+propagate uncertainty into downstream species-distribution forecasts---a
+copula-Poisson family \citep{tran2015} or a structured mean-field with
+block-tridiagonal precision \citep{opper2009} would be preferable at the
+cost of $O(m^2)$ storage and non-local CAVI updates.
+
+\paragraph{Support mismatch at zero counts.}
+The Poisson distribution assigns $q(N_{i,t}=0)=e^{-\mu_{i,t}}$, which
+decreases rapidly for large $\mu_{i,t}$.  At sites that are genuinely
+unoccupied (true $N_{i,t}=0$), the process model constrains $\mu_{i,t}$
+toward the immigration floor $\psi_i+\mathbb{E}_q[\Lambda_{i,t}]>0$, so
+the Poisson family cannot place all mass at zero.  A zero-inflated Poisson
+family $q(N_{i,t})=\pi_i\cdot\delta_0+(1-\pi_i)\cdot\mathrm{Pois}(\mu_{i,t})$,
+with variational occupancy probability $\pi_i$, would better handle
+patchy landscapes with many truly empty quadrats, at the cost of a
+non-analytic CAVI update for $\pi_i$ (binary coordinate requires a
+logistic step, or a sigmoid reparameterisation with stochastic gradient).
+
 \paragraph{Limitations and future work.}
 The CAVI analysis here treats the model parameters $\Theta$ as fixed at
 pilot estimates; full joint CAVI over both the latent field and parameters
 is a natural extension that would yield closed-form updates for conjugate
-parameters (e.g.\ the NegBin mean $\rho$) and stochastic VI steps for
-the remainder.  The mean-field Poisson family underestimates posterior
-variance for the Binomial survival component $S_{i,t}$, producing the
-observed 2--4~pp coverage shortfall; a structured approximation with
-correlated Poisson factors, or a Gamma mean-field over counts, may
-partially recover this variance.  Extending the convergence analysis
-of Proposition~\ref{thm:vi-converge} to the joint CAVI, and deriving sharp
+parameters (e.g.\ the NegBin mean $\rho$) and stochastic VI steps for the
+remainder.  Extending the convergence analysis of
+Proposition~\ref{thm:vi-converge} to the joint CAVI, and deriving sharp
 coverage-gap bounds as a function of $\phi_{\max}$ and $K_{\min}$, remain
 open theoretical problems.  On the applied side, a covariate-driven LDD
 link $\log\psi_t = w_t^\top\gamma_\psi$ would accommodate seasonally
