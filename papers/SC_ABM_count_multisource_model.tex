@@ -1409,27 +1409,103 @@ $\rho N^*=7.9$, close to the observed mean 8.15.  The initial population
 at $t=0$ is set to the observation-implied site means
 $\hat\mu_{i,0}=\bar{Y}^{(C)}_i/\rho$.
 
-\paragraph{Results.}
+\paragraph{Convergence and speed.}
 SMFVB infers all $2{,}670$ variational means $\mu_{i,t}$ in
-\textbf{0.3 seconds} (2 CAVI sweeps on a standard laptop).  The posterior
-mean territory density is $9.6$ quadrats$^{-1}$ (range
-$[0.8,\,41.3]$), approximately stationary across years
-(2004: 10.3; 2013: 9.5 quadrats$^{-1}$), consistent with the near-zero
-observed annual trend ($+0.065$ territories yr$^{-1}$).  The ten most
-productive quadrats include lowland mixed-forest sites in the Swiss Plateau
-(e.g.~Q213, Q243), where Great Tit densities are known to be highest
-\citep{glutz1993}.  The ELBO converges to $-11{,}018$ after the first
-complete sweep and remains unchanged at sweep 2, confirming that the
-single forward-pass CAVI has reached a coordinate-wise fixed point.
+\textbf{0.3 seconds} (2 CAVI sweeps on a standard laptop; Intel Core i7).
+The surrogate ELBO reaches $-11{,}018$ after the first complete forward
+sweep and is unchanged at sweep 2 (relative change $< 10^{-10}$),
+confirming that the single-pass CAVI has reached a coordinate-wise fixed
+point.
 
-A full joint parameter-estimation step---updating $\phi$, $K$, $\psi$,
-$\omega$, $\rho$, and $\kappa$ by ascending the ELBO via an outer
-variational EM loop---would improve the residual discrepancy between the
-posterior predictive mean ($\rho\,\bar\mu=6.9$) and observed count mean
-(8.15).  We defer this variational EM extension to future work; the present
-illustration demonstrates that SMFVB correctly handles the
-dual-channel structure, missing observations, and spatial dispersal at
-operational speed on a benchmark ecological dataset.
+\paragraph{Spatial recovery.}
+The Pearson correlation between the posterior variational mean
+$\mu_{i,t}$ and the observed count $Y^{(C)}_{i,t}$ at all surveyed
+cell-year pairs is $r=0.874$ ($R^2=0.764$, $n=2{,}071$).
+This correlation is nearly identical across sites with very different
+amounts of survey information: $r=0.828$ for sites visited in only one
+year versus $r=0.881$ for the 84 fully surveyed sites (all ten years),
+showing that the process model correctly borrows strength from spatial
+neighbours for data-sparse locations.  At zero-count cell-years the
+posterior mean is $\bar\mu=2.1$, reflecting the immigration floor
+imposed by the dispersal model; at cell-years with $Y^{(C)}\ge10$ it
+rises to $\bar\mu=15.9$, correctly identifying high-abundance locations.
+The strongest predictor of site-level mean abundance is elevation
+($r=-0.807$): mean posterior density falls monotonically from
+$14.5$ territories quadrat$^{-1}$ below 500 m to $2.5$ territories
+quadrat$^{-1}$ above 2{,}000 m, consistent with Great Tit ecology
+\citep{glutz1993}.  Forest cover has a weak positive association
+($r=0.154$), also in the expected direction.
+
+\paragraph{Temporal dynamics.}
+Table~\ref{tab:mhb-temporal} compares the annual posterior mean
+$\bar\mu_t=m^{-1}\sum_i \mu_{i,t}$ with the observed annual mean count
+$\bar Y^{(C)}_t$ over 2004--2013.  Both series are approximately
+stationary: the fitted linear trend in $\bar\mu_t$ is $-0.06$
+territories yr$^{-1}$ (range 9.3--10.3 quadrat$^{-1}$), while the
+observed trend in $\bar Y^{(C)}_t$ is $+0.07$ yr$^{-1}$.  The magnitude
+of both slopes is negligible relative to the inter-annual variability,
+consistent with a stable breeding population over this decade.
+
+\begin{table}[t]
+\centering
+\caption{Annual posterior variational mean $\bar\mu_t$ and observed
+mean count $\bar Y^{(C)}_t$ for Great Tit at MHB quadrats, 2004--2013.
+$\rho\bar\mu_t$ is the model-implied expected count.}
+\label{tab:mhb-temporal}
+\begin{tabular}{cccc}
+\hline
+Year & $\bar\mu_t$ & $\rho\bar\mu_t$ & $\bar Y^{(C)}_t$ \\
+\hline
+2004 & 10.25 & 7.38 & 7.38 \\
+2005 &  9.77 & 7.03 & 7.96 \\
+2006 &  9.54 & 6.87 & 8.14 \\
+2007 &  9.51 & 6.85 & 8.83 \\
+2008 &  9.41 & 6.78 & 7.63 \\
+2009 &  9.29 & 6.69 & 7.41 \\
+2010 &  9.37 & 6.75 & 8.65 \\
+2011 &  9.43 & 6.79 & 8.25 \\
+2012 &  9.57 & 6.89 & 9.22 \\
+2013 &  9.45 & 6.80 & 7.62 \\
+\hline
+\end{tabular}
+\end{table}
+
+\paragraph{Posterior predictive checks.}
+We draw $R=1{,}000$ posterior predictive replicates from
+$N_{i,t}\sim\mathrm{Poisson}(\mu_{i,t})$, then
+$Y^{(C)\,\mathrm{rep}}\sim\mathrm{NegBin}(\rho N,r)$ and
+$Y^{(P)\,\mathrm{rep}}\sim\mathrm{Bernoulli}(1-e^{-\kappa N})$, and
+compare to the observed data using three test statistics computed
+\emph{exclusively at observed locations} (the 77.6\% of cell-year
+combinations that were surveyed):
+\begin{itemize}
+  \item $T_1$: mean count $\bar Y^{(C)}$.
+    Observed $=8.15$; posterior predictive 95\% interval $[6.51,7.10]$;
+    Bayesian $p=0.000$.
+  \item $T_2$: detection rate $\bar Y^{(P)}$.
+    Observed $=0.681$; interval $[0.503,0.539]$; $p=0.000$.
+  \item $T_3$: linear slope of annual mean $\bar Y^{(C)}_t$.
+    Observed $=+0.065$ yr$^{-1}$; interval $[-0.107,0.116]$; $p=0.122$.
+\end{itemize}
+$T_3$ is not rejected, confirming that SMFVB correctly captures
+the approximately stationary temporal dynamics.  $T_1$ and $T_2$ expose
+a systematic underprediction of abundance (by $-16.5\%$) and detection
+(by $-0.07$ on the probability scale).  Moment matching reveals the
+source: to reproduce $\bar Y^{(C)}=8.15$ given $\bar\mu=9.44$ at
+observed locations, the detection fraction would need to be
+$\hat\rho=8.15/9.44=0.863$ (used: 0.720); similarly, reproducing the
+observed detection rate requires $\hat\kappa=0.121$ (used: 0.100).
+These discrepancies are a consequence of fixing parameters at
+literature-informed values rather than estimating them from data.
+The spatial ordering of sites (which sites are high vs.\ low abundance)
+is recovered with $r=0.874$; the absolute scale is shifted by the
+fixed-parameter prior.  A joint outer variational EM step---maximising
+the ELBO over $\theta=(\phi,K,\psi,\omega,\rho,r,\kappa)$ while holding
+the CAVI inner loop fixed---would remove this offset.  We defer
+variational EM to future work; the present illustration demonstrates that
+SMFVB correctly handles dual-channel observations, irregular spatial
+graphs, 22\% missing data, and a ten-year latent state field at
+sub-second computational cost.
 
 %% ============================================================
 \section{Discussion}\label{sec:discussion}
