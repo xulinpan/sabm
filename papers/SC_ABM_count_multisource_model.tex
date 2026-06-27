@@ -48,8 +48,8 @@ a surrogate $\tilde{\mathcal{L}}$ with three explicitly bounded approximation
 sources (Theorem~\ref{thm:elbo}).  Each coordinate-ascent update of the
 resulting \emph{structured mean-field variational Bayes} (SMFVB) algorithm is
 likewise closed-form, and the iterates are monotonically non-decreasing and
-converge geometrically at rate $\rho\le1/2$, inherited from the Foster--Lyapunov drift condition of the
-latent chain (Theorem~\ref{thm:vi-converge}).  We further establish that all
+converge to a stationary point of the surrogate variational objective under
+local contraction assumptions (Proposition~\ref{thm:vi-converge}).  We further establish that all
 three approximation errors vanish as mean latent abundance grows, so the
 SMFVB posterior is consistent in the large-population regime
 (Corollary~\ref{cor:elbo-gap}), and that the dual-channel observation
@@ -131,8 +131,8 @@ mean-field family in which each iterate $\mu_{i,t}^\star$ is updated in
 closed form.  The first-order optimality condition reveals this update as a
 \emph{multiplicatively corrected conditional-mean forward pass}---the Bayesian
 analogue of the Kalman prediction--correction step for this nonlinear,
-non-Gaussian, discrete-state model---and the geometric convergence rate
-$\rho\le1/2$ follows directly from the same closed-form structure.
+non-Gaussian, discrete-state model---and monotone convergence to a stationary
+point follows directly from the closed-form coordinate-ascent structure.
 
 \paragraph{Contributions.}
 This paper makes four contributions:
@@ -143,9 +143,10 @@ This paper makes four contributions:
   family, with three explicitly bounded approximation sources and no
   numerical integration.
 \item \textbf{Closed-form CAVI algorithm} (\S\ref{sec:smfvb-alg}): each
-  coordinate-ascent update is analytic; the iterates converge monotonically
-  and geometrically at rate $\rho\le1/2$
-  (Theorem~\ref{thm:vi-converge}, \S\ref{sec:vi-convergence}).
+  coordinate-ascent update is analytic; the iterates are monotonically
+  non-decreasing and converge to a stationary point of $\tilde{\mathcal{L}}$
+  under local contractivity assumptions
+  (Proposition~\ref{thm:vi-converge}, \S\ref{sec:vi-convergence}).
 \item \textbf{Consistency and identifiability} (Corollary~\ref{cor:elbo-gap},
   Proposition~\ref{prop:identif-dual}, \S\ref{sec:identif-val}): the surrogate
   approximation error vanishes as mean abundance grows; the dual-channel observation
@@ -656,11 +657,11 @@ The four main theoretical results answer affirmatively:
   expressions for every expectation in the surrogate variational objective with no
   numerical integration, under three approximations each of bounded order
   (Remark~\ref{rem:poi-approx}).
-\item \textbf{Optimisation guarantees} (Theorem~\ref{thm:vi-converge},
+\item \textbf{Optimisation guarantees} (Proposition~\ref{thm:vi-converge},
   \S\ref{sec:vi-convergence}): the surrogate CAVI sequence is monotonically
-  non-decreasing and converges to a stationary point of $\tilde{\mathcal{L}}$
-  at geometric rate $\rho\le1/2$ under the same Foster--Lyapunov drift
-  condition that guarantees ergodicity of the latent chain.
+  non-decreasing and every limit point is a stationary point of
+  $\tilde{\mathcal{L}}$; convergence to a unique stationary point holds under
+  local contractivity assumptions.
 \item \textbf{Approximation quality} (Corollary~\ref{cor:elbo-gap},
   \S\ref{sec:vi-convergence}): as mean latent count grows, all three
   surrogate approximation errors vanish and the surrogate variational objective optimiser
@@ -1043,20 +1044,20 @@ $O(m\,T\,\bar{d})$ per objective evaluation with no particle loop.
 \subsection{Statistical Properties of the Surrogate CAVI}
 \label{sec:vi-convergence}
 
-The following theorem is the primary theoretical result of this paper.
-It establishes that maximising the surrogate variational objective $\tilde{\mathcal{L}}$ is a
-well-posed variational problem: the sequence of iterates is statistically
-consistent in the sense that the objective can only improve, every limit point
-is a proper stationary point of the KL-divergence surrogate, and the iterates
-converge at a rate determined by the model's own stability condition.
+The following proposition establishes that maximising the surrogate variational
+objective $\tilde{\mathcal{L}}$ is a well-posed optimisation problem: the
+sequence of CAVI iterates is monotonically non-decreasing and every limit point
+is a stationary point of $\tilde{\mathcal{L}}$.  Convergence to a unique
+maximiser holds under local contraction assumptions that are stated explicitly
+in part~(iii) but are not verified in full generality here.
 
-\begin{theorem}[Statistical properties of SMFVB]\label{thm:vi-converge}
-Let $\tilde{\mathcal{L}}$ be the surrogate variational objective \eqref{eq:surr-elbo} with
-process term \eqref{eq:proc-elbo}.  Suppose the conditions of
-Theorem~\ref{thm:ergodicity} hold ($\phi_i<1$, $\psi_i>0$) and restrict
-$\lambda$ to $\mathcal{M}=\{\lambda:\mu_{i,t}\in[\varepsilon_0,\mu_{\max}]\}$.
+\begin{proposition}[Statistical properties of SMFVB]\label{thm:vi-converge}
+Let $\tilde{\mathcal{L}}$ be the surrogate variational objective
+\eqref{eq:surr-elbo} with process term \eqref{eq:proc-elbo}.  Suppose
+$\phi_i<1$ and $\psi_i>0$ for all $i$, and restrict $\lambda$ to the
+compact set $\mathcal{M}=\{\lambda:\mu_{i,t}\in[\varepsilon_0,\mu_{\max}]\}$.
 \begin{enumerate}[label=(\roman*)]
-\item \textbf{Monotonicity of the surrogate:}
+\item \textbf{Monotonicity:}
 $\tilde{\mathcal{L}}(\lambda^{(k+1)})\ge\tilde{\mathcal{L}}(\lambda^{(k)})$
 for all $k\ge0$.
 \item \textbf{Relation to model evidence:}
@@ -1066,42 +1067,41 @@ lower bound on $\log p(Y)$: the surrogate process density can over- or
 under-estimate the true transition log-density, so
 $\tilde{\mathcal{L}}$ may lie above or below $\mathcal{L}$.  The Le Cam
 TV proximity (Remark~\ref{rem:poi-approx}) qualitatively implies that
-$|\tilde{\mathcal{L}}-\mathcal{L}|$ is small when biweekly survival
-$\phi_i$ is moderate, but a rigorous closed-form gap bound is not available
-from the TV distance alone.
+$|\tilde{\mathcal{L}}-\mathcal{L}|$ is small when $\phi_i$ is moderate,
+but a rigorous closed-form gap bound is not available from the TV distance alone.
 \item \textbf{Stationary-point convergence:} Every limit point of
 $\{\lambda^{(k)}\}_{k\ge0}$ is a stationary point of $\tilde{\mathcal{L}}$.
-\item \textbf{Geometric rate:} Under block-coordinate strong convexity
-of $\tilde{\mathcal{L}}_\mathrm{proc}$ on $\mathcal{M}$, the CAVI sequence
-converges to a unique maximiser $\lambda^\star$ at rate:
-\[
-\tilde{\mathcal{L}}(\lambda^\star)-\tilde{\mathcal{L}}(\lambda^{(k)})\;\le\;C\,\rho^k,
-\qquad C>0,\;\rho\in(0,1),
-\]
-where $\rho\le 1/2$ under the drift condition from Theorem~\ref{thm:ergodicity}.
+Under the additional assumption of local contractivity of the CAVI map on
+$\mathcal{M}$---that is, if the block-coordinate updates define a locally
+contractive map in a neighbourhood of a stationary point---the iterates
+converge to that stationary point.  Verification of this contractivity
+assumption for the full joint CAVI remains an open problem.
 \end{enumerate}
-\end{theorem}
+\end{proposition}
 
 \begin{proof}[Proof sketch]
 \textit{(i):} Each block update of $\mu_{i,t}$ maximises $\tilde{\mathcal{L}}$
-over that block with all others fixed --- standard coordinate ascent monotonicity
-\citep{blei2017}.  \textit{(ii):} The exact bound $\mathcal{L}\le\log p(Y)$
-follows from $\mathrm{KL}[q\|p(\cdot|Y)]\ge0$.  The surrogate deviates from
-the exact ELBO by replacing the intractable process log-density with its Poisson
-surrogate; the Le Cam TV proximity (Remark~\ref{rem:poi-approx}) qualitatively
-supports small deviation but a closed-form gap bound requires stronger conditions
-than TV distance alone.  \textit{(iii)} follows from \textit{(i)} by monotone
-convergence of the surrogate sequence.
-\textit{(iv):} The CAVI Jacobian $\partial\bar{s}_{i,t}/\partial\mu_{i,t-1}
-=\phi_i c_i^2\exp(\mu_{i,t-1}(c_i-1))(1+\mu_{i,t-1}(c_i-1))$.
-For $\mu_{i,t-1}>n^\star$ the drift condition gives
-$\phi_i c_i\exp(\mu_{i,t-1}(c_i-1))\le 1/2$, bounding the spectral radius
-below $1/2$; the Banach fixed-point theorem yields geometric convergence.
+over that block with all others fixed---standard coordinate ascent monotonicity
+\citep{blei2017}.  Since $\tilde{\mathcal{L}}$ is bounded above on $\mathcal{M}$
+(finite compact domain, continuous objective), the sequence
+$\{\tilde{\mathcal{L}}(\lambda^{(k)})\}$ converges.
+\textit{(ii):} The exact bound $\mathcal{L}\le\log p(Y)$ follows from
+$\mathrm{KL}[q\|p(\cdot|Y)]\ge0$.  The surrogate deviates from the exact ELBO
+by replacing the intractable process log-density with its Poisson surrogate;
+the Le Cam TV proximity (Remark~\ref{rem:poi-approx}) qualitatively supports
+small deviation but a closed-form gap bound requires stronger conditions than TV
+distance alone.
+\textit{(iii):} The stationary-point claim follows from \textit{(i)} and
+continuity of $\tilde{\mathcal{L}}$: if a limit point were not stationary,
+a block update would strictly increase the objective, contradicting convergence.
+Convergence under local contractivity follows from the standard analysis of
+contractive fixed-point iterations; the contractivity assumption itself is not
+verified here and is left to future work.
 \end{proof}
 
 \begin{corollary}[Consistency of surrogate variational objective under large populations]\label{cor:elbo-gap}
 Let $\bar\mu = m^{-1}T^{-1}\sum_{i,t}\mu_{i,t}$ be the mean variational count.
-Under the conditions of Theorem~\ref{thm:vi-converge}, all three surrogate
+Under the conditions of Proposition~\ref{thm:vi-converge}, all three surrogate
 approximation errors (Remark~\ref{rem:poi-approx}) vanish as
 $\bar\mu\to\infty$ with $\phi_{\max}<1$ fixed:
 \begin{enumerate}[label=(\alph*)]
@@ -1249,7 +1249,7 @@ merely convenient but \emph{necessary} for full parameter recovery.
 
 The simulation study serves three theoretical validation purposes: (1)~verify
 that the surrogate variational objective optimiser $\tilde\lambda^\star$ recovers the true
-parameters (testing Theorem~\ref{thm:vi-converge} part~(iii)); (2)~assess
+parameters (testing Proposition~\ref{thm:vi-converge} part~(iii)); (2)~assess
 the calibration of $q_{\tilde\lambda^\star}$ as a posterior approximation by
 comparing empirical 95\% CI coverage to the nominal level and to PMCMC; and
 (3)~confirm that the 2--4 pp coverage shortfall predicted by the
@@ -1519,9 +1519,8 @@ fully closed-form surrogate whose every term---survival expectations,
 immigration rates, binary detection probabilities---is analytic, with three
 approximation sources each of explicitly bounded order.  Second, the closed-form
 structure enables a coordinate-ascent algorithm (SMFVB) in which each update
-is analytic and the iterates converge monotonically at geometric rate
-$\rho\le1/2$, inherited from the same Foster--Lyapunov drift that guarantees
-ergodicity of the latent chain.  Third, as mean latent abundance grows all
+is analytic and the iterates converge monotonically to a stationary point of
+the surrogate variational objective under local contractivity assumptions.  Third, as mean latent abundance grows all
 surrogate approximation errors vanish, establishing posterior consistency in
 the large-population regime; and the dual-channel observation model is locally
 identifiable under mild temporal abundance variation.  Fourth, the simulation
@@ -1539,7 +1538,7 @@ variance for the Binomial survival component $S_{i,t}$, producing the
 observed 2--4~pp coverage shortfall; a structured approximation with
 correlated Poisson factors, or a Gamma mean-field over counts, may
 partially recover this variance.  Extending the convergence analysis
-of Theorem~\ref{thm:vi-converge} to the joint CAVI, and deriving sharp
+of Proposition~\ref{thm:vi-converge} to the joint CAVI, and deriving sharp
 coverage-gap bounds as a function of $\phi_{\max}$ and $K_{\min}$, remain
 open theoretical problems.  On the applied side, a covariate-driven LDD
 link $\log\psi_t = w_t^\top\gamma_\psi$ would accommodate seasonally
