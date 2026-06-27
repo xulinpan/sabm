@@ -7,6 +7,7 @@
 \usepackage{hyperref}
 \usepackage{algorithm}
 \usepackage{algpseudocode}
+\usepackage{float}
 \usepackage{graphicx}
 \graphicspath{{figures/}}
 \usepackage{tikz}
@@ -68,13 +69,13 @@ counts and temporal variation (Proposition~\ref{prop:identif-dual}).
 Across ten simulation scenarios (50 replicates each, $m=100$, $T=15$) spanning
 low/high abundance, density-dependence regimes, sparse observations,
 model misspecification, and large spatial lattice ($m=1{,}000$),
-SMFVB achieves 95\% credible-interval coverage within 4 percentage points of
+SMFVB achieves 95\% variational interval coverage within 4 percentage points of
 particle MCMC with a $22\times$ wall-time reduction (4~min vs.\ 92~min),
 consistent with the theoretical properties of the surrogate.
 Applied to Swiss Great Tit territory counts (MHB programme, $m=267$, $T=10$),
 a variational EM extension simultaneously estimates detection and dispersal
-parameters and yields empirically well-calibrated posterior predictive checks
-($p\in(0.1,\,0.9)$ for three test statistics).
+parameters and yields in-sample calibration diagnostics consistent with surrogate self-consistency
+($p\in(0.1,\,0.9)$ for three test statistics against training data).
 \end{abstract}
 
 \begin{keyword}
@@ -223,11 +224,11 @@ This paper makes four contributions:
   $T\ge2$ with temporal abundance variation and known positive latent counts.
 \item \textbf{Simulation evidence and real-data application}
   (\S\ref{sec:simulation}, \S\ref{sec:realdata}): ten scenarios
-  (50 replicates each, $m=100$, $T=15$) show 95\% CI coverage within
+  (50 replicates each, $m=100$, $T=15$) show 95\% variational interval coverage within
   4~pp of particle MCMC at $22\times$ lower wall time, consistent with
   the surrogate approximation properties; a VEM extension applied to Swiss
-  MHB Great Tit data ($m=267$, $T=10$) yields empirically well-calibrated
-  PP checks.
+  MHB Great Tit data ($m=267$, $T=10$) yields in-sample calibration
+  diagnostics consistent with surrogate self-consistency.
 \end{enumerate}
 
 \paragraph{Organisation.}
@@ -561,7 +562,7 @@ Consider a single isolated cell ($\mathcal{N}_i=\emptyset$) with dynamics
   \quad
   L_t \sim \mathrm{Poisson}(\psi),
 \]
-where $\phi\in(0,1)$, $K>0$, and $\psi\ge 0$.  Then $\{N_t\}_{t\ge 0}$ is
+where $\phi\in(0,1)$, $K>0$, and $\psi > 0$.  Then $\{N_t\}_{t\ge 0}$ is
 a geometrically ergodic Markov chain on $\mathbb{Z}_{\ge 0}$ possessing a
 unique stationary distribution $\pi_\phi$ with $\E_{\pi_\phi}[N]\le\phi K/e+\psi$.
 \end{theorem}
@@ -580,10 +581,20 @@ $\E[N_t\mid N_{t-1}=n]\le n/2+\psi$.  This is the Foster--Lyapunov drift conditi
 $\E[V(N_t)\mid N_{t-1}=n]\le\lambda V(n)+b$ with $\lambda=1/2$ outside the
 finite ``small'' set $C_0=\{0,\ldots,\lceil n^*\rceil\}$.
 (When $\phi\le1/2$, $n^*=0$ and the condition holds for all $n\ge 1$.)
-Irreducibility and aperiodicity hold because the $\mathrm{Poisson}(\psi)$
-component ($\psi>0$) gives positive reach to all states in finitely many steps.
+Irreducibility holds because $\psi>0$ implies $\mathrm{Pois}(\psi)$ assigns
+positive probability to every non-negative integer, giving positive reach
+from any state to all of $\mathbb{Z}_{\ge0}$ in one step.  Aperiodicity
+follows from $p(N_1=n\mid N_0=n)>0$ for all $n$.
 Geometric ergodicity follows from \citet{meyntweedie1993}, Theorem~15.0.1.
 \end{proof}
+
+\begin{remark}[$\psi=0$ case]
+When $\psi=0$ (no long-distance arrivals), the chain is absorbed at 0 if
+the initial state is ever 0, since $\mathrm{Pois}(0)=\delta_0$ and the
+Binomial component contributes nothing.  The theorem does not apply;
+a cell with $\psi=0$ must be assigned a positive lower bound on $\psi$
+or treated as structurally absent.  In practice we require $\psi_i\ge\varepsilon_0>0$.
+\end{remark}
 
 \begin{proposition}[Conditional mean bound under bounded dispersal]
 \label{prop:bound}
@@ -757,24 +768,20 @@ provides complementary evidence about presence or signal detection. Together, th
 two channels reduce but do not automatically eliminate confounding among abundance,
 survey detection, and remote-sensing detection.
 
-\begin{proposition}[Identifiability of $(\rho_{i,t},\kappa_{i,t})$ under known false-positive rate]
-\label{prop:identif}
-Suppose $N_{i,t}>0$ at all observed cell--time pairs and that the false-positive
-rate $\eta_{i,t}=\eta_0$ is known (e.g.\ fixed by external calibration or by a
-prior concentrated near zero).  Let $t_1\ne t_2$ be two time points with
-$N_{i,t_1}\ne N_{i,t_2}$.  Then $\rho_{i,t}$ and $\kappa_{i,t}$ are jointly
-identified from the pair $(Y^{(C)}_{i,t},Y^{(P)}_{i,t})$, $t\in\{t_1,t_2\}$.
-\end{proposition}
-
-\begin{proof}
-The count channel gives $\E[Y^{(C)}_{i,t}]=\rho_{i,t}N_{i,t}$, so
-$\rho_{i,t}N_{i,t}$ is identified.  At $t_1$ and $t_2$ with
-$N_{i,t_1}\ne N_{i,t_2}$ this determines $\rho_{i,t}$ from the ratio of two
-identified quantities.  With $\rho_{i,t}$ and $N_{i,t}$ known, the binary
-channel $\pi^{(P)}_{i,t}=\eta_0+(1-\eta_0)(1-e^{-\kappa_{i,t}N_{i,t}})$ is
-strictly increasing in $\kappa_{i,t}$ for fixed $N_{i,t}>0$ and $\eta_0<1$,
-hence $\kappa_{i,t}$ is identified by inversion.
-\end{proof}
+\begin{remark}[Intuition for dual-channel identifiability]
+\label{rem:identif-intuition}
+Conditional on known positive latent counts $N_{i,t}>0$, each channel
+provides a separate constraint on the observation parameters.
+The count channel $\E[Y^{(C)}_{i,t}]=\rho N_{i,t}$ gives a constraint
+on $\rho$, and with $N$ and $\rho$ determined, the binary channel
+$\pi^{(P)}_{i,t}=\eta+(1-\eta)(1-e^{-\kappa N_{i,t}})$ is strictly
+increasing in $\kappa$ (for fixed $N>0$, $\eta<1$) and hence identifies
+$\kappa$ by inversion.  This argument conditions on $N$ being \emph{known};
+with $N$ latent, the full hierarchical identifiability requires the
+Fisher-information analysis in Proposition~\ref{prop:identif-dual}.
+The key requirement in both cases is $N_{i,t}>0$ and temporal variation
+in $N$: without abundance variation, $\kappa$ and $\eta$ are confounded.
+\end{remark}
 
 \begin{remark}[Non-identifiability when $\eta_{i,t}$ is free]
 When $\eta_{i,t}$ is a free parameter, the triple $(\kappa_{i,t},\eta_{i,t},N_{i,t})$
@@ -859,7 +866,7 @@ Identifiability of the dual-channel observation model, a prerequisite for
 the approximation error convergence in (iii), is established in
 Proposition~\ref{prop:identif-dual} (\S\ref{sec:identif-val}).
 
-\subsection{Variational Family, Exact ELBO, and the Surrogate}
+\subsection{Variational Family and the Surrogate Objective}
 \label{sec:vi-family}
 
 \paragraph{Variational family.}
@@ -875,16 +882,10 @@ q_\lambda(N_{1:T},\Theta)
 \end{equation}
 
 \paragraph{Why the Poisson mean-field family?}
-The choice $q(N_{i,t})=\mathrm{Pois}(\mu_{i,t})$ is motivated by four
+The choice $q(N_{i,t})=\mathrm{Pois}(\mu_{i,t})$ is motivated by three
 complementary properties.
 
 \begin{enumerate}[label=(\roman*)]
-\item \textbf{Maximum entropy.}  Among all distributions on $\mathbb{Z}_{\ge0}$
-  with prescribed mean $\mu$, the Poisson is the maximum-entropy distribution
-  \citep{grunwald2004}.  It therefore imposes the weakest possible additional
-  assumptions: any other distribution with the same mean encodes extra structure
-  not supported by the data.
-
 \item \textbf{Conjugacy with the generative model.}  Two of the three process
   components---immigration $I_{i,t}\sim\mathrm{Pois}(\Lambda_{i,t})$ and LDD
   $L_{i,t}\sim\mathrm{Pois}(\psi_i)$---are themselves Poisson, so the optimal
@@ -992,15 +993,15 @@ without the analytic convergence guarantees.
 
 \paragraph{Summary.}
 The Poisson mean-field is the unique family that is (i)~supported on
-$\mathbb{Z}_{\ge0}$, (ii)~maximum-entropy given the mean, (iii)~conjugate
-to the Poisson subcomponents of the generative model, and (iv)~equipped with
-an MGF that yields fully analytic deterministic surrogate updates for the
-count ABM survival and detection expectations.  Its principal limitation---variance
+$\mathbb{Z}_{\ge0}$, (ii)~conjugate to the Poisson subcomponents of the
+generative model, and (iii)~equipped with an MGF that yields fully analytic
+deterministic surrogate updates for the count ABM survival and detection
+expectations.  Its principal limitation---variance
 underestimation from the Binomial survival term---is documented in
 \S\ref{sec:simulation} and discussed further in \S\ref{sec:limitations-mf}.
 
 \paragraph{Exact ELBO and its intractable term.}
-The exact ELBO for the unmodified count ABM is:
+The exact evidence lower bound (ELBO) for the unmodified count ABM is:
 
 \begin{equation}\label{eq:elbo}
 \mathcal{L}(\lambda)
@@ -1329,7 +1330,7 @@ at the current iterate and updating $\mu_{i,t}$ explicitly
 The sweep costs $O(m\,\bar{d})$ per time step for the immigration sum~\eqref{eq:immig-id},
 giving $O(m\,T\,\bar{d})$ per full sweep with no particle loop.
 
-\begin{algorithm}[ht]
+\begin{algorithm}[H]
 \caption{SMFVB: deterministic surrogate variational filtering for count ABMs.
   The latent-field update is a forward-filtering approximation to coordinate ascent
   (drops future-process contributions; see \S\ref{sec:cavi-update}).
@@ -1614,10 +1615,11 @@ SMFVB initialises $\mu_{i,t}$ at the prior process mean forward pass.
 PMCMC uses a random-walk Metropolis--Hastings kernel with proposal standard
 deviations pre-tuned by pilot runs to target acceptance rates in $[0.20,0.40]$;
 8 independent chains, 10{,}000 iterations, 5{,}000 burn-in; $P=3{,}000$
-particles for Scenarios A--E.  SMFVB 95\% credible intervals are obtained
+particles for Scenarios A--E.  SMFVB 95\% variational intervals are obtained
 from the Poisson variational distribution: $\hat\mu_{i,t}\pm1.96\sqrt{\hat\mu_{i,t}}$
 for the latent field; for scalar parameters, Laplace-approximation intervals
-from the diagonal Hessian of $\tilde{\mathcal{L}}$.  PMCMC intervals are
+from the diagonal Hessian of $\tilde{\mathcal{L}}$.
+These are surrogate variational intervals, not exact Bayesian credible intervals.  PMCMC intervals are
 posterior quantiles across post-burn-in draws.  PMCMC targets the exact
 generative model $p(Y,N_{1:T}|\Theta)$ via a bootstrap particle filter with
 systematic resampling; SMFVB targets the surrogate $\tilde{\mathcal{L}}$.
@@ -1672,7 +1674,7 @@ For each scenario we report:
 \begin{itemize}[nosep]
 \item \textbf{RMSE}: root mean squared error of the variational posterior mean
   vs.\ truth, averaged over replicates.
-\item \textbf{Coverage}: empirical 95\% credible-interval coverage rate.
+\item \textbf{Coverage}: empirical 95\% variational interval coverage rate.
 \item \textbf{Relative bias}: $|\hat\phi - \phi_0|/\phi_0$ as a percentage,
   averaged over replicates.
 \item \textbf{Runtime}: wall-clock time per replicate (8-core Intel i7-1165G7,
@@ -1695,7 +1697,7 @@ CI rate.  ESS is the PMCMC minimum effective sample size for $\bar\phi$
 \label{tab:results}
 \begin{tabular}{cllllllll}
 \toprule
-Scen. & RMSE$_\phi$ & Cover & Rel.\ bias & Runtime & ELBO & Sweeps & ESS \\
+Scen. & RMSE$_\phi$ & Cover & Rel.\ bias & Runtime & $\tilde{\mathcal{L}}^\star$ & Sweeps & ESS \\
 \midrule
 A & 0.030 & 0.90 & 1.2\% & 4 min  & $-2\,847$ & 8  & 1820 \\
 B & 0.072 & 0.82 & 5.8\% & 4 min  & $-1\,203$ & 11 & 1420 \\
@@ -1720,7 +1722,7 @@ J & 0.039 & 0.88 & 8.2\%$^\ddagger$ & 4 min & $-2\,983$ & 10 & --- \\
 \caption{SMFVB performance across ten simulation scenarios (Table~\ref{tab:scenarios}).
   \emph{Left}: RMSE of the posterior variational mean for $\bar\phi$.
   Dashed vertical line marks the baseline Scenario~A value (RMSE$=0.030$).
-  \emph{Right}: empirical 95\% credible-interval coverage for $\bar\phi$.
+  \emph{Right}: empirical 95\% variational interval coverage for $\bar\phi$.
   Dashed line at the nominal level (0.95); dotted line at the baseline coverage (0.90).
   Colour indicates scenario type: abundance regime (blue), density dependence (green),
   observation sparsity (orange), misspecification (purple), scale (brown),
@@ -1731,7 +1733,7 @@ J & 0.039 & 0.88 & 8.2\%$^\ddagger$ & 4 min & $-2\,983$ & 10 & --- \\
 \paragraph{Scenarios A (Baseline) and method comparison.}
 Figure~\ref{fig:sim-results} displays RMSE and coverage across all ten
 scenarios; numerical results appear in Table~\ref{tab:results}.
-On the baseline setting SMFVB achieves RMSE$_\phi=0.030$, 95\% CI coverage
+On the baseline setting SMFVB achieves RMSE$_\phi=0.030$, 95\% variational interval coverage
 of 0.90, and runtime of 4 minutes, compared to PMCMC (coverage 0.93,
 RMSE$_\phi=0.028$, runtime 92 minutes at $P=3{,}000$; see \S\ref{sec:pmcmc-diag}).
 SMFVB is $22\times$ faster than PMCMC with a 3~pp coverage penalty, a
@@ -1801,8 +1803,8 @@ PMCMC at this scale would require an estimated $>40$ hours per replicate
 (extrapolated from the $m=100$ timing as $O(m^2T)$) and is not run.
 Coverage (0.91) and RMSE$_\phi$ (0.031) at $m=1\,000$ are nearly identical to
 the $m=100$ baseline, confirming that performance does not degrade as the
-state space grows.  The ELBO $(-28\,104)$ scales approximately linearly with
-$mT$ as expected.
+state space grows.  The surrogate objective value ($-28\,104$) scales approximately
+linearly with $mT$ as expected.
 
 \paragraph{Scenario I (Zero inflation, 35\% empty sites).}
 When 35\% of sites are permanently empty ($N_{i,t}=0$ for all $t$), the
@@ -2032,6 +2034,26 @@ the likelihood surface for weakly identified parameters.
 \subsection{Summary and Recommendations}
 \label{sec:sim-summary}
 
+\paragraph{When SMFVB fails.}
+Four scenarios reveal regimes where SMFVB's surrogate approximation degrades
+materially.
+\emph{Scenario B} ($\bar{N}<2$): when mean abundance is near zero the Poisson
+mean-field cannot concentrate mass near the support boundary, inflating
+RMSE$_\phi$ by $140\%$ and reducing coverage to 0.82---the worst coverage
+across all scenarios.
+\emph{Scenario F} (sparse observations, $f_C=0.10$): with fewer than 15\%
+of cell-year combinations observed, the surrogate has insufficient data to
+correct the process-driven prior, dropping coverage to 0.86.
+\emph{Scenario I} (35\% zero-inflated sites): the $\psi_i>0$ constraint forces
+$\mu_{i,t}\approx\psi_i>0$ at permanently empty sites, inflating RMSE$_\phi$
+by 47\% and depressing coverage to 0.84.
+\emph{Scenario J} (high false-positive rate $\eta=0.15$): saturation of the
+binary channel confounds $\eta$ and $\kappa$, producing 8.2\% bias in $\eta$
+and the lowest coverage observed outside Scenario B (0.77 for $\eta$).
+Users should treat SMFVB results with heightened caution in any of these four
+regimes; the recommendations in Table~\ref{tab:recommendations} give
+mitigating strategies for each.
+
 Table~\ref{tab:recommendations} distils the scenario results into practical
 guidance.
 
@@ -2148,8 +2170,8 @@ lower, reducing the immigration floor needed to explain occupied zero-count
 sites.
 
 \paragraph{Convergence and speed.}
-The VEM requires \textbf{8 outer iterations} to converge (relative ELBO
-change $<10^{-5}$), each requiring 2--3 inner forward-filtering sweeps (Figure~\ref{fig:vem-convergence}).
+The VEM requires \textbf{8 outer iterations} to converge (relative surrogate
+objective change $|\Delta\tilde{\mathcal{L}}|/|\tilde{\mathcal{L}}|<10^{-5}$), each requiring 2--3 inner forward-filtering sweeps (Figure~\ref{fig:vem-convergence}).
 Total wall time is \textbf{2.6 seconds} on a standard laptop (Intel Core i7).
 The surrogate variational objective improves from $-11{,}018$ (fixed-parameter
 run) to $-10{,}847$ at VEM convergence, a surrogate objective gain of 171 units that
@@ -2163,7 +2185,7 @@ from data rather than fixing them at literature values.
   \emph{Left}: estimated values of $\hat\rho$, $\hat\kappa$, $\hat\psi$ at each
   outer VEM iteration (dashed lines indicate final values).
   \emph{Right}: surrogate variational objective $\tilde{\mathcal{L}}$ over VEM
-  iterations (dashed line at convergence value $-10{,}847$; ELBO gain of 171
+  iterations (dashed line at convergence value $-10{,}847$; surrogate objective gain of 171
   units over the fixed-parameter run at $-11{,}018$).
   Convergence is reached at iteration~8 (relative $|\Delta\tilde{\mathcal{L}}|<10^{-5}$).}
 \label{fig:vem-convergence}
@@ -2232,10 +2254,10 @@ Year & $\bar\mu_t$ & $\hat\rho\bar\mu_t$ & $\bar Y^{(C)}_t$ \\
 \label{fig:temporal}
 \end{figure}
 
-\paragraph{Posterior predictive checks.}
+\paragraph{In-sample calibration diagnostics.}
 Figure~\ref{fig:ppcheck} shows the posterior predictive distributions
 for all three test statistics under both fixed and VEM-estimated parameters.
-We draw $R=1{,}000$ posterior predictive replicates from
+We draw $R=1{,}000$ predictive replicates from
 $N_{i,t}\sim\mathrm{Poisson}(\mu_{i,t})$, then
 $Y^{(C)\,\mathrm{rep}}\sim\mathrm{NegBin}(\hat\rho N, r)$ and
 $Y^{(P)\,\mathrm{rep}}\sim\mathrm{Bernoulli}(1-e^{-\hat\kappa N})$ at
@@ -2244,7 +2266,7 @@ are computed \emph{exclusively at observed locations}
 (the 77.6\% of cell-year combinations that were surveyed):
 \begin{itemize}
   \item $T_1$: mean count $\bar Y^{(C)}$.
-    Observed $=8.15$; posterior predictive 95\% interval $[7.86,\;8.44]$;
+    Observed $=8.15$; predictive 95\% interval $[7.86,\;8.44]$;
     Bayesian $p=0.472$.
   \item $T_2$: detection rate $\bar Y^{(P)}$.
     Observed $=0.681$; interval $[0.655,\;0.707]$; $p=0.488$.
@@ -2252,14 +2274,20 @@ are computed \emph{exclusively at observed locations}
     Observed $=+0.065$ yr$^{-1}$; interval $[-0.041,\;0.173]$;
     $p=0.139$.
 \end{itemize}
-All three Bayesian $p$-values lie in $(0.1, 0.9)$: the VEM-estimated model
-is well-calibrated for the observed count mean, the detection rate, and the
-temporal trend simultaneously.  This is a direct consequence of the VEM
-M-step: estimating $\rho$ from data rather than fixing it at a literature
-value removes the systematic underprediction ($-16.5\%$) that caused
-$p=0.000$ for $T_1$ and $T_2$ under fixed parameters.  The $T_3$ $p$-value
-(0.139) is unchanged, confirming that the temporal trend was already
-well-captured and that the VEM estimates did not overfit the temporal signal.
+\emph{Scope caveat.}  These checks use the same data as parameter estimation;
+they assess internal consistency (self-calibration) of the fitted surrogate,
+not predictive validity on held-out data.  They should be interpreted as
+in-sample diagnostics: a $p$-value near 0 or 1 would indicate that the
+estimated model is inconsistent with the training data; $p\in(0.1,0.9)$
+confirms internal consistency but does not validate out-of-sample generalization.
+
+All three Bayesian $p$-values lie in $(0.1, 0.9)$: the VEM-estimated model is
+internally self-consistent for the observed count mean, the detection rate, and
+the temporal trend.  This is a direct consequence of the VEM M-step: estimating
+$\rho$ from data rather than fixing it at a literature value removes the
+systematic underprediction ($-16.5\%$) that caused $p=0.000$ for $T_1$ and
+$T_2$ under fixed parameters.  The $T_3$ $p$-value (0.139) is unchanged,
+confirming that the temporal trend was already well-captured.
 The residual $T_3$ misfit ($p<0.5$) reflects genuine inter-annual variability
 in true Great Tit abundance that the stationary process model does not
 represent; a time-varying $\phi_t$ or $\psi_t$ covariate would address this.
@@ -2277,7 +2305,7 @@ represent; a time-varying $\phi_t$ or $\psi_t$ covariate would address this.
   \emph{Right}: $T_3$ (linear trend slope, observed $=+0.065$ yr$^{-1}$).
   Fixed parameters produce Bayesian $p=0.000$ for $T_1$ and $T_2$ (replicates
   systematically below observed); VEM estimates yield $p=0.472$, $0.488$, $0.139$
-  (all well-calibrated).}
+  (in-sample self-consistent).  These are in-sample calibration diagnostics.}
 \label{fig:ppcheck}
 \end{figure}
 
@@ -2307,13 +2335,13 @@ established here.  The dual-channel observation model is locally identifiable
 from the observation layer given known positive latent counts and temporal
 variation (Proposition~\ref{prop:identif-dual}).  Fourth, the ten-scenario
 simulation study is consistent with these properties: SMFVB matches particle
-MCMC credible-interval coverage to within 4 percentage points at a $22\times$
+MCMC variational interval coverage to within 4 percentage points at a $22\times$
 wall-time reduction.
 
 \subsection{Limitations of the Poisson Mean-Field Family}
 \label{sec:limitations-mf}
 
-The Poisson mean-field family is chosen for maximum-entropy, conjugacy, and
+The Poisson mean-field family is chosen for conjugacy and
 MGF tractability (\S\ref{sec:vi-family}), but these advantages come with
 three structural limitations that practitioners should weigh when applying
 SMFVB.
@@ -2327,7 +2355,7 @@ introduces negative covariance between $N_{i,t}$ and $N_{j,t}$ (offspring
 cells sharing a common parent pool), a structure that a fully factored
 mean-field family cannot represent.  In the simulation study
 (\S\ref{sec:simulation}) this produces a 2--4 percentage-point shortfall in
-95\% credible-interval coverage, larger when $\phi_i$ is high and $K_i$ is
+95\% variational interval coverage, larger when $\phi_i$ is high and $K_i$ is
 small (high survival fraction, strong density regulation).  Potential
 remedies---each forfeiting some tractability---include: a NegBin mean-field
 $q(N_{i,t})=\mathrm{NegBin}(\mu_{i,t},r_q)$ with an additional variational
@@ -2386,6 +2414,82 @@ The R/C++ implementation of the SMFVB algorithm
 (Algorithm~\ref{alg:smfvb}), all simulation scripts, and code to reproduce
 every figure and table in this paper are available at
 \url{https://github.com/xulinpan/sabm}.
+
+\appendix
+
+%% ============================================================
+\section{VEM M-Step: Analytic Gradients and Hessians}
+\label{sec:mstep-formulas}
+%% ============================================================
+
+The outer M-step of the VEM maximises $\tilde{\mathcal{L}}$ over the scalar
+parameters $(\rho,\kappa,\psi)$ by Newton--Raphson, using the analytic
+gradient and Hessian obtained from Theorem~\ref{thm:elbo}.  Each one-dimensional
+update is computed with clipping to the parameter support and checked for
+sign change of the gradient.  We state the formulas for completeness.
+
+\paragraph{Notation.}
+Let $\mathcal{O}_C = \{(i,t): Y^{(C)}_{i,t}\text{ observed}\}$ and
+$\mathcal{O}_P = \{(i,t): Y^{(P)}_{i,t}\text{ observed}\}$.
+Write $\mu_{i,t}$ for the current E-step variational mean,
+$\tilde\mu_{i,t} = \bar s_{i,t} + \mathbb{E}_q[\Lambda_{i,t}] + \psi$ for the
+process-model predicted mean (as in eq.~\ref{eq:proc-mean}),
+and $\hat\pi_{i,t} = \eta + (1-\eta)(1-e^{-\kappa\mu_{i,t}})$ for the
+binary-channel detection probability.
+
+\paragraph{Count-detection fraction $\rho\in(0,1)$; prior $\rho\sim\mathrm{Beta}(a_\rho,b_\rho)$.}
+\begin{align}
+g_\rho &= \sum_{(i,t)\in\mathcal{O}_C}
+  \frac{r\bigl(y^{(C)}_{i,t}-\rho\mu_{i,t}\bigr)}{\rho\bigl(\rho\mu_{i,t}+r\bigr)}
+  + \frac{a_\rho-1}{\rho} - \frac{b_\rho-1}{1-\rho}, \label{eq:grad-rho}\\
+H_\rho &= -\sum_{(i,t)\in\mathcal{O}_C}
+  \frac{r\bigl[\rho\mu_{i,t}(\rho\mu_{i,t}+r)
+    + (y^{(C)}_{i,t}-\rho\mu_{i,t})(2\rho\mu_{i,t}+r)\bigr]}
+       {\rho^2(\rho\mu_{i,t}+r)^2}
+  - \frac{a_\rho-1}{\rho^2} - \frac{b_\rho-1}{(1-\rho)^2}. \label{eq:hess-rho}
+\end{align}
+The gradient $g_\rho$ is the NegBin score summed over observed count locations,
+plus the Beta log-prior gradient.
+Newton--Raphson update: $\rho\leftarrow\mathrm{clip}\bigl(\rho - H_\rho^{-1}g_\rho,\;\varepsilon,1-\varepsilon\bigr)$.
+
+\paragraph{Binary detection rate $\kappa>0$; prior $\kappa\sim\mathrm{Gamma}(a_\kappa,b_\kappa)$.}
+Let $\delta_{i,t}=(1-\eta)\mu_{i,t}e^{-\kappa\mu_{i,t}}=\partial\hat\pi_{i,t}/\partial\kappa$.
+\begin{align}
+g_\kappa &= \sum_{(i,t)\in\mathcal{O}_P}
+  \frac{y^{(P)}_{i,t}-\hat\pi_{i,t}}{\hat\pi_{i,t}(1-\hat\pi_{i,t})}\,\delta_{i,t}
+  + \frac{a_\kappa-1}{\kappa} - b_\kappa, \label{eq:grad-kappa}\\
+H_\kappa &= -\sum_{(i,t)\in\mathcal{O}_P}
+  \left[\frac{\delta_{i,t}^2}{\hat\pi_{i,t}(1-\hat\pi_{i,t})}
+    + \frac{(y^{(P)}_{i,t}-\hat\pi_{i,t})(1-2\hat\pi_{i,t})\,\delta_{i,t}^2}
+           {\hat\pi_{i,t}^2(1-\hat\pi_{i,t})^2}
+    - \frac{(y^{(P)}_{i,t}-\hat\pi_{i,t})(1-\eta)\mu_{i,t}^2 e^{-\kappa\mu_{i,t}}}
+           {\hat\pi_{i,t}(1-\hat\pi_{i,t})}\right]
+  - \frac{a_\kappa-1}{\kappa^2}. \label{eq:hess-kappa}
+\end{align}
+The first term in $H_\kappa$ is the Fisher information $\mathcal{I}(\kappa)$;
+the remaining terms are the observed-information correction that accounts for
+the Bernoulli curvature at non-central $\hat\pi_{i,t}$.
+
+\paragraph{LDD immigration mean $\psi>0$; prior $\psi\sim\mathrm{Gamma}(a_\psi,b_\psi)$.}
+Since $\psi$ enters $\tilde\mu_{i,t}$ additively with unit coefficient,
+the process-surrogate gradient and Hessian take a particularly simple form:
+\begin{align}
+g_\psi &= \sum_{i,t}\left[\frac{\mu_{i,t}}{\tilde\mu_{i,t}}-1\right]
+  + \frac{a_\psi-1}{\psi} - b_\psi, \label{eq:grad-psi}\\
+H_\psi &= -\sum_{i,t}\frac{\mu_{i,t}}{\tilde\mu_{i,t}^2}
+  - \frac{a_\psi-1}{\psi^2}. \label{eq:hess-psi}
+\end{align}
+Newton--Raphson update: $\psi\leftarrow\max\bigl(\psi - H_\psi^{-1}g_\psi,\;\varepsilon_0\bigr)$,
+where $\varepsilon_0>0$ maintains the $\psi>0$ constraint from Theorem~\ref{thm:ergodicity}.
+
+\paragraph{Implementation.}
+All three updates are one-dimensional, require no matrix decompositions, and
+cost $O(|\mathcal{O}_C|)$ or $O(|\mathcal{O}_P|)$ per iteration.
+Starting values are the moment-matched estimates described in
+\S\ref{sec:realdata}.  Convergence is declared when
+$|\Delta\tilde{\mathcal{L}}|/|\tilde{\mathcal{L}}|<10^{-5}$ across two
+consecutive outer VEM iterations.  In the MHB Great Tit application
+(\S\ref{sec:realdata}) 8 outer iterations suffice.
 
 \bibliographystyle{elsarticle-harv}
 \bibliography{novel_model_SC_ABM_NKD}
