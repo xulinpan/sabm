@@ -26,7 +26,7 @@
 
 \begin{frontmatter}
 
-\title{Variational Inference for Count Statistical Agent-Based Models}
+\title{Closed-form Variational Inference for Count Statistical Agent-Based Models}
 
 \author{Xulin Pan\corref{cor1}}
 \cortext[cor1]{Corresponding author}
@@ -40,13 +40,15 @@ the intractability of the transition likelihood: when latent abundance evolves
 through a Binomial survival plus Poisson immigration convolution, neither the
 log-PMF nor the exact evidence lower bound (ELBO) has a closed form.
 We show that the Poisson moment generating function (MGF) resolves this
-obstacle.  Under a Poisson mean-field variational family, every expectation in
-the ELBO is obtained analytically via the MGF, defining a surrogate
-$\tilde{\mathcal{L}}$ with three bounded approximation sources
-(Theorem~\ref{thm:elbo}).  The resulting \emph{structured mean-field
-variational Bayes} (SMFVB) algorithm is a coordinate-ascent scheme whose
-iterates are monotonically non-decreasing and converge geometrically at rate
-$\rho\le1/2$, inherited from the Foster--Lyapunov drift condition of the
+obstacle by delivering a \emph{fully closed-form} surrogate ELBO.  Under a
+Poisson mean-field variational family, every expectation---survival
+probabilities, immigration rates, and binary detection probabilities---is
+computed analytically via the MGF with no quadrature or Monte Carlo, defining
+a surrogate $\tilde{\mathcal{L}}$ with three explicitly bounded approximation
+sources (Theorem~\ref{thm:elbo}).  Each coordinate-ascent update of the
+resulting \emph{structured mean-field variational Bayes} (SMFVB) algorithm is
+likewise closed-form, and the iterates are monotonically non-decreasing and
+converge geometrically at rate $\rho\le1/2$, inherited from the Foster--Lyapunov drift condition of the
 latent chain (Theorem~\ref{thm:vi-converge}).  We further establish that all
 three approximation errors vanish as mean latent abundance grows, so the
 SMFVB posterior is consistent in the large-population regime
@@ -60,13 +62,12 @@ reduction (4~min vs.\ 92~min).
 \end{abstract}
 
 \begin{keyword}
-variational Bayes \sep
+closed-form variational inference \sep
 moment generating function \sep
 evidence lower bound \sep
-agent-based model \sep
-count data \sep
-negative binomial \sep
 coordinate-ascent variational inference \sep
+count statistical agent-based model \sep
+negative binomial \sep
 spatio-temporal model \sep
 identifiability
 \end{keyword}
@@ -113,33 +114,36 @@ summary statistic choice and yields only an approximate posterior.  Neither
 provides a closed-form variational objective that can be optimised by
 coordinate-ascent iteration.
 
-\paragraph{Our approach: the Poisson MGF trick.}
+\paragraph{Our approach: closed-form ELBO via the Poisson MGF.}
 We show that replacing the intractable Binomial--Poisson process density with a
 Poisson surrogate---justified by the Le Cam total-variation bound
-$d_{\mathrm{TV}}(\mathrm{Binom}(n,p),\,\mathrm{Pois}(np))\le p$---converts the
-ELBO into a closed-form expression via the Poisson moment generating function
-(MGF).  Under the Poisson MGF, every expectation over the surrogate process
-density can be computed analytically: survival expectations, binary detection
-probabilities, and immigration rates are all obtained in closed form with no
-quadrature or Monte Carlo.
+$d_{\mathrm{TV}}(\mathrm{Binom}(n,p),\,\mathrm{Pois}(np))\le p$---converts
+every expectation in the ELBO into a closed-form expression via the Poisson
+moment generating function (MGF).  Survival expectations, binary detection
+probabilities, and neighbourhood immigration rates are all obtained
+analytically; no numerical integration, Monte Carlo sampling, or black-box
+gradient estimator is required at any stage of the optimisation.
 
-The resulting \emph{structured mean-field variational Bayes} (SMFVB) algorithm
-is a coordinate-ascent (CAVI) scheme over a Poisson mean-field family.  Each
-iterate updates the variational mean $\mu_{i,t}^\star$ in closed form, and the
-first-order optimality condition reveals the update as a
+The closed-form ELBO enables a \emph{structured mean-field variational Bayes}
+(SMFVB) algorithm: a coordinate-ascent (CAVI) scheme over a Poisson
+mean-field family in which each iterate $\mu_{i,t}^\star$ is updated in
+closed form.  The first-order optimality condition reveals this update as a
 \emph{multiplicatively corrected conditional-mean forward pass}---the Bayesian
 analogue of the Kalman prediction--correction step for this nonlinear,
-non-Gaussian model.
+non-Gaussian, discrete-state model---and the geometric convergence rate
+$\rho\le1/2$ follows directly from the same closed-form structure.
 
 \paragraph{Contributions.}
 This paper makes four contributions:
 \begin{enumerate}[label=(\roman*)]
-\item \textbf{MGF surrogate ELBO} (Theorem~\ref{thm:elbo},
-  \S\ref{sec:elbo-terms}): closed-form expressions for every ELBO term under
-  a Poisson mean-field family, with three explicitly bounded approximation
-  sources.
-\item \textbf{SMFVB algorithm} (\S\ref{sec:smfvb-alg}): a coordinate-ascent
-  scheme that converges monotonically and geometrically at rate $\rho\le1/2$
+\item \textbf{Closed-form surrogate ELBO} (Theorem~\ref{thm:elbo},
+  \S\ref{sec:elbo-terms}): the Poisson MGF yields exact closed-form
+  expressions for every expectation in the ELBO under a Poisson mean-field
+  family, with three explicitly bounded approximation sources and no
+  numerical integration.
+\item \textbf{Closed-form CAVI algorithm} (\S\ref{sec:smfvb-alg}): each
+  coordinate-ascent update is analytic; the iterates converge monotonically
+  and geometrically at rate $\rho\le1/2$
   (Theorem~\ref{thm:vi-converge}, \S\ref{sec:vi-convergence}).
 \item \textbf{Consistency and identifiability} (Corollary~\ref{cor:elbo-gap},
   Proposition~\ref{prop:identif-dual}, \S\ref{sec:identif-val}): the surrogate
@@ -366,7 +370,7 @@ N_{i,t-1}p^S_{i,t-1}(1-p^S_{i,t-1})
 Thus the process model naturally generates extra-Poisson variation because the
 latent count is a convolution of a binomial survival term and two Poisson arrival
 terms.
-The spatiotemporal count structure of SC-ABM parallels the penalized Poisson
+The spatiotemporal count structure of the count ABM parallels the penalized Poisson
 framework of \citet{zhang2025csda}, who develop a doubly-fused penalization
 scheme for simultaneously detecting temporal change points and spatial clusters
 in count data, and show that doubly-penalized maximum likelihood estimators are
@@ -609,7 +613,7 @@ that fusing count and binary streams substantially reduces uncertainty in
 latent abundance estimates relative to either channel alone.
 
 %% ============================================================
-\section{Variational Inference via the Poisson MGF}
+\section{Closed-form ELBO via the Poisson MGF}
 \label{sec:vi}
 %% ============================================================
 
@@ -629,27 +633,27 @@ q^\star_\lambda
 \mathcal{L}(\lambda),
 \end{equation}
 where $\mathcal{L}(\lambda)=\mathbb{E}_q[\log p(Y,N_{1:T},\boldsymbol\alpha,\Theta)]
--\mathbb{E}_q[\log q_\lambda]$ is the exact evidence lower bound (ELBO).
-The obstacle is that the SC-ABM transition density
+-\mathbb{E}_q[\log q_\lambda]$ is the exact ELBO.
+The obstacle is that the count ABM transition density
 $p(N_{i,t}\mid\mathbf{N}_{t-1})$ is a Binomial--Poisson convolution
 (\S\ref{sec:process}) with no closed-form log-PMF, making the process term
 $\mathcal{L}_\mathrm{proc}:=\mathbb{E}_q[\log p(N_{1:T}\mid\boldsymbol\alpha,\Theta)]$
-analytically intractable and the KL problem~\eqref{eq:kl-problem} unsolvable
-in closed form.
+analytically intractable and blocking any closed-form evaluation of
+$\mathcal{L}(\lambda)$.
 
 \paragraph{Approach and theoretical results.}
-We study the following question: \emph{does there exist a tractable surrogate
-$\tilde{\mathcal{L}}$ of the exact ELBO such that
-(a)~the surrogate CAVI sequence converges to a well-defined stationary point,
-(b)~the surrogate optimiser $\tilde\lambda^\star$ is close to the exact KL
-minimiser $\lambda^\star$, and (c)~the resulting variational posterior
-$q_{\tilde\lambda^\star}$ provides calibrated uncertainty quantification?}
+We study the following question: \emph{does there exist a closed-form
+surrogate $\tilde{\mathcal{L}}$ of the exact ELBO such that
+(a)~every term of $\tilde{\mathcal{L}}$ and its CAVI gradient is analytic,
+(b)~the surrogate CAVI sequence converges to a well-defined stationary point,
+and (c)~the surrogate optimiser $\tilde\lambda^\star$ provides calibrated
+uncertainty quantification?}
 The four main theoretical results answer affirmatively:
 \begin{enumerate}[label=(\roman*)]
-\item \textbf{Tractability} (Theorem~\ref{thm:elbo},
-  \S\ref{sec:elbo-terms}): the Poisson moment generating function (MGF)
-  yields exact closed-form expressions for every expectation in the
-  surrogate ELBO, under three approximations each of bounded order
+\item \textbf{Closed-form tractability} (Theorem~\ref{thm:elbo},
+  \S\ref{sec:elbo-terms}): the Poisson MGF yields exact closed-form
+  expressions for every expectation in the surrogate ELBO with no
+  numerical integration, under three approximations each of bounded order
   (Remark~\ref{rem:poi-approx}).
 \item \textbf{Optimisation guarantees} (Theorem~\ref{thm:vi-converge},
   \S\ref{sec:vi-convergence}): the surrogate CAVI sequence is monotonically
@@ -703,7 +707,7 @@ dependence that the factored family cannot capture; this is reflected in the
 \S\ref{sec:simulation}.
 
 \paragraph{Exact ELBO and its intractable term.}
-The exact ELBO for the unmodified SC-ABM is:
+The exact ELBO for the unmodified count ABM is:
 
 \begin{equation}\label{eq:elbo}
 \mathcal{L}(\lambda)
@@ -751,7 +755,7 @@ conditional mean as its rate parameter:
 \end{equation}
 
 Crucially, $\mu^\dagger_{i,t}$ is the \emph{exact} conditional mean of the
-original SC-ABM process; only the log-PMF evaluation is replaced.  The Le Cam
+original count ABM process; only the log-PMF evaluation is replaced.  The Le Cam
 Poisson--Binomial total-variation bound \citep{lecam1960} gives
 $\|\mathrm{Pois}(\mu^\dagger)\,-\,p(N_{i,t}|\mathbf{N}_{t-1})\|_\mathrm{TV}
 \le \phi_i\,e^{-N_{i,t-1}/K_i}$,
@@ -787,7 +791,7 @@ Define $c_i:=e^{-1/K_i}\in(0,1)$.
 =: \bar{s}_{i,t}.
 \end{equation}
 This is an \emph{exact moment} of the Poisson variational distribution
-applied to the exact SC-ABM survival function; no model approximation is involved.
+applied to the exact count ABM survival function; no model approximation is involved.
 
 \item \textbf{Expected binary detection probability (exact under $q$, from the exact model):}
 \begin{equation}\label{eq:det-id}
@@ -995,9 +999,9 @@ time step for the immigration sum~\eqref{eq:immig-id}, giving
 $O(m\,T\,\bar{d})$ per ELBO evaluation with no particle loop.
 
 \begin{algorithm}[ht]
-\caption{SMFVB for SC-ABM (exact model; surrogate ELBO $\tilde{\mathcal{L}}$)}\label{alg:cavi}
+\caption{SMFVB: closed-form CAVI for count ABMs (exact model; surrogate ELBO $\tilde{\mathcal{L}}$)}\label{alg:cavi}
 \begin{algorithmic}[1]
-\Require Exact SC-ABM parameters $(\phi_i,K_i,\omega_j,h,\psi_i,\rho_{i,t},\kappa_{i,t},\eta_{i,t})$
+\Require Count ABM parameters $(\phi_i,K_i,\omega_j,h,\psi_i,\rho_{i,t},\kappa_{i,t},\eta_{i,t})$
          and observations $(Y^{(C)},Y^{(P)})$.
          \emph{The generative model $p$ is not modified.}
 \State \textbf{Initialise:} run one forward pass of the exact conditional mean
@@ -1138,7 +1142,7 @@ stability of the argmax under uniform convergence of the objective
 
 Because $\tilde{\mathcal{L}}$ approximates the exact ELBO (which is itself
 a lower bound on $\log p(Y)$), comparing $\tilde{\mathcal{L}}^\star$ across
-competing SC-ABM specifications provides a computationally convenient
+competing count ABM specifications provides a computationally convenient
 alternative to cross-validation or DIC, in the spirit of the variational
 information criterion \citep{blei2017}.  This comparison is \emph{approximate}:
 since $\tilde{\mathcal{L}}$ is a surrogate rather than the exact ELBO, the
@@ -1157,7 +1161,7 @@ one SMFVB run at $O(m\,T\,\bar{d})$ rather than a full PMCMC re-run.
 \section{Identifiability and Validation}\label{sec:identif-val}
 
 \begin{proposition}[Dual-channel local identifiability]\label{prop:identif-dual}
-Consider the SC-ABM observation model at a single cell $i$ with latent counts
+Consider the count ABM observation model at a single cell $i$ with latent counts
 $n_{i,1},\ldots,n_{i,T}>0$ and parameters
 $\theta=(\rho_i,r,\kappa_i,\eta_i)$.
 
@@ -1198,7 +1202,7 @@ Specifically,
       {\pi_{i,1}(1-\pi_{i,1})\,\pi_{i,2}(1-\pi_{i,2})}
 >0.
 \]
-Under the SC-ABM process model, $n_{i,t}$ varies as long as
+Under the count ABM process model, $n_{i,t}$ varies as long as
 $\psi_i>0$ or the dispersal network is non-trivial; hence $(\kappa,\eta)$
 are locally identifiable from the binary channel with $T\ge 2$.
 
@@ -1224,7 +1228,7 @@ their outer products span $\mathbb{R}^{2\times2}$.
 The determinant formula follows by direct calculation.
 Part~(iv): block-diagonal structure follows from conditional independence;
 process parameter identifiability from the temporal evolution of the latent
-counts via the SC-ABM mean recursion.
+counts via the count ABM mean recursion.
 \end{proof}
 
 \begin{remark}[Practical consequence]\label{rem:identif}
@@ -1374,20 +1378,22 @@ these thresholds, informative priors on $\omega_j$ and $h$ are advisable.
 \section{Discussion}\label{sec:discussion}
 %% ============================================================
 
-We have developed a variational inference framework for count statistical
-agent-based models, centred on three contributions.  First, the Poisson MGF
-converts an otherwise intractable ELBO into closed-form expressions under a
-Poisson mean-field family, with three approximation sources each of bounded and
-explicitly characterised order.  Second, the resulting SMFVB coordinate-ascent
-algorithm converges monotonically and geometrically at rate $\rho\le1/2$, a
-consequence of the same Foster--Lyapunov drift that guarantees ergodicity of
-the latent chain.  Third, as mean latent abundance grows the surrogate
-approximation errors vanish, establishing posterior consistency in the
-large-population regime; and the dual-channel observation model is locally
-identifiable given mild temporal variation in abundance.  The simulation study
-confirms that these theoretical properties translate into practice: SMFVB
-matches particle MCMC coverage to within 4 percentage points at a
-$22\times$ wall-time reduction.
+We have developed a \emph{closed-form} variational inference framework for
+count statistical agent-based models with four interlocking contributions.
+First, the Poisson MGF converts an otherwise intractable ELBO into a
+fully closed-form surrogate whose every term---survival expectations,
+immigration rates, binary detection probabilities---is analytic, with three
+approximation sources each of explicitly bounded order.  Second, the closed-form
+structure enables a coordinate-ascent algorithm (SMFVB) in which each update
+is analytic and the iterates converge monotonically at geometric rate
+$\rho\le1/2$, inherited from the same Foster--Lyapunov drift that guarantees
+ergodicity of the latent chain.  Third, as mean latent abundance grows all
+surrogate approximation errors vanish, establishing posterior consistency in
+the large-population regime; and the dual-channel observation model is locally
+identifiable under mild temporal abundance variation.  Fourth, the simulation
+study confirms that these theoretical guarantees translate directly to
+practice: SMFVB matches particle MCMC credible-interval coverage to within
+4 percentage points at a $22\times$ wall-time reduction.
 
 \paragraph{Limitations and future work.}
 The CAVI analysis here treats the model parameters $\Theta$ as fixed at
