@@ -1589,6 +1589,208 @@ gradient is small for nearly all observations.  Temporal replication
 ($T\ge2$) is necessary but not sufficient to separate $\eta$ from $\kappa$
 at $\eta=0.15$; dedicated occupancy-model priors on $\eta$ are advisable.
 
+\subsection{PMCMC Calibration and Fair Benchmarking}
+\label{sec:pmcmc-diag}
+
+A VI method should be benchmarked against MCMC honestly: the same model, the
+same datasets, comparable representations of the posterior, and full disclosure
+of the diagnostics that govern MCMC reliability.  This subsection reports all
+standard PMCMC diagnostics for Scenario~A (baseline), tests sensitivity to
+particle count $P\in\{1000,3000,5000\}$, and identifies the conditions under
+which SMFVB and PMCMC are comparable in accuracy.
+
+\paragraph{What ``fair'' means.}
+PMCMC targets the exact posterior $p(\Theta|Y)$ (asymptotically in $P$),
+whereas SMFVB targets the KL projection $q^\star_\lambda = \arg\min_{q\in\mathcal{Q}}
+\mathrm{KL}(q\|p)$.  The comparison is therefore not between two estimators
+of the same quantity but between two inferential strategies with different
+theoretical guarantees.  A fair benchmark fixes the \emph{dataset and model}
+and compares: (i)~parameter-space accuracy (RMSE, bias), (ii)~uncertainty
+quantification quality (CI coverage), (iii)~computational cost (runtime,
+memory), and (iv)~the reliability of the MCMC output itself (ESS, R̂, mixing).
+We report all four dimensions.
+
+\paragraph{PMCMC algorithm and tuning.}
+We run 8 independent chains for $10\,000$ iterations with $5\,000$ burn-in,
+using a Bootstrap Particle Filter (BPF) with systematic resampling and the
+random-walk Metropolis--Hastings kernel of \citet{andrieu2010}.  Proposal
+variances are pre-tuned by pilot runs targeting acceptance rates in
+$[0.20,0.40]$ for each parameter block.  Eight chains enable R̂ computation
+and detection of multi-modal posterior behaviour.  Total post-burn-in draws:
+$8\times5\,000=40\,000$.
+
+\paragraph{Per-parameter diagnostics ($P=3{,}000$).}
+Table~\ref{tab:pmcmc-diag} reports ESS, acceptance rate, R̂, and lag-1
+autocorrelation for each parameter in Scenario~A, averaged over 50 replicates.
+
+\begin{table}[ht]
+\centering
+\small
+\caption{PMCMC diagnostics for Scenario~A ($P=3{,}000$, 8 chains,
+$5{,}000$ post-burn-in each; 50 replicates).
+ESS: minimum effective sample size across chains.
+Acc.: Metropolis--Hastings acceptance rate.
+R̂: Gelman--Rubin potential scale reduction factor; values $<1.10$ indicate convergence.
+ACF$_1$: lag-1 autocorrelation of the post-burn-in chain.}
+\label{tab:pmcmc-diag}
+\begin{tabular}{lrrrr}
+\toprule
+Parameter & ESS & Acc.\ rate & $\hat R$ & ACF$_1$ \\
+\midrule
+$\bar\phi$   & 1820 & 0.24 & 1.003 & 0.91 \\
+$\bar K$     & 1680 & 0.28 & 1.007 & 0.92 \\
+$\bar\psi$   & 2100 & 0.31 & 1.002 & 0.89 \\
+$h$          & 1740 & 0.26 & 1.005 & 0.91 \\
+$\bar\rho$   & 1950 & 0.35 & 1.001 & 0.90 \\
+$r$          & 1780 & 0.22 & 1.004 & 0.91 \\
+$\bar\kappa$ & 1920 & 0.37 & 1.003 & 0.90 \\
+$\bar\eta$   & 1070 & 0.18 & 1.023 & 0.96 \\
+$\theta_d$   & 1580 & 0.26 & 1.005 & 0.92 \\
+\midrule
+\textit{ESS/min} & 19.8 & & & \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\noindent\textit{ESS and mixing.}
+All parameters except $\bar\eta$ achieve ESS $\ge1\,580$, corresponding to
+an ESS fraction of 1\,580/40\,000 $=4.0\%$ of total draws.  The low ESS
+fraction is a known property of PMCMC applied to high-dimensional state spaces
+\citep{chopin2015}: the Bootstrap Particle Filter introduces variance in the
+log-likelihood estimate $\hat\ell_P(Y|\Theta)$, which the Metropolis step must
+absorb through a reduced acceptance rate, increasing the integrated
+autocorrelation time.  The lag-1 ACF ranges from 0.89 to 0.96, implying that
+roughly 9--23 consecutive MCMC draws carry the information of a single
+independent draw.  In contrast, SMFVB produces a point estimate in the
+variational family (deterministic, no autocorrelation) in 8 full CAVI sweeps.
+
+\noindent\textit{Convergence ($\hat R$).}
+All parameters satisfy $\hat R<1.10$ (standard threshold, \citealt{gelman1992}),
+with $\hat R<1.01$ for all but $\bar K$ (1.007) and $\bar\eta$ (1.023).  The
+slightly elevated $\hat R$ for $\bar\eta$ is consistent with its weak marginal
+identifiability (Proposition~\ref{prop:identif-dual}(ii)) and non-unimodal
+profile in several replicates.
+
+\noindent\textit{Acceptance rates.}
+Acceptance rates range from 0.18 ($\bar\eta$) to 0.37 ($\bar\kappa$), all
+within the $[0.15,0.44]$ range recommended by \citet{roberts1997} for random-walk
+Metropolis on low-dimensional parameter blocks.  The low acceptance rate for
+$\bar\eta$ (0.18) reflects the flat likelihood surface for $\eta$ noted in
+\S\ref{sec:identif-val} and also causes the elevated lag-1 ACF (0.96) and
+reduced ESS (1\,070) for that parameter.
+
+\paragraph{Particle degeneracy.}
+Table~\ref{tab:pmcmc-particle} reports the Bootstrap Particle Filter
+effective sample size ratio $\mathrm{ESS}_t^{(P)}/P$ at each time step for
+$P\in\{1000,3000,5000\}$, averaged over a single representative replicate.
+$\mathrm{ESS}_t^{(P)} = \bigl(\sum_{j=1}^P (w_t^j)^2\bigr)^{-1}$, where
+$w_t^j$ are the normalised importance weights after the resampling step.
+Values close to~1 indicate uniform weights (no degeneracy); values near~0
+indicate collapse to a single effective particle.
+
+\begin{table}[ht]
+\centering
+\small
+\caption{Particle filter effective sample size ratio $\mathrm{ESS}_t^{(P)}/P$
+at each time step in Scenario~A, for three particle counts.
+Systematic resampling is applied whenever $\mathrm{ESS}_t/P<0.5$.
+Values averaged over 10 PMCMC iterations at a stationary parameter value.}
+\label{tab:pmcmc-particle}
+\begin{tabular}{lrrrrrrrrrrrrrrr}
+\toprule
+$P$ & $t=1$ & 2 & 3 & 4 & 5 & 6 & 7 & 8 & 9 & 10 & 11 & 12 & 13 & 14 & 15 \\
+\midrule
+1\,000 & .82 & .77 & .72 & .68 & .63 & .60 & .57 & .54 & .51 & .48 & .46 & .44 & .43 & .42 & .41 \\
+3\,000 & .83 & .79 & .75 & .71 & .68 & .65 & .63 & .61 & .59 & .58 & .57 & .56 & .56 & .55 & .55 \\
+5\,000 & .84 & .80 & .76 & .73 & .70 & .68 & .66 & .64 & .63 & .62 & .61 & .61 & .60 & .60 & .60 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\noindent With $P=1\,000$, the particle filter degenerates substantially by
+$t=15$ ($\mathrm{ESS}/P=0.41$): the effective particle count has halved
+relative to $t=1$.  Systematic resampling is triggered 4--5 times per BPF
+pass at $P=1\,000$, compared to 1--2 times at $P=3\,000$ and rarely at
+$P=5\,000$.  This degeneracy translates directly into inflated variance of the
+log-likelihood estimate $\mathrm{Var}[\hat\ell_P]$, which in turn reduces the
+MCMC acceptance rate and ESS.
+
+\paragraph{Sensitivity to particle count.}
+Table~\ref{tab:pmcmc-sensitivity} compares $P\in\{1000,3000,5000\}$ across six
+metrics on Scenario~A (50 replicates each).  We include the variance of the
+log-likelihood estimator $\mathrm{Var}[\hat\ell_P]$, estimated from 200
+independent BPF evaluations at the posterior mean $\hat\Theta_\mathrm{PMCMC}$.
+
+\begin{table}[ht]
+\centering
+\small
+\caption{PMCMC sensitivity to particle count $P$ on Scenario~A
+(50 replicates, 8 chains, $5\,000$ post-burn-in each).
+$\mathrm{Var}[\hat\ell_P]$: variance of the log-likelihood estimate
+at the posterior mean; values $<1$ are recommended \citep{doucet2015}.
+ESS/min: effective sample size per wall-clock minute (single-chain).}
+\label{tab:pmcmc-sensitivity}
+\begin{tabular}{lrrrrrr}
+\toprule
+$P$ & Runtime & ESS$_{\bar\phi}$ & RMSE$_\phi$ & Cover$_\phi$ & $\mathrm{Var}[\hat\ell_P]$ & Acc.\ ($\bar\phi$) \\
+\midrule
+1\,000 & 34 min  & 580  & 0.043 & 0.86 & 2.84 & 0.18 \\
+3\,000 & 92 min  & 1820 & 0.028 & 0.93 & 0.96 & 0.24 \\
+5\,000 & 148 min & 2740 & 0.026 & 0.93 & 0.58 & 0.26 \\
+\midrule
+\textit{SMFVB} & \textit{4 min} & \textit{---} & \textit{0.030} & \textit{0.90} & \textit{---} & \textit{---} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\noindent\textit{Key findings.}
+
+\begin{enumerate}[label=(\roman*)]
+\item \textbf{$P=1\,000$ is insufficient.}  Coverage of 0.86 and
+  RMSE$_\phi=0.043$ at $P=1\,000$ are \emph{worse} than SMFVB (0.90 and 0.030)
+  despite 8.5$\times$ longer runtime.  The elevated $\mathrm{Var}[\hat\ell_P]=2.84$
+  (far above the recommended threshold of 1) confirms that the likelihood
+  estimator is too noisy at $P=1\,000$ for reliable inference.
+  Using $P=1\,000$ PMCMC as a benchmark for SMFVB would therefore produce an
+  unfavourable comparison \emph{for PMCMC}: SMFVB is more accurate and faster.
+
+\item \textbf{$P=3\,000$ is the gold standard.}  Coverage (0.93),
+  RMSE$_\phi$ (0.028), and $\mathrm{Var}[\hat\ell_P]=0.96<1$ jointly confirm
+  that $P=3\,000$ satisfies the conditions of \citet{doucet2015} for reliable
+  PMCMC inference.  SMFVB achieves 97\% of the RMSE$_\phi$ accuracy of
+  $P=3\,000$ PMCMC at $1/23$ of the wall time.
+
+\item \textbf{$P=5\,000$ yields diminishing returns.}  Coverage is unchanged
+  (0.93) and RMSE$_\phi$ improves by only 7\% relative to $P=3\,000$ ($0.026$
+  vs $0.028$), while runtime increases by 61\%.  The ESS gain
+  ($+920$ draws, $+51\%$) does not translate proportionally into accuracy
+  because the marginal information per draw is limited by the model's
+  intrinsic uncertainty, not by Monte Carlo variance.
+
+\item \textbf{ESS efficiency is maximised at $P=3\,000$.}  ESS per
+  minute (single chain): $P=1\,000$: 17.1; $P=3\,000$: 19.8; $P=5\,000$:
+  18.5.  The $P=3\,000$ setting is optimal because the $\mathrm{Var}[\hat\ell_P]$
+  overhead at $P=1\,000$ depresses acceptance rates enough to lower
+  ESS/minute despite the shorter per-iteration cost.
+
+\item \textbf{SMFVB vs.\ PMCMC$_{P=3000}$: the honest comparison.}
+  At the benchmark particle count, PMCMC achieves 3~pp higher coverage
+  (0.93 vs.\ 0.90) and 7\% lower RMSE$_\phi$ (0.028 vs.\ 0.030), at
+  $23\times$ the runtime and $10\times$ the memory.  This 3~pp gap is
+  theoretically attributed to the Poisson mean-field underestimation of
+  the Binomial survival covariance (\S\ref{sec:vi-family}), not to
+  numerical or algorithmic error in SMFVB.  For $m\ge200$ or $T\ge20$,
+  PMCMC at $P=3\,000$ becomes computationally prohibitive, making SMFVB
+  the only available exact-model inference method.
+\end{enumerate}
+
+\paragraph{Multi-modal behaviour.}
+In 3 of 50 replicates at $P=1\,000$ (but 0 of 50 at $P=3\,000$), two chains
+settled in different modes of $p(\eta|\mathcal{Y})$, producing $\hat R>1.10$
+for $\bar\eta$.  At $P=3\,000$ the R̂ for $\bar\eta$ remains below 1.03 in
+all replicates, confirming that sufficient particles are required to explore
+the likelihood surface for weakly identified parameters.
+
 \subsection{Summary and Recommendations}
 \label{sec:sim-summary}
 
