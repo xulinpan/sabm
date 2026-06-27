@@ -1715,7 +1715,7 @@ of the same quantity but between two inferential strategies with different
 theoretical guarantees.  A fair benchmark fixes the \emph{dataset and model}
 and compares: (i)~parameter-space accuracy (RMSE, bias), (ii)~uncertainty
 quantification quality (CI coverage), (iii)~computational cost (runtime,
-memory), and (iv)~the reliability of the MCMC output itself (ESS, R̂, mixing).
+memory), and (iv)~the reliability of the MCMC output itself (ESS, $\widehat{R}$, mixing).
 We report all four dimensions.
 
 \paragraph{PMCMC algorithm and tuning.}
@@ -1723,12 +1723,12 @@ We run 8 independent chains for $10\,000$ iterations with $5\,000$ burn-in,
 using a Bootstrap Particle Filter (BPF) with systematic resampling and the
 random-walk Metropolis--Hastings kernel of \citet{andrieu2010}.  Proposal
 variances are pre-tuned by pilot runs targeting acceptance rates in
-$[0.20,0.40]$ for each parameter block.  Eight chains enable R̂ computation
+$[0.20,0.40]$ for each parameter block.  Eight chains enable $\widehat{R}$ computation
 and detection of multi-modal posterior behaviour.  Total post-burn-in draws:
 $8\times5\,000=40\,000$.
 
 \paragraph{Per-parameter diagnostics ($P=3{,}000$).}
-Table~\ref{tab:pmcmc-diag} reports ESS, acceptance rate, R̂, and lag-1
+Table~\ref{tab:pmcmc-diag} reports ESS, acceptance rate, $\widehat{R}$, and lag-1
 autocorrelation for each parameter in Scenario~A, averaged over 50 replicates.
 
 \begin{table}[ht]
@@ -1738,7 +1738,7 @@ autocorrelation for each parameter in Scenario~A, averaged over 50 replicates.
 $5{,}000$ post-burn-in each; 50 replicates).
 ESS: minimum effective sample size across chains.
 Acc.: Metropolis--Hastings acceptance rate.
-R̂: Gelman--Rubin potential scale reduction factor; values $<1.10$ indicate convergence.
+$\widehat{R}$: Gelman--Rubin potential scale reduction factor; values $<1.10$ indicate convergence.
 ACF$_1$: lag-1 autocorrelation of the post-burn-in chain.}
 \label{tab:pmcmc-diag}
 \begin{tabular}{lrrrr}
@@ -1895,7 +1895,7 @@ $P$ & Runtime & ESS$_{\bar\phi}$ & RMSE$_\phi$ & Cover$_\phi$ & $\mathrm{Var}[\h
 \paragraph{Multi-modal behaviour.}
 In 3 of 50 replicates at $P=1\,000$ (but 0 of 50 at $P=3\,000$), two chains
 settled in different modes of $p(\eta|\mathcal{Y})$, producing $\hat R>1.10$
-for $\bar\eta$.  At $P=3\,000$ the R̂ for $\bar\eta$ remains below 1.03 in
+for $\bar\eta$.  At $P=3\,000$ the $\widehat{R}$ for $\bar\eta$ remains below 1.03 in
 all replicates, confirming that sufficient particles are required to explore
 the likelihood surface for weakly identified parameters.
 
