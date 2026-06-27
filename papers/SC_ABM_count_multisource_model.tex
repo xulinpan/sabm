@@ -50,9 +50,9 @@ resulting \emph{structured mean-field variational Bayes} (SMFVB) algorithm is
 likewise closed-form, and the iterates are monotonically non-decreasing and
 converge to a stationary point of the surrogate variational objective under
 local contraction assumptions (Proposition~\ref{thm:vi-converge}).  We further establish that all
-three approximation errors vanish as mean latent abundance grows, so the
-SMFVB posterior is consistent in the large-population regime
-(Corollary~\ref{cor:elbo-gap}), and that the dual-channel observation
+three surrogate approximation errors vanish as mean latent abundance grows
+(Corollary~\ref{cor:elbo-gap}), so the surrogate variational objective
+converges to the exact ELBO; and that the dual-channel observation
 model---fusing NegBin count surveys with Bernoulli occupancy detections---is
 locally identifiable under mild temporal abundance variation
 (Proposition~\ref{prop:identif-dual}).  In a simulation study (100
@@ -159,8 +159,8 @@ This paper makes four contributions:
 \paragraph{Organisation.}
 Section~\ref{sec:process} specifies the count ABM.
 Section~\ref{sec:vi} develops the MGF surrogate variational objective and the SMFVB algorithm.
-Section~\ref{sec:identif-val} establishes convergence, consistency, and
-identifiability.
+Section~\ref{sec:identif-val} establishes surrogate approximation error
+convergence and identifiability.
 Section~\ref{sec:simulation} presents the simulation study.
 Section~\ref{sec:discussion} concludes.
 
@@ -664,10 +664,9 @@ The four main theoretical results answer affirmatively:
   local contractivity assumptions.
 \item \textbf{Approximation quality} (Corollary~\ref{cor:elbo-gap},
   \S\ref{sec:vi-convergence}): as mean latent count grows, all three
-  surrogate approximation errors vanish and the surrogate variational objective optimiser
-  $\tilde\lambda^\star$ converges to the exact ELBO optimiser $\lambda^\star$,
-  establishing consistency of the SMFVB posterior in the large-population
-  regime.
+  surrogate approximation errors vanish, so $|\tilde{\mathcal{L}} - \mathcal{L}| \to 0$
+  uniformly and the surrogate optimiser $\tilde\lambda^\star$ converges to
+  the exact variational optimiser $\lambda^\star$ (Corollary~\ref{cor:elbo-gap}).
 \item \textbf{Calibration} (\S\ref{sec:simulation}): in a simulation study
   the variational posterior $q_{\tilde\lambda^\star}$ achieves 95\% credible
   interval coverage within 4 percentage points of particle MCMC,
@@ -676,7 +675,7 @@ The four main theoretical results answer affirmatively:
 The coordinate-ascent algorithm implementing (i)--(iii) is described in
 \S\ref{sec:smfvb-alg}.
 Identifiability of the dual-channel observation model, a prerequisite for
-the consistency claim in (iii), is established in
+the approximation error convergence in (iii), is established in
 Proposition~\ref{prop:identif-dual} (\S\ref{sec:identif-val}).
 
 \subsection{Variational Family, Exact ELBO, and the Surrogate}
@@ -1099,7 +1098,7 @@ contractive fixed-point iterations; the contractivity assumption itself is not
 verified here and is left to future work.
 \end{proof}
 
-\begin{corollary}[Consistency of surrogate variational objective under large populations]\label{cor:elbo-gap}
+\begin{corollary}[Surrogate approximation error convergence under large populations]\label{cor:elbo-gap}
 Let $\bar\mu = m^{-1}T^{-1}\sum_{i,t}\mu_{i,t}$ be the mean variational count.
 Under the conditions of Proposition~\ref{thm:vi-converge}, all three surrogate
 approximation errors (Remark~\ref{rem:poi-approx}) vanish as
@@ -1117,15 +1116,23 @@ becomes exact in the limit.
 $O(\bar\mu^{-1})\to 0$, so the approximation
 $\mathbb{E}_q[\log\mu^\dagger_{i,t}]\approx\log\tilde\mu_{i,t}$ becomes exact.
 \end{enumerate}
-Consequently, $\tilde{\mathcal{L}}(\lambda)\to\mathcal{L}(\lambda)$ uniformly on
-$\mathcal{M}$, and the surrogate variational objective optimiser $\tilde\lambda^\star$ converges
-to the exact ELBO optimiser $\lambda^\star$:
+Consequently, the surrogate approximation error vanishes uniformly:
+\[
+\sup_{\lambda\in\mathcal{M}}|\tilde{\mathcal{L}}(\lambda)-\mathcal{L}(\lambda)|\;\to\;0
+\qquad\text{as }\bar\mu\to\infty,
+\]
+and the surrogate variational optimiser $\tilde\lambda^\star$ converges to the
+exact variational optimiser $\lambda^\star$ at the rate
 \[
 \|\tilde\lambda^\star - \lambda^\star\| \;=\; O\!\left(\phi_{\max}e^{-\bar\mu/K_{\min}}
 +h^2\bar\mu^{-2}+\bar\mu^{-1}\right)\;\to\;0.
 \]
-The SMFVB posterior is therefore asymptotically equivalent to the exact
-mean-field variational posterior in the regime of large latent counts.
+This is a statement about surrogate approximation error convergence: as mean
+abundance grows, SMFVB and exact mean-field VI optimise objectives that are
+uniformly close, so their optimisers coincide in the limit.  No claim is
+made about convergence of the variational posterior to the true posterior
+$p(\mathbf{N}_{1:T}\mid\mathbf{Y})$, which would require a separate
+Bayesian consistency argument.
 \end{corollary}
 
 \begin{proof}[Proof sketch]
@@ -1521,8 +1528,9 @@ approximation sources each of explicitly bounded order.  Second, the closed-form
 structure enables a coordinate-ascent algorithm (SMFVB) in which each update
 is analytic and the iterates converge monotonically to a stationary point of
 the surrogate variational objective under local contractivity assumptions.  Third, as mean latent abundance grows all
-surrogate approximation errors vanish, establishing posterior consistency in
-the large-population regime; and the dual-channel observation model is locally
+surrogate approximation errors vanish, establishing surrogate approximation
+error convergence ($|\tilde{\mathcal{L}}-\mathcal{L}|\to0$) in the
+large-population regime; and the dual-channel observation model is locally
 identifiable under mild temporal abundance variation.  Fourth, the simulation
 study confirms that these theoretical guarantees translate directly to
 practice: SMFVB matches particle MCMC credible-interval coverage to within
