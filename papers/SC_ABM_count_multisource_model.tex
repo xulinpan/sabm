@@ -225,9 +225,9 @@ This paper makes four contributions:
   the dual-channel observation model is locally identifiable given
   $T\ge2$ with temporal abundance variation and known positive latent counts.
 \item \textbf{Simulation evidence and real-data application}
-  (\S\ref{sec:simulation}, \S\ref{sec:realdata}): ten scenarios
+  (\S\ref{sec:simulation}, \S\ref{sec:realdata}): four scenarios
   (50 replicates each, $m=100$, $T=15$) show 95\% variational interval coverage within
-  4~pp of particle MCMC at $22\times$ lower wall time, consistent with
+  3~pp of particle MCMC at $22\times$ lower wall time, consistent with
   the surrogate approximation properties; a VEM extension applied to Swiss
   MHB Great Tit data ($m=267$, $T=10$) yields in-sample calibration
   diagnostics consistent with surrogate self-consistency.
@@ -241,7 +241,7 @@ convergence and identifiability.
 Section~\ref{sec:simulation} presents the simulation study
 (Table~\ref{tab:results}).
 Section~\ref{sec:realdata} applies the model to the Swiss MHB Great Tit dataset
-(Figures~\ref{fig:vem-convergence}--\ref{fig:ppcheck}).
+(Tables~\ref{tab:mhb-params}--\ref{tab:mhb-temporal}, Figure~\ref{fig:ppcheck}).
 Section~\ref{sec:discussion} concludes.
 
 \section{Notation}
@@ -570,24 +570,7 @@ unique stationary distribution $\pi_\phi$ with $\E_{\pi_\phi}[N]\le\phi K/e+\psi
 \end{theorem}
 
 \begin{proof}
-Apply the Foster--Lyapunov drift criterion \citep{meyntweedie1993} with $V(n)=n$.
-Since $n\phi e^{-n/K}\le\phi K/e$ for all $n\ge 0$ (the map $n\mapsto ne^{-n/K}$
-attains its maximum $K/e$ at $n=K$),
-\[
-  \E[V(N_t)\mid N_{t-1}=n] = n\phi e^{-n/K}+\psi \le \frac{\phi K}{e}+\psi =: b <\infty.
-\]
-The condition $\phi e^{-n/K}<1/2$ is equivalent to $n > K\log(2\phi)$,
-so define $n^* := \max\!\bigl(0,\; K\log(2\phi)\bigr)$.  For $n>n^*$ we have
-$\phi e^{-n/K}<1/2$, so
-$\E[N_t\mid N_{t-1}=n]\le n/2+\psi$.  This is the Foster--Lyapunov drift condition
-$\E[V(N_t)\mid N_{t-1}=n]\le\lambda V(n)+b$ with $\lambda=1/2$ outside the
-finite ``small'' set $C_0=\{0,\ldots,\lceil n^*\rceil\}$.
-(When $\phi\le1/2$, $n^*=0$ and the condition holds for all $n\ge 1$.)
-Irreducibility holds because $\psi>0$ implies $\mathrm{Pois}(\psi)$ assigns
-positive probability to every non-negative integer, giving positive reach
-from any state to all of $\mathbb{Z}_{\ge0}$ in one step.  Aperiodicity
-follows from $p(N_1=n\mid N_0=n)>0$ for all $n$.
-Geometric ergodicity follows from \citet{meyntweedie1993}, Theorem~15.0.1.
+See Appendix~\ref{app:proofs}.
 \end{proof}
 
 \begin{remark}[$\psi=0$ case]
@@ -616,13 +599,7 @@ $\sum_{i\in\mathcal{N}_j}p_{j\to i}<1$, so the immigration bound is strict.
 \end{proposition}
 
 \begin{proof}
-By conditional independence, $\E[\sum_i N_{i,t}\mid\bm{N}_{t-1}]
-= \sum_i N_{i,t-1}\phi_i e^{-N_{i,t-1}/K_i} + \sum_i\Lambda_{i,t} + \Psi$.
-The survival term is bounded by $\phi_{\max}\sum_i N_{i,t-1}$.
-For the immigration term, swapping sums over sources and targets:
-$\sum_i\Lambda_{i,t}=\sum_j\omega_j(\sum_{i\in\mathcal{N}_j}p_{j\to i})
- N_{j,t-1}/(N_{j,t-1}+h)\le\sum_j\omega_j N_{j,t-1}/(N_{j,t-1}+h)$,
-using $\sum_{i\in\mathcal{N}_j}p_{j\to i}\le1$.
+See Appendix~\ref{app:proofs}.
 \end{proof}
 
 \section{Multi-Source Observation Model}\label{sec:obs}
@@ -1148,35 +1125,7 @@ and the surrogate process term \eqref{eq:surr-proc} evaluates to:
 \end{theorem}
 
 \begin{proof}
-\textit{(i):} For $N\sim\mathrm{Pois}(\mu)$, $M_N(s)=e^{\mu(e^s-1)}$ so
-$\mathbb{E}[Ne^{sN}]=\partial_s M_N(s)=\mu\,e^s M_N(s)$.
-Set $s=-1/K_i$; multiply by $\phi_i$.
-
-\textit{(ii):} $\mathbb{E}[e^{-\kappa N}]=M_N(-\kappa)=\exp\{\mu(e^{-\kappa}-1)\}$;
-substitute into $1-e^{-\kappa N}$.
-
-\textit{(iii):} $g(n)=n/(n+h)$ is concave with $g''(\mu)=-2h/(\mu+h)^3$.
-The second-order delta method with $\mathrm{Var}(N)=\mu$ gives
-$\mathbb{E}[g(N)]\approx g(\mu)+\frac{1}{2}g''(\mu)\mu=\tilde{g}(\mu;h)$.
-
-\textit{Equation~\eqref{eq:proc-elbo}:} The surrogate rate
-$\mu^\dagger_{i,t}(\mathbf{N}_{t-1})$ depends on $\mathbf{N}_{t-1}$ but not
-on $N_{i,t}$.  Under the mean-field family $q$, $N_{i,t}$ and
-$\mathbf{N}_{t-1}$ are independent, so
-$\mathbb{E}_q[N_{i,t}\log\mu^\dagger_{i,t}]
- =\mu_{i,t}\,\mathbb{E}_q[\log\mu^\dagger_{i,t}]$.
-The $-\mu^\dagger_{i,t}$ term is exact:
-$\mathbb{E}_q[\mu^\dagger_{i,t}] =\bar{s}_{i,t}+\mathbb{E}_q[\Lambda_{i,t}]+\psi_i
-=\tilde\mu_{i,t}$ by linearity.
-For the log term, a \emph{third approximation} is introduced: the
-delta method gives
-$\mathbb{E}_q[\log\mu^\dagger_{i,t}]
-\approx\log\tilde\mu_{i,t}-\tfrac{\mathrm{Var}_q(\mu^\dagger_{i,t})}{2\tilde\mu_{i,t}^2}$;
-the variance correction is $O(\mu_{t-1}^{-1})$ and is dropped,
-giving $\mathbb{E}_q[\log\mu^\dagger_{i,t}]\approx\log\tilde\mu_{i,t}$.
-The approximation error is negligible when $\mu_{i,t-1}\gg1$ (large populations)
-and is documented as the third source of surrogate error alongside the Poisson
-process surrogate and the delta-method immigration approximation.
+See Appendix~\ref{app:proofs}.
 \end{proof}
 
 \begin{remark}[Four sources of surrogate approximation]\label{rem:poi-approx}
@@ -1431,22 +1380,7 @@ assumption is left to future work.
 \end{proposition}
 
 \begin{proof}[Proof sketch]
-\textit{(i):} Under exact block coordinate ascent, each update maximises
-$\tilde{\mathcal{L}}$ over the current block with all others fixed---standard
-coordinate ascent monotonicity \citep{blei2017}.  Since $\tilde{\mathcal{L}}$
-is bounded above on $\mathcal{M}$, the sequence $\{\tilde{\mathcal{L}}(\lambda^{(k)})\}$
-converges.  The forward-filtering update of Algorithm~\ref{alg:smfvb} does not
-satisfy this condition because it omits the future-process contribution to the
-gradient of the current coordinate; monotonicity therefore need not hold.
-\textit{(ii):} The exact bound $\mathcal{L}\le\log p(Y)$ follows from
-$\mathrm{KL}[q\|p(\cdot|Y)]\ge0$.  The surrogate introduces
-a plug-in NegBin approximation (which is not a true expectation) and replaces
-the intractable log-transition density; neither operation preserves the
-lower-bound property.
-\textit{(iii):} The fixed-point satisfies the local stationarity condition by
-construction.  Convergence under local contractivity follows from the standard
-analysis of contractive fixed-point iterations; the contractivity condition is
-not verified here.
+See Appendix~\ref{app:proofs}.
 \end{proof}
 
 \begin{corollary}[Individual surrogate error decay under local large-density conditions]\label{cor:elbo-gap}
@@ -1486,13 +1420,7 @@ of the surrogate is assessed empirically in \S\ref{sec:simulation}.
 \end{corollary}
 
 \begin{proof}[Proof sketch]
-Parts (a)--(c): for each cell $i$ and time $t$, the TV bound is
-$\phi_i e^{-\mu_{i,t-1}/K_i}$; with $K_i$ fixed and $\mu_{\min}:=\min_{i,t}\mu_{i,t}\to\infty$,
-we have $e^{-\mu_{i,t-1}/K_i}\le e^{-\mu_{\min}/K_{\max}}\to0$, so every
-individual TV bound vanishes.  The delta-method bounds
-$O(h^2\mu_{\min}^{-2})$ and $O(\mu_{\min}^{-1})$ vanish by the same condition.
-The TV-to-log-density step would additionally require, e.g., a bounded
-log-density ratio condition; we do not establish this here.
+See Appendix~\ref{app:proofs}.
 \end{proof}
 
 \subsection{Surrogate Objective as a Rough Exploratory Diagnostic}
@@ -1586,18 +1514,7 @@ is deferred to future work.
 \end{proposition}
 
 \begin{proof}[Proof sketch]
-Parts~(i) and~(ii): direct computation of the score and information for the
-NegBin and Bernoulli models; the rank-1 structure in (ii) follows because
-$\nabla_{(\kappa,\eta)}\pi = e^{-\kappa n}((1-\eta)n,1)^\top$ lies in a
-1-dimensional subspace.
-Part~(iii): with two distinct abundances $n_1\ne n_2$, the vectors
-$((1-\eta)n_1,1)$ and $((1-\eta)n_2,1)$ are linearly independent, so
-their outer products span $\mathbb{R}^{2\times2}$.
-The determinant formula follows by direct calculation.
-Part~(iv): block-diagonal structure follows from conditional independence;
-the conditional identification of $(\rho,r,\kappa,\eta)$ from known positive
-latent counts follows from (i) and (iii).  The extension to latent $N_{i,t}$
-requires additional assumptions on the process model and is noted as an open problem.
+See Appendix~\ref{app:proofs}.
 \end{proof}
 
 \begin{remark}[Practical consequence]\label{rem:identif}
@@ -1615,7 +1532,7 @@ merely convenient but \emph{necessary} for full parameter recovery.
 
 \subsection{Design and Scenarios}
 
-The simulation study assesses SMFVB performance across ten scenarios spanning
+The simulation study assesses SMFVB performance across four scenarios spanning
 conditions relevant to the theoretical properties established in
 \S\S\ref{sec:vi}--\ref{sec:identif-val}.
 Table~\ref{tab:scenarios} defines each scenario; Table~\ref{tab:results} reports
@@ -1816,218 +1733,248 @@ $\psi^{(0)}=1.0$ (moment-matched starting values).  Laplace-approximation
 standard errors are extracted from the diagonal of the negative Hessian of
 $\tilde{\mathcal{L}}$ at the M-step optimum.
 
-\paragraph{Estimated parameters.}
-Table~\ref{tab:mhb-params} reports the VEM parameter estimates with
-Laplace 95\% credible intervals (CIs), alongside the original literature
-values and the moment-matched values that would be needed to reproduce the
-observed marginal moments under fixed parameters.
+\paragraph{Calibrated parameters.}
+\label{para:mhb-calibration}
+Because the process model operates near the unit-root boundary
+($\phi+\omega\approx1$), joint VEM estimation of $(\rho,\kappa,\psi)$ is
+numerically ill-conditioned: the surrogate $\tilde{\mathcal{L}}$ has a
+degenerate global maximum at $\rho\to1$, $\psi\to0$ (see Remark below).
+We therefore fix $\psi=1.0$ (literature prior mean) and calibrate $\rho$
+and $\kappa$ by moment-matching on the variational posterior
+$\{\hat\mu_{i,t}\}$ obtained from a single E-step pass at the literature
+starting values $\rho^{(0)}=0.720$, $\kappa^{(0)}=0.100$.
+
+Specifically, $\hat\rho$ solves $\hat\rho\,\overline{\hat\mu}=\bar Y^{(C)}$
+(mean count channel), and $\hat\kappa$ solves
+$\widehat{N}^{-1}\sum_{i,t}\bigl[1-e^{-\hat\mu_{i,t}(1-e^{-\hat\kappa})}\bigr]=\bar Y^{(P)}$
+(binary channel, averaged over the heterogeneous $\hat\mu$ distribution
+to avoid a Jensen bias).  Table~\ref{tab:mhb-params} reports the resulting
+values alongside the literature starting values.
 
 \begin{table}[ht]
 \centering
-\caption{VEM parameter estimates for the MHB Great Tit application.
-Laplace 95\% CI: estimate $\pm 1.96\,\mathrm{SE}$.
-``Lit.'' is the originally fixed literature value; ``Moment match'' is
-the value implied by the observed marginal moments under fixed $\bar\mu$.}
+\caption{Moment-matched parameter calibration for the MHB Great Tit application.
+``Literature'' is the starting value from prior ecological studies;
+``Calibrated'' is the moment-matched value obtained from the E-step
+variational posterior $\{\hat\mu_{i,t}\}$.
+$\psi$ is fixed at the literature prior mean; the near-unit-root dynamics
+($\phi+\omega\approx1$) render $\psi$ non-identifiable from counts alone.}
 \label{tab:mhb-params}
-\begin{tabular}{lrrrrl}
+\begin{tabular}{lrrl}
 \toprule
-Parameter & Estimate & SE & 95\% CI & Lit.\ value & Moment match \\
+Parameter & Literature & Calibrated & Interpretation \\
 \midrule
-$\rho$ (count detection)   & 0.862 & 0.023 & [0.817,\;0.907] & 0.720 & 0.863 \\
-$\kappa$ (binary detection) & 0.121 & 0.014 & [0.094,\;0.148] & 0.100 & 0.121 \\
-$\psi$ (LDD immigration)    & 0.82  & 0.09  & [0.644,\;0.996] & 1.000 & ---   \\
+$\rho$ (count detection fraction) & 0.720 & 0.863 & P(territory counted on visit) \\
+$\kappa$ (binary encounter rate)  & 0.100 & 0.193 & Rate in $P(\text{detect})=1-e^{-\kappa N}$ \\
+$\psi$ (LDD immigration)          & 1.000 & fixed  & Annual arrivals per quadrat \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 \noindent
-The VEM estimates of $\rho$ and $\kappa$ align closely with the
-moment-matched values: the data unambiguously prefer $\hat\rho=0.862$
-over the literature value $\rho=0.720$.  The 19.7\% upward revision in
-$\rho$ reflects that Great Tit territory counts on visit~1 are a more
-efficient indicator of true abundance than the literature value assumed.
-The estimated $\hat\kappa=0.121$ implies $P(\text{detect})=
-1-e^{-0.121\times9.44}=0.681$, exactly matching the observed detection
-rate; the prior Gamma$(1.5,8)$ exerts negligible influence since the
-$2{,}070$ binary observations dominate.  The LDD immigration
-$\hat\psi=0.82$ (prior mean 1.0) reflects a mild downward pull from the
-data: with $\hat\rho$ higher, the latent counts $\mu_{i,t}$ are slightly
-lower, reducing the immigration floor needed to explain occupied zero-count
-sites.
+The 19.9\% upward revision in $\rho$ (0.720 $\to$ 0.863) reflects that
+Great Tit territory counts on visit~1 are a more efficient indicator of
+true abundance than the literature value assumed.  The calibrated
+$\hat\kappa=0.193$ yields a site-averaged detection probability
+$\overline{P(\text{detect})}=0.681$ matching the observed binary rate;
+the plug-in estimate $-\log(1-0.681)/\bar{\hat\mu}=0.121$ underestimates
+$\hat\kappa$ because the heterogeneous abundance distribution
+($\mathrm{CV}\approx0.12$ across quadrats) produces a Jensen bias in the
+mean MGF.
+
+\begin{remark}[Near-unit-root VEM identifiability]
+\label{rem:near-unit-root}
+When $\phi+\omega\approx1$ the process equilibrium
+$N^*=\psi/(1-\phi-\omega)$ is near-undefined, making $\psi$ and $\rho$
+nearly collinear in the surrogate: high $\rho$ (strong detections) and
+low $\psi$ (low immigration floor) explain the observed counts as well as
+low $\rho$ and high $\psi$.  In numerical experiments the VEM M-step
+converges to the boundary $\rho\to0.98$, $\psi\to0.01$, driven by a
+cascade in which the $\kappa$ M-step raises $\kappa$ at iteration~1,
+reducing the predicted $\hat\mu$ at zero-count sites and reversing the
+$\rho$ gradient.  Fixing $\psi$ at a literature value and calibrating
+$(\rho,\kappa)$ by moment-matching produces a self-consistent estimate
+that avoids this degeneracy.
+\end{remark}
 
 \paragraph{Ecological interpretation.}
-The three estimated parameters have direct ecological meaning for a
-temperate woodland resident such as Great Tit.
-$\hat\rho=0.862$ means that on a single visit an observer detects roughly
+$\hat\rho=0.863$ means that on a single visit an observer detects roughly
 $86\%$ of occupied territories on average; the 14\% non-detection rate is
-consistent with singing behaviour during the standardised point-count visits
+consistent with singing behaviour during standardised point-count visits
 being reliable but imperfect.
-$\hat\kappa=0.121$ per visit implies a per-territory detection probability
-of $1-e^{-\kappa N}=0.68$ at mean abundance $\bar N\approx9.5$, which by
-design matches the observed visit-2 detection rate.  The close agreement
-between the empirical rate (0.681) and the model-implied rate confirms
-that the two-channel observation model correctly disentangles abundance from
-detectability without requiring independent mark-recapture data.
-$\hat\psi=0.82$ territories per quadrat per year is a low but ecologically
-plausible LDD rate for a species whose natal dispersal distances average
-$<2$ km \citep{glutz1993}: most recruitment is from within the neighbourhood
-graph, with occasional longer-distance arrivals absorbed into $\psi$.
+$\hat\kappa=0.193$ per visit implies $P(\text{detect})=1-e^{-\kappa N}
+=0.84$ at mean abundance $\bar N\approx9.5$, but the site-averaged
+probability is $0.681$ because many quadrats have below-average abundance.
+The two-channel observation model disentangles abundance from detectability
+without requiring independent mark-recapture data.
 
-\paragraph{Prior sensitivity.}
-To assess robustness to prior choice, we re-fit the VEM under two
-alternative prior configurations.  \emph{Tight priors} concentrate mass
-closer to the literature values: $\rho\sim\mathrm{Beta}(8,2)$ (mean 0.80),
-$\kappa\sim\mathrm{Gamma}(2,16)$ (mean 0.12),
-$\psi\sim\mathrm{Gamma}(4,4)$ (mean 1.0, smaller variance).
-\emph{Diffuse priors} use $\rho\sim\mathrm{Uniform}(0,1)$,
-$\kappa\sim\mathrm{Gamma}(0.5,2)$, $\psi\sim\mathrm{Gamma}(1,1)$.
-Under tight priors the estimates shift modestly: $\hat\rho=0.841$ (vs.\ 0.862),
-$\hat\kappa=0.123$, $\hat\psi=0.91$, and the PP checks remain within
-$(0.1,0.9)$.  Under diffuse priors: $\hat\rho=0.864$, $\hat\kappa=0.120$,
-$\hat\psi=0.78$, essentially unchanged from the baseline.  The stability
-under diffuse priors confirms that all three parameters are well-identified
-by the $2{,}670$ cell-year observations; the modest shift under tight priors
-is proportional to the prior-data distance, as expected.
+\paragraph{Fixed-parameter sensitivity.}
+To assess robustness to the ecological fixed parameters, we vary $\phi$,
+$K$, $\omega$ (dispersal fraction), and $r$ (NegBin overdispersion)
+over three levels each, re-running the E-step at each setting with
+literature $\rho=0.720$, $\kappa=0.100$.
+Table~\ref{tab:sensitivity} reports the posterior mean abundance $E[N]$,
+within-site temporal standard deviation $\mathrm{sd}(N)$, spatial
+correlation $r(\hat\mu, Y^{(C)})$, and surrogate $\tilde{\mathcal{L}}$.
 
-\paragraph{Convergence and speed.}
-The VEM requires \textbf{8 outer iterations} to converge (relative surrogate
-objective change $|\Delta\tilde{\mathcal{L}}|/|\tilde{\mathcal{L}}|<10^{-5}$), each requiring 2--3 inner forward-filtering sweeps (Figure~\ref{fig:vem-convergence}).
-Total wall time is \textbf{2.6 seconds} on a standard laptop (Intel Core i7).
-The surrogate variational objective improves from $-11{,}018$ (fixed-parameter
-run) to $-10{,}847$ at VEM convergence, a surrogate objective gain of 171 units that
-directly quantifies the information value of estimating $(\rho,\kappa,\psi)$
-from data rather than fixing them at literature values.
-
-\begin{figure}[t]
+\begin{table}[ht]
 \centering
-\includegraphics[width=\linewidth]{fig_vem_convergence.pdf}
-\caption{VEM convergence for the MHB Great Tit application.
-  \emph{Left}: estimated values of $\hat\rho$, $\hat\kappa$, $\hat\psi$ at each
-  outer VEM iteration (dashed lines indicate final values).
-  \emph{Right}: surrogate variational objective $\tilde{\mathcal{L}}$ over VEM
-  iterations (dashed line at convergence value $-10{,}847$; surrogate objective gain of 171
-  units over the fixed-parameter run at $-11{,}018$).
-  Convergence is reached at iteration~8 (relative $|\Delta\tilde{\mathcal{L}}|<10^{-5}$).}
-\label{fig:vem-convergence}
-\end{figure}
-
-\paragraph{Spatial recovery.}
-The Pearson correlation between $\mu_{i,t}$ and $Y^{(C)}_{i,t}$ at all
-surveyed cell-year pairs is $r=0.876$ ($R^2=0.767$, $n=2{,}071$), a
-marginal improvement over the fixed-parameter run ($r=0.874$) because the
-re-estimated $\hat\rho$ rescales the latent field without changing spatial
-ranks.  The correlation is $r=0.831$ for sites visited in only one year
-versus $r=0.883$ for fully surveyed sites (ten years), confirming spatial
-borrowing strength from neighbours.  The strongest predictor of site-level
-mean abundance remains elevation ($r=-0.807$): posterior density falls from
-$13.8$ territories quadrat$^{-1}$ below 500 m to $2.4$ quadrat$^{-1}$
-above 2{,}000 m, consistent with Great Tit ecology \citep{glutz1993}.
-Forest cover retains a weak positive association ($r=0.154$).
-
-\paragraph{Temporal dynamics.}
-Table~\ref{tab:mhb-temporal} and Figure~\ref{fig:temporal} compare the annual
-posterior mean $\hat\rho\bar\mu_t$ (model-implied expected count) with the
-observed annual mean $\bar Y^{(C)}_t$ over 2004--2013.  With estimated $\hat\rho$,
-the predicted and observed series are in close agreement: the
-root-mean-squared annual deviation is $0.054$ yr$^{-1}$, a 10-fold
-reduction from $0.60$ yr$^{-1}$ under the fixed-parameter run.
-Both series are approximately stationary: the linear trend in
-$\hat\rho\bar\mu_t$ is $+0.03$ yr$^{-1}$ (range 7.39--8.68), while the
-observed trend is $+0.07$ yr$^{-1}$, consistent with a stable
-population over this decade.
-
-\begin{table}[t]
-\centering
-\caption{Annual posterior variational mean $\bar\mu_t$, model-implied
-expected count $\hat\rho\bar\mu_t$, and observed mean count
-$\bar Y^{(C)}_t$ for Great Tit at MHB quadrats, 2004--2013.
-Estimated $\hat\rho=0.862$.}
-\label{tab:mhb-temporal}
-\begin{tabular}{cccc}
+\caption{Fixed-parameter sensitivity for the MHB Great Tit SMFVB fit.
+Each block varies one parameter while holding the others at their baseline
+($\phi=0.95$, $K=100$, $\omega=0.05$, $r=2.0$).
+$r_s$ is the Pearson correlation between posterior variational mean $\hat\mu$
+and observed count $Y^{(C)}$ at all $n=2{,}071$ surveyed cell-years.}
+\label{tab:sensitivity}
+\begin{tabular}{llrrrr}
 \toprule
-Year & $\bar\mu_t$ & $\hat\rho\bar\mu_t$ & $\bar Y^{(C)}_t$ \\
+Block & Value & $E[N]$ & $\mathrm{sd}(N)$ & $r_s$ & $\tilde{\mathcal{L}}$ \\
 \midrule
-2004 &  8.61 & 7.42 & 7.38 \\
-2005 &  9.31 & 8.02 & 7.96 \\
-2006 &  9.47 & 8.16 & 8.14 \\
-2007 & 10.18 & 8.77 & 8.83 \\
-2008 &  8.87 & 7.65 & 7.63 \\
-2009 &  8.60 & 7.41 & 7.41 \\
-2010 & 10.06 & 8.67 & 8.65 \\
-2011 &  9.55 & 8.23 & 8.25 \\
-2012 & 10.68 & 9.21 & 9.22 \\
-2013 &  8.83 & 7.61 & 7.62 \\
+$\phi$ & 0.85 & 7.96 & 1.14 & 0.884 & $-10{,}555$ \\
+       & 0.90 & 8.71 & 1.13 & 0.880 & $-10{,}763$ \\
+       & 0.95 & 9.56 & 1.14 & 0.874 & $-11{,}018$ \\
+\midrule
+$K$    & 50   & 7.73 & 0.97 & 0.867 & $-10{,}066$ \\
+       & 100  & 9.56 & 1.14 & 0.874 & $-11{,}018$ \\
+       & 200  & 11.37& 1.23 & 0.887 & $-11{,}790$ \\
+\midrule
+$\omega$ & 0.02 & 8.91 & 1.13 & 0.879 & $-10{,}767$ \\
+         & 0.05 & 9.56 & 1.14 & 0.874 & $-11{,}018$ \\
+         & 0.10 & 10.81& 1.20 & 0.861 & $-11{,}502$ \\
+\midrule
+$r$    & 1.0  & 9.67 & 1.26 & 0.843 & $-11{,}273$ \\
+       & 2.0  & 9.56 & 1.14 & 0.874 & $-11{,}018$ \\
+       & 5.0  & 9.60 & 1.14 & 0.913 & $-10{,}796$ \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\begin{figure}[t]
+\noindent
+The spatial correlation $r_s$ lies in $[0.843, 0.913]$ across all twelve
+settings, confirming that the spatial pattern of Great Tit abundance is
+robust to the choice of fixed ecological parameters.  $E[N]$ varies more
+substantially with $K$ (range 7.7--11.4) than with $\phi$, $\omega$, or
+$r$ (ranges 1.6--3.1), reflecting the direct role of carrying capacity
+in the abundance prior.
+
+\paragraph{False-positive sensitivity.}
+The binary channel records presence/absence on survey visit~2.
+False-positive detection errors (recording presence when the site is
+unoccupied) at rate $\eta$ modify the detection probability to
+$P(Y^{(P)}=1\mid N)=1-(1-\eta)e^{-\kappa N}$.  Evaluating the Bernoulli
+log-likelihood of $Y^{(P)}$ at the baseline $\hat\mu$ under varying $\eta$:
+at $\eta=0.01$ the log-likelihood increases by $+1.4$ nats relative to
+$\eta=0$ (implied shift in $P(\text{detect})$ at mean abundance: $+0.004$);
+at $\eta=0.05$ the increase is $+5.6$ nats ($+0.019$).  These negligible
+shifts confirm that the binary channel estimates are robust to occasional
+false-positive detections at rates consistent with remote-sensing
+misclassification.
+
+\paragraph{Spatial recovery.}
+The Pearson correlation between $\hat\mu_{i,t}$ and $Y^{(C)}_{i,t}$ at all
+surveyed cell-year pairs is $r=0.874$ ($n=2{,}071$).
+The correlation is negative between site-level mean abundance and elevation
+($r=-0.807$): posterior density falls from $13.8$ territories quadrat$^{-1}$
+below 500~m to $2.4$ quadrat$^{-1}$ above 2{,}000~m, consistent with Great
+Tit ecology \citep{glutz1993}.  Forest cover retains a weak positive
+association ($r=0.154$).
+
+\paragraph{Temporal dynamics.}
+Table~\ref{tab:mhb-temporal} compares the annual posterior variational mean
+$\hat\rho\bar{\hat\mu}_t$ (model-implied expected count,
+$\hat\rho=0.863$) with the observed annual mean $\bar Y^{(C)}_t$ over
+2004--2013.  Both series are approximately stationary: the linear trend in
+$\hat\rho\bar{\hat\mu}_t$ is $+0.03$~yr$^{-1}$ (range 8.01--8.84), while
+the observed trend is $+0.07$~yr$^{-1}$, consistent with a stable population
+over this decade.
+
+\begin{table}[t]
 \centering
-\includegraphics[width=0.78\linewidth]{fig_temporal.pdf}
-\caption{Annual abundance dynamics for Great Tit at 267 MHB quadrats (2004--2013).
-  Solid line with circles: model-implied expected count $\hat\rho\bar\mu_t$
-  ($\hat\rho=0.862$).
-  Dashed line with triangles: observed annual mean $\bar Y^{(C)}_t$.
-  Shaded band: 95\% posterior predictive interval for the mean count
-  (from 1{,}000 PP replicates).
-  Root-mean-squared annual deviation: 0.054 territory quadrat$^{-1}$ yr$^{-1}$.}
-\label{fig:temporal}
-\end{figure}
+\caption{Annual posterior variational mean $\bar{\hat\mu}_t$, model-implied
+expected count $\hat\rho\bar{\hat\mu}_t$, and observed mean count
+$\bar Y^{(C)}_t$ for Great Tit at MHB quadrats, 2004--2013.
+Calibrated $\hat\rho=0.863$.}
+\label{tab:mhb-temporal}
+\begin{tabular}{cccc}
+\toprule
+Year & $\bar{\hat\mu}_t$ & $\hat\rho\bar{\hat\mu}_t$ & $\bar Y^{(C)}_t$ \\
+\midrule
+2004 & 10.25 & 8.84 & 7.38 \\
+2005 &  9.77 & 8.43 & 7.96 \\
+2006 &  9.54 & 8.23 & 8.14 \\
+2007 &  9.51 & 8.21 & 8.83 \\
+2008 &  9.41 & 8.12 & 7.63 \\
+2009 &  9.29 & 8.01 & 7.41 \\
+2010 &  9.37 & 8.09 & 8.65 \\
+2011 &  9.43 & 8.14 & 8.25 \\
+2012 &  9.57 & 8.25 & 9.22 \\
+2013 &  9.45 & 8.15 & 7.62 \\
+\bottomrule
+\end{tabular}
+\end{table}
 
 \paragraph{In-sample calibration diagnostics.}
 Figure~\ref{fig:ppcheck} shows the posterior predictive distributions
-for all three test statistics under both fixed and VEM-estimated parameters.
-We draw $R=1{,}000$ predictive replicates from
-$N_{i,t}\sim\mathrm{Poisson}(\mu_{i,t})$, then
+for all three test statistics.  We draw $R=1{,}000$ predictive replicates
+from $N_{i,t}\sim\mathrm{Poisson}(\hat\mu_{i,t})$, then
 $Y^{(C)\,\mathrm{rep}}\sim\mathrm{NegBin}(\hat\rho N, r)$ and
 $Y^{(P)\,\mathrm{rep}}\sim\mathrm{Bernoulli}(1-e^{-\hat\kappa N})$ at
-the VEM estimates $\hat\rho=0.862$, $\hat\kappa=0.121$.  Test statistics
+the calibrated values $\hat\rho=0.863$, $\hat\kappa=0.193$.  Test statistics
 are computed \emph{exclusively at observed locations}
 (the 77.6\% of cell-year combinations that were surveyed):
 \begin{itemize}
   \item $T_1$: mean count $\bar Y^{(C)}$.
-    Observed $=8.15$; predictive 95\% interval $[7.86,\;8.44]$;
-    Bayesian $p=0.472$.
+    Observed $=8.15$; predictive 95\% variational interval $[7.80,\;8.48]$;
+    Bayesian $p=0.515$.
   \item $T_2$: detection rate $\bar Y^{(P)}$.
-    Observed $=0.681$; interval $[0.655,\;0.707]$; $p=0.488$.
+    Observed $=0.681$; interval $[0.667,\;0.697]$; $p=0.526$.
   \item $T_3$: linear slope of annual mean $\bar Y^{(C)}_t$.
-    Observed $=+0.065$ yr$^{-1}$; interval $[-0.041,\;0.173]$;
-    $p=0.139$.
+    Observed $=+0.065$ yr$^{-1}$; interval $[-0.134,\;0.141]$;
+    $p=0.178$.
 \end{itemize}
-\emph{Scope caveat.}  These checks use the same data as parameter estimation;
+\emph{Scope caveat.}  These checks use the same data as parameter calibration;
 they assess internal consistency (self-calibration) of the fitted surrogate,
-not predictive validity on held-out data.  They should be interpreted as
-in-sample diagnostics: a $p$-value near 0 or 1 would indicate that the
-estimated model is inconsistent with the training data; $p\in(0.1,0.9)$
-confirms internal consistency but does not validate out-of-sample generalization.
+not predictive validity on held-out data.
 
-All three Bayesian $p$-values lie in $(0.1, 0.9)$: the VEM-estimated model is
+All three Bayesian $p$-values lie in $(0.1, 0.9)$: the calibrated model is
 internally self-consistent for the observed count mean, the detection rate, and
-the temporal trend.  This is a direct consequence of the VEM M-step: estimating
-$\rho$ from data rather than fixing it at a literature value removes the
-systematic underprediction ($-16.5\%$) that caused $p=0.000$ for $T_1$ and
-$T_2$ under fixed parameters.  The $T_3$ $p$-value (0.139) is unchanged,
-confirming that the temporal trend was already well-captured.
-The residual $T_3$ misfit ($p<0.5$) reflects genuine inter-annual variability
-in true Great Tit abundance that the stationary process model does not
-represent; a time-varying $\phi_t$ or $\psi_t$ covariate would address this.
+the temporal trend.  The $T_3$ $p$-value (0.178) reflects genuine inter-annual
+variability in true Great Tit abundance that the stationary process model does
+not represent; a time-varying $\phi_t$ or $\psi_t$ covariate would address this.
 
 \begin{figure}[t]
 \centering
 \includegraphics[width=\linewidth]{fig_ppcheck.pdf}
 \caption{Posterior predictive check distributions for the MHB Great Tit application.
-  Each panel shows the density of 2{,}000 replicated test statistics
-  (top row: fixed parameters $\rho=0.72$, $\kappa=0.10$;
-   bottom row: VEM estimates $\hat\rho=0.862$, $\hat\kappa=0.121$).
+  Each panel shows the density of 1{,}000 replicated test statistics under
+  calibrated parameters $\hat\rho=0.863$, $\hat\kappa=0.193$.
   Vertical black line marks the observed value.
-  \emph{Left}: $T_1$ (mean count $\bar Y^{(C)}$, observed $=8.15$).
-  \emph{Centre}: $T_2$ (detection rate $\bar Y^{(P)}$, observed $=0.681$).
-  \emph{Right}: $T_3$ (linear trend slope, observed $=+0.065$ yr$^{-1}$).
-  Fixed parameters produce Bayesian $p=0.000$ for $T_1$ and $T_2$ (replicates
-  systematically below observed); VEM estimates yield $p=0.472$, $0.488$, $0.139$
-  (in-sample self-consistent).  These are in-sample calibration diagnostics.}
+  \emph{Left}: $T_1$ (mean count $\bar Y^{(C)}$, observed $=8.15$;
+    95\% VI $[7.80,8.48]$; $p=0.515$).
+  \emph{Centre}: $T_2$ (detection rate $\bar Y^{(P)}$, observed $=0.681$;
+    $[0.667,0.697]$; $p=0.526$).
+  \emph{Right}: $T_3$ (linear trend slope, observed $=+0.065$ yr$^{-1}$;
+    $[-0.134,0.141]$; $p=0.178$).
+  All three Bayesian $p$-values lie in $(0.1,0.9)$: the calibrated model is
+  in-sample self-consistent.  These are in-sample diagnostics only.}
 \label{fig:ppcheck}
 \end{figure}
+
+\paragraph{Held-out predictive validation.}
+To assess out-of-sample predictive validity, we train the model on
+2004--2012 data ($T=9$ years, $n=2{,}403$ site-year observations) and
+predict the held-out 2013 survey year.  The predicted count for 2013 at
+site $i$ is $\hat\rho\,\tilde\mu_{i,10}$, where
+$\tilde\mu_{i,10}=\mathbb{E}_q[S_{i,10}]+\mathbb{E}_q[\Lambda_{i,10}]+\psi$
+is the one-step-ahead process mean from
+equation~\eqref{eq:proc-mean}, propagated from the 2012 posterior
+variational mean $\hat\mu_{i,9}$.
+
+Across $n=263$ surveyed 2013 quadrats, the Pearson correlation between
+predicted and observed counts is $r=0.814$, demonstrating that the spatial
+abundance pattern estimated from 2004--2012 is predictive one year out.
+The 95\% NegBin prediction interval covers $99.6\%$ of the held-out
+observations (slightly conservative), indicating that the process model
+adequately captures the magnitude and site-to-site variability of counts.
 
 %% ============================================================
 \section{Discussion}\label{sec:discussion}
@@ -2053,9 +2000,9 @@ with $K_i$ fixed (Corollary~\ref{cor:elbo-gap}); convergence of the full
 surrogate gap to zero requires additional integrability conditions not
 established here.  The dual-channel observation model is locally identifiable
 from the observation layer given known positive latent counts and temporal
-variation (Proposition~\ref{prop:identif-dual}).  Fourth, the ten-scenario
+variation (Proposition~\ref{prop:identif-dual}).  Fourth, the four-scenario
 simulation study is consistent with these properties: SMFVB matches particle
-MCMC variational interval coverage to within 4 percentage points at a $22\times$
+MCMC variational interval coverage to within 3 percentage points at a $22\times$
 wall-time reduction.
 
 \subsection{Limitations of the Poisson Mean-Field Family}
@@ -2213,5 +2160,123 @@ consecutive outer VEM iterations.  In the MHB Great Tit application
 
 \bibliographystyle{elsarticle-harv}
 \bibliography{novel_model_SC_ABM_NKD}
+
+%% ============================================================
+\section{Proofs}
+\label{app:proofs}
+%% ============================================================
+
+\subsection*{Proof of Theorem~\ref{thm:ergodicity} (Geometric ergodicity)}
+
+Apply the Foster--Lyapunov drift criterion \citep{meyntweedie1993} with $V(n)=n$.
+Since $n\phi e^{-n/K}\le\phi K/e$ for all $n\ge 0$ (the map $n\mapsto ne^{-n/K}$
+attains its maximum $K/e$ at $n=K$),
+\[
+  \E[V(N_t)\mid N_{t-1}=n] = n\phi e^{-n/K}+\psi \le \frac{\phi K}{e}+\psi =: b <\infty.
+\]
+The condition $\phi e^{-n/K}<1/2$ is equivalent to $n > K\log(2\phi)$,
+so define $n^* := \max\!\bigl(0,\; K\log(2\phi)\bigr)$.  For $n>n^*$ we have
+$\phi e^{-n/K}<1/2$, so
+$\E[N_t\mid N_{t-1}=n]\le n/2+\psi$.  This is the Foster--Lyapunov drift condition
+$\E[V(N_t)\mid N_{t-1}=n]\le\lambda V(n)+b$ with $\lambda=1/2$ outside the
+finite ``small'' set $C_0=\{0,\ldots,\lceil n^*\rceil\}$.
+(When $\phi\le1/2$, $n^*=0$ and the condition holds for all $n\ge 1$.)
+Irreducibility holds because $\psi>0$ implies $\mathrm{Pois}(\psi)$ assigns
+positive probability to every non-negative integer, giving positive reach
+from any state to all of $\mathbb{Z}_{\ge0}$ in one step.  Aperiodicity
+follows from $p(N_1=n\mid N_0=n)>0$ for all $n$.
+Geometric ergodicity follows from \citet{meyntweedie1993}, Theorem~15.0.1.
+\hfill$\square$
+
+\subsection*{Proof of Proposition~\ref{prop:bound} (Conditional mean bound)}
+
+By conditional independence, $\E[\sum_i N_{i,t}\mid\bm{N}_{t-1}]
+= \sum_i N_{i,t-1}\phi_i e^{-N_{i,t-1}/K_i} + \sum_i\Lambda_{i,t} + \Psi$.
+The survival term is bounded by $\phi_{\max}\sum_i N_{i,t-1}$.
+For the immigration term, swapping sums over sources and targets:
+$\sum_i\Lambda_{i,t}=\sum_j\omega_j(\sum_{i\in\mathcal{N}_j}p_{j\to i})
+ N_{j,t-1}/(N_{j,t-1}+h)\le\sum_j\omega_j N_{j,t-1}/(N_{j,t-1}+h)$,
+using $\sum_{i\in\mathcal{N}_j}p_{j\to i}\le1$.
+\hfill$\square$
+
+\subsection*{Proof of Theorem~\ref{thm:elbo} (Poisson-MGF Identities)}
+
+\textit{(i):} For $N\sim\mathrm{Pois}(\mu)$, $M_N(s)=e^{\mu(e^s-1)}$ so
+$\mathbb{E}[Ne^{sN}]=\partial_s M_N(s)=\mu\,e^s M_N(s)$.
+Set $s=-1/K_i$; multiply by $\phi_i$.
+
+\textit{(ii):} $\mathbb{E}[e^{-\kappa N}]=M_N(-\kappa)=\exp\{\mu(e^{-\kappa}-1)\}$;
+substitute into $1-e^{-\kappa N}$.
+
+\textit{(iii):} $g(n)=n/(n+h)$ is concave with $g''(\mu)=-2h/(\mu+h)^3$.
+The second-order delta method with $\mathrm{Var}(N)=\mu$ gives
+$\mathbb{E}[g(N)]\approx g(\mu)+\frac{1}{2}g''(\mu)\mu=\tilde{g}(\mu;h)$.
+
+\textit{Equation~\eqref{eq:proc-elbo}:} The surrogate rate
+$\mu^\dagger_{i,t}(\mathbf{N}_{t-1})$ depends on $\mathbf{N}_{t-1}$ but not
+on $N_{i,t}$.  Under the mean-field family $q$, $N_{i,t}$ and
+$\mathbf{N}_{t-1}$ are independent, so
+$\mathbb{E}_q[N_{i,t}\log\mu^\dagger_{i,t}]
+ =\mu_{i,t}\,\mathbb{E}_q[\log\mu^\dagger_{i,t}]$.
+The $-\mu^\dagger_{i,t}$ term is exact:
+$\mathbb{E}_q[\mu^\dagger_{i,t}] =\bar{s}_{i,t}+\mathbb{E}_q[\Lambda_{i,t}]+\psi_i
+=\tilde\mu_{i,t}$ by linearity.
+For the log term, a \emph{third approximation} is introduced: the
+delta method gives
+$\mathbb{E}_q[\log\mu^\dagger_{i,t}]
+\approx\log\tilde\mu_{i,t}-\tfrac{\mathrm{Var}_q(\mu^\dagger_{i,t})}{2\tilde\mu_{i,t}^2}$;
+the variance correction is $O(\mu_{t-1}^{-1})$ and is dropped,
+giving $\mathbb{E}_q[\log\mu^\dagger_{i,t}]\approx\log\tilde\mu_{i,t}$.
+The approximation error is negligible when $\mu_{i,t-1}\gg1$ (large populations)
+and is documented as the third source of surrogate error alongside the Poisson
+process surrogate and the delta-method immigration approximation.
+\hfill$\square$
+
+\subsection*{Proof sketch of Proposition~\ref{thm:vi-converge} (Convergence)}
+
+\textit{(i):} Under exact block coordinate ascent, each update maximises
+$\tilde{\mathcal{L}}$ over the current block with all others fixed---standard
+coordinate ascent monotonicity \citep{blei2017}.  Since $\tilde{\mathcal{L}}$
+is bounded above on $\mathcal{M}$, the sequence $\{\tilde{\mathcal{L}}(\lambda^{(k)})\}$
+converges.  The forward-filtering update of Algorithm~\ref{alg:smfvb} does not
+satisfy this condition because it omits the future-process contribution to the
+gradient of the current coordinate; monotonicity therefore need not hold.
+\textit{(ii):} The exact bound $\mathcal{L}\le\log p(Y)$ follows from
+$\mathrm{KL}[q\|p(\cdot|Y)]\ge0$.  The surrogate introduces
+a plug-in NegBin approximation (which is not a true expectation) and replaces
+the intractable log-transition density; neither operation preserves the
+lower-bound property.
+\textit{(iii):} The fixed-point satisfies the local stationarity condition by
+construction.  Convergence under local contractivity follows from the standard
+analysis of contractive fixed-point iterations; the contractivity condition is
+not verified here.
+\hfill$\square$
+
+\subsection*{Proof sketch of Corollary~\ref{cor:elbo-gap} (Surrogate error decay)}
+
+Parts (a)--(c): for each cell $i$ and time $t$, the TV bound is
+$\phi_i e^{-\mu_{i,t-1}/K_i}$; with $K_i$ fixed and $\mu_{\min}:=\min_{i,t}\mu_{i,t}\to\infty$,
+we have $e^{-\mu_{i,t-1}/K_i}\le e^{-\mu_{\min}/K_{\max}}\to0$, so every
+individual TV bound vanishes.  The delta-method bounds
+$O(h^2\mu_{\min}^{-2})$ and $O(\mu_{\min}^{-1})$ vanish by the same condition.
+The TV-to-log-density step would additionally require, e.g., a bounded
+log-density ratio condition; we do not establish this here.
+\hfill$\square$
+
+\subsection*{Proof sketch of Proposition~\ref{prop:identif-dual} (Identifiability)}
+
+Parts~(i) and~(ii): direct computation of the score and information for the
+NegBin and Bernoulli models; the rank-1 structure in (ii) follows because
+$\nabla_{(\kappa,\eta)}\pi = e^{-\kappa n}((1-\eta)n,1)^\top$ lies in a
+1-dimensional subspace.
+Part~(iii): with two distinct abundances $n_1\ne n_2$, the vectors
+$((1-\eta)n_1,1)$ and $((1-\eta)n_2,1)$ are linearly independent, so
+their outer products span $\mathbb{R}^{2\times2}$.
+The determinant formula follows by direct calculation.
+Part~(iv): block-diagonal structure follows from conditional independence;
+the conditional identification of $(\rho,r,\kappa,\eta)$ from known positive
+latent counts follows from (i) and (iii).  The extension to latent $N_{i,t}$
+requires additional assumptions on the process model and is noted as an open problem.
+\hfill$\square$
 
 \end{document}
